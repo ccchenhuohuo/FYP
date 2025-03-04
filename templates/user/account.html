@@ -1,0 +1,270 @@
+{% extends "user/layout.html" %}
+
+{% block title %}我的账户{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="account-header">
+    <h1><i class="fas fa-user-circle"></i> 我的账户</h1>
+</div>
+
+<!-- 用户欢迎部分 -->
+<div class="user-welcome">
+    <div>
+        <p><i class="fas fa-user"></i> 欢迎回来，<strong>{{ current_user.user_name }}</strong>!</p>
+    </div>
+    <div>
+        <span class="last-login">上次登录: 2024年3月3日 10:30</span>
+    </div>
+</div>
+
+<!-- 显示消息提示 -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="messages">
+            {% for category, message in messages %}
+                <div class="message {{ category }}">
+                    {% if category == 'success' %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif category == 'error' %}
+                        <i class="fas fa-exclamation-circle"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle"></i>
+                    {% endif %}
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- 账户余额和充值 -->
+<div class="balance-display">
+    <h2><i class="fas fa-wallet"></i> 账户余额</h2>
+    <p class="current-balance">¥ {{ current_user.balance }}</p>
+    
+    <div class="deposit-form">
+        <h3><i class="fas fa-plus-circle"></i> 充值</h3>
+        <form action="{{ url_for('user.deposit') }}" method="post">
+            <div class="form-group">
+                <label for="amount"><i class="fas fa-money-bill-wave"></i> 充值金额:</label>
+                <input type="number" id="amount" name="amount" min="1" step="0.01" required placeholder="请输入充值金额">
+            </div>
+            <div class="form-actions">
+                <button type="submit"><i class="fas fa-check"></i> 确认充值</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 创建新订单 -->
+<div class="section">
+    <h2><i class="fas fa-file-invoice"></i> 创建新订单</h2>
+    <form action="{{ url_for('user.create_order') }}" method="post" class="order-form">
+        <div class="form-group">
+            <label for="ticker"><i class="fas fa-tag"></i> 股票代码:</label>
+            <input type="text" id="ticker" name="ticker" required placeholder="例如: AAPL">
+        </div>
+        <div class="form-group">
+            <label for="order_type"><i class="fas fa-exchange-alt"></i> 订单类型:</label>
+            <select id="order_type" name="order_type" required>
+                <option value="buy">买入</option>
+                <option value="sell">卖出</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="price"><i class="fas fa-dollar-sign"></i> 价格:</label>
+            <input type="number" id="price" name="price" min="0.01" step="0.01" required placeholder="请输入价格">
+        </div>
+        <div class="form-group">
+            <label for="quantity"><i class="fas fa-sort-amount-up"></i> 数量:</label>
+            <input type="number" id="quantity" name="quantity" min="1" required placeholder="请输入数量">
+        </div>
+        <div class="form-actions">
+            <button type="submit"><i class="fas fa-plus"></i> 创建订单</button>
+        </div>
+    </form>
+</div>
+
+<!-- 订单列表 -->
+<div class="section">
+    <h2><i class="fas fa-list"></i> 我的订单</h2>
+    {% if orders %}
+        <div class="table-responsive">
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>订单ID</th>
+                        <th>股票代码</th>
+                        <th>类型</th>
+                        <th>价格</th>
+                        <th>数量</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td><small>{{ order.order_id }}</small></td>
+                            <td><strong>{{ order.ticker }}</strong></td>
+                            <td>
+                                {% if order.order_type == 'buy' %}
+                                    <span class="transaction-tag tag-buy">买入</span>
+                                {% else %}
+                                    <span class="transaction-tag tag-sell">卖出</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.order_price }}</td>
+                            <td>{{ order.order_quantity }}</td>
+                            <td>
+                                {% if order.order_status == 'pending' %}
+                                    <span class="status-pending">待执行</span>
+                                {% elif order.order_status == 'executed' %}
+                                    <span class="status-executed">已执行</span>
+                                {% elif order.order_status == 'cancelled' %}
+                                    <span class="status-cancelled">已取消</span>
+                                {% else %}
+                                    {{ order.order_status }}
+                                {% endif %}
+                            </td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if order.order_status == 'pending' %}
+                                    <form action="{{ url_for('user.cancel_order', order_id=order.order_id) }}" method="post">
+                                        <button type="submit" class="btn-small danger"><i class="fas fa-times"></i> 取消</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无订单记录</p>
+    {% endif %}
+</div>
+
+<!-- 交易记录 -->
+<div class="section">
+    <h2><i class="fas fa-history"></i> 我的交易记录</h2>
+    {% if transactions %}
+        <div class="table-responsive">
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>交易ID</th>
+                        <th>订单ID</th>
+                        <th>类型</th>
+                        <th>详情</th>
+                        <th>金额</th>
+                        <th>交易时间</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                        <tr>
+                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td><small>{{ transaction.order_id }}</small></td>
+                            <td>
+                                {% if transaction.transaction_type == 'buy' %}
+                                    <span class="transaction-tag tag-buy">买入</span>
+                                {% elif transaction.transaction_type == 'sell' %}
+                                    <span class="transaction-tag tag-sell">卖出</span>
+                                {% elif transaction.transaction_type == 'deposit' %}
+                                    <span class="transaction-tag tag-deposit">充值</span>
+                                {% else %}
+                                    {{ transaction.transaction_type }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.transaction_type == 'deposit' %}
+                                    账户充值
+                                {% else %}
+                                    <strong>{{ transaction.ticker }}</strong> × {{ transaction.transaction_quantity }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.transaction_type == 'buy' %}
+                                    <span class="negative-amount">-{{ transaction.transaction_amount }}</span>
+                                {% else %}
+                                    <span class="positive-amount">+{{ transaction.transaction_amount }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.transaction_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if transaction.transaction_status == 'completed' %}
+                                    <span class="status-completed">已完成</span>
+                                {% elif transaction.transaction_status == 'failed' %}
+                                    <span class="status-failed">失败</span>
+                                {% elif transaction.transaction_status == 'reversed' %}
+                                    <span class="status-reversed">已撤销</span>
+                                {% else %}
+                                    {{ transaction.transaction_status }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无交易记录</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 简单的输入验证
+    document.addEventListener('DOMContentLoaded', function() {
+        const orderForm = document.querySelector('form[action*="create_order"]');
+        if (orderForm) {
+            orderForm.addEventListener('submit', function(e) {
+                const price = parseFloat(document.getElementById('price').value);
+                const quantity = parseInt(document.getElementById('quantity').value);
+                
+                if (price <= 0 || isNaN(price)) {
+                    alert('请输入有效的价格');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                if (quantity <= 0 || isNaN(quantity)) {
+                    alert('请输入有效的数量');
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+        
+        const depositForm = document.querySelector('form[action*="deposit"]');
+        if (depositForm) {
+            depositForm.addEventListener('submit', function(e) {
+                const amount = parseFloat(document.getElementById('amount').value);
+                
+                if (amount <= 0 || isNaN(amount)) {
+                    alert('请输入有效的充值金额');
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+        
+        // 高亮当前导航菜单项
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('nav a');
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,15 @@
+# 主要依赖
+Flask==2.2.3
+Flask-Login==0.6.2
+Flask-SQLAlchemy==3.0.3
+SQLAlchemy==2.0.7
+Werkzeug==2.2.3
+
+# 数据库连接
+PyMySQL==1.0.3
+mysql-connector-python==8.0.33
+
+# 数据处理和获取
+pandas==2.0.1
+yfinance==0.2.20
+numpy==1.24.3 

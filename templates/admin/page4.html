@@ -1,0 +1,15 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}管理员页面4{% endblock %}
+
+{% block content %}
+<div>
+    <h1>管理员页面4</h1>
+    <p>欢迎，管理员 {{ current_user.admin_name }}!</p>
+    <p>这是管理员页面4的内容。</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/page4.js"></script>
+{% endblock %} 

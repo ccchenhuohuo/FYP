@@ -1,0 +1,35 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}管理员页面1{% endblock %}
+
+{% block content %}
+<div>
+    <h1>管理员页面1</h1>
+    <p>欢迎，管理员 {{ current_user.admin_name }}!</p>
+    <p>这是管理员页面1的内容。</p>
+    
+    <h2>用户列表</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>邮箱</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.user_id }}</td>
+                <td>{{ user.user_name }}</td>
+                <td>{{ user.user_email }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin/page1.js"></script>
+{% endblock %} 

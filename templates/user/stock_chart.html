@@ -1,0 +1,585 @@
+{% extends "user/layout.html" %}
+
+{% block title %}股票历史走势{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stock_chart.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header my-4">
+        <h1><i class="fas fa-chart-line text-primary"></i> 股票历史走势与预测分析</h1>
+        <p class="text-muted">通过历史数据和蒙特卡洛模拟探索股票未来表现</p>
+    </div>
+    
+    <!-- 图表控制面板 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-sliders-h"></i> 图表控制</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="stockSelector"><i class="fas fa-search"></i> 选择股票</label>
+                        <select class="form-control" id="stockSelector">
+                            <option value="AAPL">Apple Inc. (AAPL)</option>
+                            <option value="GOOGL">Alphabet Inc. (GOOGL)</option>
+                            <option value="MSFT">Microsoft Corp. (MSFT)</option>
+                            <option value="AMZN">Amazon.com Inc. (AMZN)</option>
+                            <option value="META">Meta Platforms Inc. (META)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="timeRange"><i class="fas fa-calendar-alt"></i> 时间范围</label>
+                        <select class="form-control" id="timeRange">
+                            <option value="custom">自定义日期范围</option>
+                            <option value="1m">1个月</option>
+                            <option value="3m">3个月</option>
+                            <option value="6m">6个月</option>
+                            <option value="1y">1年</option>
+                            <option value="all" selected>全部</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 自定义日期范围选择器 -->
+            <div class="row mt-3" id="customDateRange" style="display: none;">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="startDate"><i class="fas fa-calendar-day"></i> 开始日期</label>
+                        <input type="date" class="form-control" id="startDate">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="endDate"><i class="fas fa-calendar-day"></i> 结束日期</label>
+                        <input type="date" class="form-control" id="endDate">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-outline-primary w-100" id="applyDateRange">
+                        <i class="fas fa-check"></i> 应用日期范围
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 实时股票数据 -->
+    <div class="card mb-4" id="realTimeDataCard">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-bolt"></i> 实时行情</h5>
+        </div>
+        <div class="card-body">
+            <div id="loadingRealTimeData" class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <span class="ms-2">正在获取实时数据...</span>
+            </div>
+            <div id="realTimeDataError" class="alert alert-danger" style="display: none;"></div>
+            
+            <div id="realTimeDataContent" class="row" style="display: none;">
+                <div class="col-md-3">
+                    <div class="real-time-item">
+                        <div class="label"><i class="fas fa-dollar-sign"></i> 当前价格</div>
+                        <div class="value" id="rtPrice">--</div>
+                        <div class="change" id="rtPriceChange">--</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="real-time-item">
+                        <div class="label"><i class="fas fa-chart-bar"></i> 交易量</div>
+                        <div class="value" id="rtVolume">--</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="real-time-item">
+                        <div class="label"><i class="fas fa-arrow-up"></i> 今日最高</div>
+                        <div class="value" id="rtHigh">--</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="real-time-item">
+                        <div class="label"><i class="fas fa-arrow-down"></i> 今日最低</div>
+                        <div class="value" id="rtLow">--</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mt-2">
+                <small class="text-muted" id="lastUpdated"></small>
+                <button class="btn btn-sm btn-outline-primary ms-2" id="refreshRealTimeData">
+                    <i class="fas fa-sync-alt"></i> 刷新
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表显示区域 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-chart-area"></i> 价格走势图</h5>
+        </div>
+        <div class="card-body chart-wrapper">
+            <div id="loadingMessage" style="display: none;" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <span class="ms-2">正在加载数据...</span>
+            </div>
+            <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+            <canvas id="stockChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 蒙特卡洛模拟控制面板 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-random"></i> 蒙特卡洛模拟预测</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="simulationDays"><i class="fas fa-calendar"></i> 模拟天数</label>
+                        <input type="number" class="form-control" id="simulationDays" value="30" min="1" max="365">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="simulationCount"><i class="fas fa-dice"></i> 模拟次数</label>
+                        <input type="number" class="form-control" id="simulationCount" value="1000" min="100" max="10000">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" id="simulateButton">
+                        <i class="fas fa-play"></i> 运行模拟
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 视图模式切换 -->
+            <div id="viewModeToggle" class="btn-group mt-4" style="display: none;">
+                <button type="button" class="btn btn-outline-secondary active" id="historyModeBtn">
+                    <i class="fas fa-history"></i> 重点查看历史数据
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="simulationModeBtn">
+                    <i class="fas fa-chart-line"></i> 重点查看模拟路径
+                </button>
+            </div>
+            
+            <div id="simulationStats" class="mt-4 p-3 bg-light rounded" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="card mb-5">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-calculator"></i> 统计信息</h5>
+        </div>
+        <div class="card-body">
+            <div class="data-grid stats-grid">
+                <div class="data-item">
+                    <h4><i class="fas fa-arrow-up"></i> 最高价</h4>
+                    <p class="value" id="highestPrice">-</p>
+                </div>
+                <div class="data-item">
+                    <h4><i class="fas fa-arrow-down"></i> 最低价</h4>
+                    <p class="value" id="lowestPrice">-</p>
+                </div>
+                <div class="data-item">
+                    <h4><i class="fas fa-equals"></i> 平均价</h4>
+                    <p class="value" id="averagePrice">-</p>
+                </div>
+                <div class="data-item">
+                    <h4><i class="fas fa-exchange-alt"></i> 总交易量</h4>
+                    <p class="value" id="totalVolume">-</p>
+                </div>
+                <div class="data-item">
+                    <h4><i class="fas fa-calendar-check"></i> 最后交易日</h4>
+                    <p class="value" id="lastTradeDate">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 基本面数据部分 -->
+    <div class="fundamental-section">
+        <div class="fundamental-header">
+            <h2><i class="fas fa-chart-pie"></i> 公司基本面数据</h2>
+        </div>
+        
+        <!-- 选项卡导航 -->
+        <div class="fundamental-tabs">
+            <button id="tabFundamental" class="tab-button active">
+                <i class="fas fa-info-circle"></i> 基本指标
+            </button>
+            <button id="tabBalance" class="tab-button">
+                <i class="fas fa-balance-scale"></i> 资产负债表
+            </button>
+            <button id="tabIncome" class="tab-button">
+                <i class="fas fa-file-invoice-dollar"></i> 利润表
+            </button>
+        </div>
+        
+        <!-- 基本指标内容 -->
+        <div id="contentFundamental" class="tab-content active">
+            <div class="loading-data" id="loadingFundamental">
+                <div class="loading-spinner"></div>
+                <p>正在加载基本面数据...</p>
+            </div>
+            
+            <div class="error-message" id="errorFundamental" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i> <span></span>
+            </div>
+            
+            <div class="data-grid" id="fundamentalData" style="display: none;">
+                <div class="data-item">
+                    <h4><i class="fas fa-dollar-sign"></i> 市值</h4>
+                    <p class="value" id="marketCap">-</p>
+                </div>
+                
+                <div class="data-item">
+                    <h4><i class="fas fa-chart-line"></i> 市盈率 (P/E)</h4>
+                    <p class="value" id="peRatio">-</p>
+                </div>
+                
+                <div class="data-item">
+                    <h4><i class="fas fa-book"></i> 市净率 (P/B)</h4>
+                    <p class="value" id="pbRatio">-</p>
+                </div>
+                
+                <div class="data-item">
+                    <h4><i class="fas fa-hand-holding-usd"></i> 股息收益率</h4>
+                    <p class="value" id="dividendYield">-</p>
+                </div>
+                
+                <div class="data-item">
+                    <h4><i class="fas fa-money-bill-wave"></i> 收入</h4>
+                    <p class="value" id="revenue">-</p>
+                </div>
+                
+                <div class="data-item">
+                    <h4><i class="fas fa-piggy-bank"></i> 净利润</h4>
+                    <p class="value" id="netIncome">-</p>
+                </div>
+                
+                <div class="data-item">
+                    <h4><i class="fas fa-stream"></i> 经营现金流</h4>
+                    <p class="value" id="operatingCashFlow">-</p>
+                </div>
+            </div>
+            
+            <p class="data-note" id="fundamentalDate"></p>
+        </div>
+        
+        <!-- 资产负债表内容 -->
+        <div id="contentBalance" class="tab-content">
+            <div class="loading-data" id="loadingBalance">
+                <div class="loading-spinner"></div>
+                <p>正在加载资产负债表数据...</p>
+            </div>
+            
+            <div class="error-message" id="errorBalance" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i> <span></span>
+            </div>
+            
+            <div id="balanceData" style="display: none;">
+                <div class="data-grid">
+                    <div class="data-item">
+                        <h4><i class="fas fa-wallet"></i> 流动资产</h4>
+                        <p class="value" id="currentAssets">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-building"></i> 非流动资产</h4>
+                        <p class="value" id="nonCurrentAssets">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-layer-group"></i> <strong>总资产</strong></h4>
+                        <p class="value" id="totalAssets">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-file-invoice-dollar"></i> 流动负债</h4>
+                        <p class="value" id="currentLiabilities">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-university"></i> 非流动负债</h4>
+                        <p class="value" id="nonCurrentLiabilities">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-money-check-alt"></i> <strong>总负债</strong></h4>
+                        <p class="value" id="totalLiabilities">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-chart-pie"></i> <strong>所有者权益</strong></h4>
+                        <p class="value" id="equity">-</p>
+                    </div>
+                </div>
+                
+                <p class="data-note" id="balanceDate"></p>
+            </div>
+        </div>
+        
+        <!-- 利润表内容 -->
+        <div id="contentIncome" class="tab-content">
+            <div class="loading-data" id="loadingIncome">
+                <div class="loading-spinner"></div>
+                <p>正在加载利润表数据...</p>
+            </div>
+            
+            <div class="error-message" id="errorIncome" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i> <span></span>
+            </div>
+            
+            <div id="incomeData" style="display: none;">
+                <div class="data-grid">
+                    <div class="data-item">
+                        <h4><i class="fas fa-hand-holding-usd"></i> 营业收入</h4>
+                        <p class="value" id="incomeRevenue">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-money-bill-wave"></i> 营业成本</h4>
+                        <p class="value" id="costOfRevenue">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-dollar-sign"></i> <strong>毛利润</strong></h4>
+                        <p class="value" id="grossProfit">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-chart-line"></i> 营业利润</h4>
+                        <p class="value" id="operatingIncome">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-coins"></i> 税前利润</h4>
+                        <p class="value" id="incomeBeforeTax">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-piggy-bank"></i> <strong>净利润</strong></h4>
+                        <p class="value" id="incomeNetIncome">-</p>
+                    </div>
+                    
+                    <div class="data-item">
+                        <h4><i class="fas fa-percentage"></i> <strong>利润率</strong></h4>
+                        <p class="value" id="profitMargin">-</p>
+                    </div>
+                </div>
+                
+                <p class="data-note" id="incomeDate"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- 引入Chart.js库 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.4.3/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.min.js"></script>
+
+<!-- 引入自定义JavaScript -->
+<script src="{{ url_for('static', filename='js/user/stock_chart.js') }}"></script>
+
+<!-- 基本面数据处理脚本 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 选项卡切换功能
+    const tabs = document.querySelectorAll('.tab-button');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // 移除所有活动状态
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            // 添加当前活动状态
+            tab.classList.add('active');
+            const target = tab.id.replace('tab', 'content');
+            document.getElementById(target).classList.add('active');
+        });
+    });
+    
+    // 加载基本面数据
+    const stockSelector = document.getElementById('stockSelector');
+    
+    function formatNumber(num) {
+        if (num === null || num === undefined) return '-';
+        
+        // 对于大数值，转换为适当的单位（百万或十亿）
+        if (Math.abs(num) >= 1e9) {
+            return (num / 1e9).toFixed(2) + '十亿';
+        } else if (Math.abs(num) >= 1e6) {
+            return (num / 1e6).toFixed(2) + '百万';
+        } else {
+            return num.toLocaleString();
+        }
+    }
+    
+    function formatPercentage(num) {
+        if (num === null || num === undefined) return '-';
+        return num.toFixed(2) + '%';
+    }
+    
+    function formatRatio(num) {
+        if (num === null || num === undefined) return '-';
+        return num.toFixed(2);
+    }
+    
+    function loadFundamentalData(ticker) {
+        document.getElementById('loadingFundamental').style.display = 'block';
+        document.getElementById('fundamentalData').style.display = 'none';
+        document.getElementById('errorFundamental').style.display = 'none';
+        
+        fetch(`${window.location.origin}/user/api/fundamental_data?ticker=${ticker}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // 填充数据
+                    document.getElementById('marketCap').textContent = formatNumber(data.data.market_cap);
+                    document.getElementById('peRatio').textContent = formatRatio(data.data.pe_ratio);
+                    document.getElementById('pbRatio').textContent = formatRatio(data.data.pb_ratio);
+                    document.getElementById('dividendYield').textContent = formatPercentage(data.data.dividend_yield);
+                    document.getElementById('revenue').textContent = formatNumber(data.data.revenue);
+                    document.getElementById('netIncome').textContent = formatNumber(data.data.net_income);
+                    document.getElementById('operatingCashFlow').textContent = formatNumber(data.data.operating_cash_flow);
+                    
+                    document.getElementById('fundamentalDate').textContent = `数据更新日期: ${data.data.date}`;
+                    
+                    document.getElementById('fundamentalData').style.display = 'grid';
+                } else {
+                    document.getElementById('errorFundamental').querySelector('span').textContent = data.message || '加载基本面数据失败';
+                    document.getElementById('errorFundamental').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('加载基本面数据错误:', error);
+                document.getElementById('errorFundamental').querySelector('span').textContent = `请求基本面数据时发生错误: ${error.message}`;
+                document.getElementById('errorFundamental').style.display = 'block';
+            })
+            .finally(() => {
+                document.getElementById('loadingFundamental').style.display = 'none';
+            });
+    }
+    
+    function loadBalanceSheet(ticker) {
+        document.getElementById('loadingBalance').style.display = 'block';
+        document.getElementById('balanceData').style.display = 'none';
+        document.getElementById('errorBalance').style.display = 'none';
+        
+        fetch(`${window.location.origin}/user/api/balance_sheet?ticker=${ticker}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // 填充数据
+                    document.getElementById('currentAssets').textContent = formatNumber(data.data.current_assets);
+                    document.getElementById('nonCurrentAssets').textContent = formatNumber(data.data.non_current_assets);
+                    document.getElementById('totalAssets').textContent = formatNumber(data.data.total_assets);
+                    document.getElementById('currentLiabilities').textContent = formatNumber(data.data.current_liabilities);
+                    document.getElementById('nonCurrentLiabilities').textContent = formatNumber(data.data.non_current_liabilities);
+                    document.getElementById('totalLiabilities').textContent = formatNumber(data.data.total_liabilities);
+                    document.getElementById('equity').textContent = formatNumber(data.data.equity);
+                    
+                    document.getElementById('balanceDate').textContent = `数据更新日期: ${data.data.date}`;
+                    
+                    document.getElementById('balanceData').style.display = 'block';
+                } else {
+                    document.getElementById('errorBalance').querySelector('span').textContent = data.message || '加载资产负债表数据失败';
+                    document.getElementById('errorBalance').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('加载资产负债表数据错误:', error);
+                document.getElementById('errorBalance').querySelector('span').textContent = `请求资产负债表数据时发生错误: ${error.message}`;
+                document.getElementById('errorBalance').style.display = 'block';
+            })
+            .finally(() => {
+                document.getElementById('loadingBalance').style.display = 'none';
+            });
+    }
+    
+    function loadIncomeStatement(ticker) {
+        document.getElementById('loadingIncome').style.display = 'block';
+        document.getElementById('incomeData').style.display = 'none';
+        document.getElementById('errorIncome').style.display = 'none';
+        
+        fetch(`${window.location.origin}/user/api/income_statement?ticker=${ticker}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP状态码: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // 填充数据
+                    document.getElementById('incomeRevenue').textContent = formatNumber(data.data.revenue);
+                    document.getElementById('costOfRevenue').textContent = formatNumber(data.data.cost_of_revenue);
+                    document.getElementById('grossProfit').textContent = formatNumber(data.data.gross_profit);
+                    document.getElementById('operatingIncome').textContent = formatNumber(data.data.operating_income);
+                    document.getElementById('incomeBeforeTax').textContent = formatNumber(data.data.income_before_tax);
+                    document.getElementById('incomeNetIncome').textContent = formatNumber(data.data.net_income);
+                    document.getElementById('profitMargin').textContent = formatPercentage(data.data.profit_margin);
+                    
+                    document.getElementById('incomeDate').textContent = `数据更新日期: ${data.data.date}`;
+                    
+                    document.getElementById('incomeData').style.display = 'block';
+                } else {
+                    document.getElementById('errorIncome').querySelector('span').textContent = data.message || '加载利润表数据失败';
+                    document.getElementById('errorIncome').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('加载利润表数据错误:', error);
+                document.getElementById('errorIncome').querySelector('span').textContent = `请求利润表数据时发生错误: ${error.message}`;
+                document.getElementById('errorIncome').style.display = 'block';
+            })
+            .finally(() => {
+                document.getElementById('loadingIncome').style.display = 'none';
+            });
+    }
+    
+    function loadAllData(ticker) {
+        loadFundamentalData(ticker);
+        loadBalanceSheet(ticker);
+        loadIncomeStatement(ticker);
+    }
+    
+    // 初始加载
+    loadAllData(stockSelector.value);
+    
+    // 股票选择变化时重新加载数据
+    stockSelector.addEventListener('change', function() {
+        loadAllData(this.value);
+    });
+});
+</script>
+{% endblock %} 
