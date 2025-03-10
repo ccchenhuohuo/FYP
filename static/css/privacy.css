@@ -1,0 +1,87 @@
+/* 隐私政策页面样式 */
+
+.privacy-header {
+    text-align: center;
+    margin: 2rem 0;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.privacy-header h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.privacy-header p {
+    font-size: 1rem;
+    color: #666;
+}
+
+.privacy-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 0;
+}
+
+.privacy-content section {
+    margin-bottom: 2.5rem;
+}
+
+.privacy-content h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.privacy-content p {
+    font-size: 1rem;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.privacy-content ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.privacy-content li {
+    font-size: 1rem;
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.privacy-content a {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.privacy-content a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .privacy-header h1 {
+        font-size: 2rem;
+    }
+    
+    .privacy-content {
+        padding: 1rem;
+    }
+    
+    .privacy-content h2 {
+        font-size: 1.3rem;
+    }
+    
+    .privacy-content p, 
+    .privacy-content li {
+        font-size: 0.95rem;
+    }
+} 

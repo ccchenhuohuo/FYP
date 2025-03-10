@@ -205,9 +205,6 @@ function loadStockData(ticker, range, dateRange) {
             // 更新图表
             renderChart(filteredData);
             
-            // 更新统计信息
-            updateStats(filteredData);
-            
             // 隐藏加载信息
             document.getElementById('loadingMessage').style.display = 'none';
         })
@@ -559,41 +556,17 @@ function displaySimulationStats() {
 }
 
 /**
- * 更新统计信息
- * @param {Object[]} data - 股票数据数组
- */
-function updateStats(data) {
-    if (!data || data.length === 0) {
-        return;
-    }
-    
-    // 计算统计数据
-    const prices = data.map(item => item.close);
-    const volumes = data.map(item => item.volume);
-    
-    const highestPrice = Math.max(...prices).toFixed(2);
-    const lowestPrice = Math.min(...prices).toFixed(2);
-    const averagePrice = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
-    const totalVolume = volumes.reduce((sum, volume) => sum + volume, 0).toLocaleString();
-    const lastTradeDate = formatDate(new Date(data[data.length - 1].date));
-    
-    // 更新DOM
-    document.getElementById('highestPrice').textContent = `$${highestPrice}`;
-    document.getElementById('lowestPrice').textContent = `$${lowestPrice}`;
-    document.getElementById('averagePrice').textContent = `$${averagePrice}`;
-    document.getElementById('totalVolume').textContent = totalVolume;
-    document.getElementById('lastTradeDate').textContent = lastTradeDate;
-}
-
-/**
  * 格式化日期为YYYY-MM-DD格式
  * @param {Date} date - 日期对象
- * @returns {string} 格式化后的日期字符串
+ * @returns {string} - 格式化后的日期字符串
  */
 function formatDate(date) {
+    if (!date) return '-';
+    
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    
     return `${year}-${month}-${day}`;
 }
 

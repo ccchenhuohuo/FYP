@@ -85,39 +85,36 @@
             </div>
             <div id="realTimeDataError" class="alert alert-danger" style="display: none;"></div>
             
-            <div id="realTimeDataContent" class="row" style="display: none;">
-                <div class="col-md-3">
+            <div id="realTimeDataContent" style="display: none;">
+                <div class="real-time-data-grid">
                     <div class="real-time-item">
                         <div class="label"><i class="fas fa-dollar-sign"></i> 当前价格</div>
                         <div class="value" id="rtPrice">--</div>
                         <div class="change" id="rtPriceChange">--</div>
                     </div>
-                </div>
-                <div class="col-md-3">
+                    
                     <div class="real-time-item">
                         <div class="label"><i class="fas fa-chart-bar"></i> 交易量</div>
                         <div class="value" id="rtVolume">--</div>
                     </div>
-                </div>
-                <div class="col-md-3">
+                    
                     <div class="real-time-item">
                         <div class="label"><i class="fas fa-arrow-up"></i> 今日最高</div>
                         <div class="value" id="rtHigh">--</div>
                     </div>
-                </div>
-                <div class="col-md-3">
+                    
                     <div class="real-time-item">
                         <div class="label"><i class="fas fa-arrow-down"></i> 今日最低</div>
                         <div class="value" id="rtLow">--</div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="text-end mt-2">
-                <small class="text-muted" id="lastUpdated"></small>
-                <button class="btn btn-sm btn-outline-primary ms-2" id="refreshRealTimeData">
-                    <i class="fas fa-sync-alt"></i> 刷新
-                </button>
+                
+                <div class="text-end mt-3">
+                    <small class="text-muted" id="lastUpdated">最后更新: --</small>
+                    <button class="btn btn-sm btn-outline-primary ms-2" id="refreshRealTimeData">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -176,37 +173,6 @@
             </div>
             
             <div id="simulationStats" class="mt-4 p-3 bg-light rounded" style="display: none;"></div>
-        </div>
-    </div>
-
-    <!-- 统计信息 -->
-    <div class="card mb-5">
-        <div class="card-header">
-            <h5 class="card-title"><i class="fas fa-calculator"></i> 统计信息</h5>
-        </div>
-        <div class="card-body">
-            <div class="data-grid stats-grid">
-                <div class="data-item">
-                    <h4><i class="fas fa-arrow-up"></i> 最高价</h4>
-                    <p class="value" id="highestPrice">-</p>
-                </div>
-                <div class="data-item">
-                    <h4><i class="fas fa-arrow-down"></i> 最低价</h4>
-                    <p class="value" id="lowestPrice">-</p>
-                </div>
-                <div class="data-item">
-                    <h4><i class="fas fa-equals"></i> 平均价</h4>
-                    <p class="value" id="averagePrice">-</p>
-                </div>
-                <div class="data-item">
-                    <h4><i class="fas fa-exchange-alt"></i> 总交易量</h4>
-                    <p class="value" id="totalVolume">-</p>
-                </div>
-                <div class="data-item">
-                    <h4><i class="fas fa-calendar-check"></i> 最后交易日</h4>
-                    <p class="value" id="lastTradeDate">-</p>
-                </div>
-            </div>
         </div>
     </div>
 

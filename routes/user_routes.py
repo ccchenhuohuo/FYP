@@ -23,6 +23,18 @@ def stock_chart():
     """股票历史走势图页面"""
     return render_template('user/stock_chart.html')
 
+@user_bp.route('/about')
+@login_required
+def about():
+    """团队介绍页面"""
+    return render_template('user/about.html')
+
+@user_bp.route('/privacy')
+@login_required
+def privacy():
+    """隐私政策页面"""
+    return render_template('user/privacy.html')
+
 @user_bp.route('/page2')
 @login_required
 def page2():
@@ -32,8 +44,117 @@ def page2():
 @user_bp.route('/page3')
 @login_required
 def page3():
-    """用户页面3路由"""
-    return render_template('user/page3.html')
+    """用户页面3路由 - 重定向到股票风险分析页面"""
+    return redirect(url_for('user.stock_analysis'))
+
+@user_bp.route('/stock_analysis')
+@login_required
+def stock_analysis():
+    """股票风险分析页面"""
+    return render_template('user/stock_analysis.html')
+
+@user_bp.route('/api/stock_analysis', methods=['POST'])
+@login_required
+def api_stock_analysis():
+    """股票风险分析API"""
+    try:
+        # 获取请求数据 - 支持表单数据和JSON数据
+        if request.is_json:
+            data = request.json
+        else:
+            data = request.form
+            
+        if not data:
+            return jsonify({'error': '请求数据为空'}), 400
+            
+        print(f"收到股票分析请求: {data}")
+        
+        # 获取股票代码列表 - 支持多个股票代码输入
+        tickers = data.getlist('tickers') if hasattr(data, 'getlist') else data.get('tickers', '').split(',')
+        tickers = [t.strip() for t in tickers if t.strip()]
+        
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        # 验证输入
+        if not tickers:
+            return jsonify({'error': '请提供至少一个股票代码'}), 400
+        
+        if not start_date or not end_date:
+            return jsonify({'error': '请提供开始和结束日期'}), 400
+        
+        # 导入风险监控模块
+        import sys
+        import io
+        import os
+        import json
+        
+        # 确保当前目录在sys.path中
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if current_dir not in sys.path:
+            sys.path.append(current_dir)
+        
+        print(f"Python路径: {sys.path}")
+        print(f"当前目录: {current_dir}")
+        print(f"工作目录: {os.getcwd()}")
+        
+        # 检查risk_monitor.py文件是否存在
+        risk_monitor_path = os.path.join(current_dir, 'risk_monitor.py')
+        if not os.path.exists(risk_monitor_path):
+            return jsonify({'error': f'找不到risk_monitor.py文件: {risk_monitor_path}'}), 500
+        else:
+            print(f"找到risk_monitor.py文件: {risk_monitor_path}")
+        
+        # 导入模块
+        try:
+            from risk_monitor import run_analysis_text_only_simple
+            print("成功导入 risk_monitor 模块")
+        except ImportError as e:
+            error_msg = f'导入模块失败: {str(e)}'
+            print(error_msg)
+            return jsonify({'error': error_msg}), 500
+        
+        # 捕获打印输出
+        old_stdout = sys.stdout
+        new_stdout = io.StringIO()
+        sys.stdout = new_stdout
+        
+        # 运行分析
+        try:
+            # 将股票代码列表转换为逗号分隔的字符串
+            tickers_str = ','.join(tickers)
+            print(f"开始分析: tickers={tickers_str}, start_date={start_date}, end_date={end_date}")
+            
+            # 运行分析
+            analysis_results = run_analysis_text_only_simple(tickers_str, start_date, end_date)
+            analysis_output = new_stdout.getvalue()
+            print(f"分析完成，输出长度: {len(analysis_output)}")
+            
+            # 准备返回数据
+            response_data = {
+                'tickers': tickers,
+                'start_date': start_date,
+                'end_date': end_date,
+                'data': analysis_results
+            }
+            
+            return jsonify(response_data)
+            
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            error_msg = f'分析过程出错: {str(e)}\n{error_details}'
+            print(error_msg)
+            return jsonify({'error': error_msg}), 500
+        finally:
+            sys.stdout = old_stdout
+    
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        error_msg = f"股票分析API错误: {str(e)}\n{error_details}"
+        print(error_msg)
+        return jsonify({'error': f'服务器错误: {str(e)}'}), 500
 
 @user_bp.route('/account')
 @login_required

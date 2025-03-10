@@ -262,28 +262,26 @@ body {
 }
 
 .tab-button.active {
-    background-color: var(--card-bg);
     color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
-    border-bottom: 2px solid var(--primary-color);
+    background-color: rgba(52, 152, 219, 0.1);
+    border-left: 4px solid var(--primary-color);
 }
 
 .tab-button i {
-    margin-right: 0.5rem;
+    margin-right: 8px;
 }
 
 .tab-content {
     display: none;
-    background-color: var(--card-bg);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .tab-content.active {
     display: block;
-    animation: fadeIn 0.3s ease;
+    opacity: 1;
+    animation: fadeIn 0.5s ease;
 }
 
 @keyframes fadeIn {
@@ -294,40 +292,40 @@ body {
 .data-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.25rem;
+    gap: 20px;
 }
 
 .data-item {
-    background-color: var(--light-color);
-    border-radius: var(--border-radius);
-    padding: 1.25rem;
-    transition: var(--transition);
-    border: 1px solid var(--border-color);
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .data-item:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
 }
 
 .data-item h4 {
-    margin: 0 0 0.75rem 0;
-    color: var(--text-light);
     font-size: 0.875rem;
-    font-weight: 500;
+    margin-bottom: 12px;
+    color: #555;
+    font-weight: 600;
     display: flex;
     align-items: center;
 }
 
 .data-item h4 i {
-    margin-right: 0.5rem;
+    margin-right: 8px;
     color: var(--primary-color);
 }
 
 .data-item .value {
     font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-dark);
+    font-weight: 700;
+    color: #333;
 }
 
 .data-item strong {
@@ -335,11 +333,11 @@ body {
 }
 
 .data-note {
+    font-size: 0.75rem;
+    color: #6c757d;
     text-align: right;
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-    margin-top: 1rem;
-    margin-bottom: 0;
+    margin-top: 15px;
+    font-style: italic;
 }
 
 /* 加载和错误提示 */
@@ -348,17 +346,18 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 0;
+    padding: 30px;
+    color: #6c757d;
 }
 
 .loading-spinner {
-    border: 3px solid var(--light-color);
-    border-top: 3px solid var(--primary-color);
-    border-radius: 50%;
-    width: 40px;
+    width: a40px;
     height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    margin-bottom: 15px;
 }
 
 @keyframes spin {
@@ -367,37 +366,39 @@ body {
 }
 
 .error-message {
-    background-color: rgba(230, 55, 87, 0.1);
-    color: var(--danger-color);
-    padding: 1rem;
-    border-radius: var(--border-radius);
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
     display: flex;
     align-items: center;
 }
 
 .error-message i {
-    margin-right: 0.5rem;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
+    margin-right: 10px;
+    color: #dc3545;
 }
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--light-color);
-    border-radius: 3px;
+    background: #f1f1f1;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
-    border-radius: 3px;
+    background: #ccc;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-light);
+    background: #aaa;
 }
 
 /* 响应式调整 */
@@ -411,50 +412,25 @@ body {
     }
     
     .tab-button {
-        border-bottom: 1px solid var(--border-color);
+        margin-right: 0;
     }
     
     .tab-button:last-child {
-        border-bottom: none;
+        margin-bottom: 0;
     }
     
     .tab-button.active {
-        border-bottom: 1px solid var(--primary-color);
+        border-bottom: 2px solid #3498db;
     }
-}
-
-/* 数据展示与统计信息 */
-.stats-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-}
-
-.stats-grid .data-item {
-    padding: 1rem;
-    min-height: 90px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.stats-grid .data-item h4 {
-    font-size: 0.8125rem;
-    margin-bottom: 0.5rem;
-}
-
-.stats-grid .data-item .value {
-    font-size: 1.125rem;
-    margin-top: auto;
 }
 
 /* 自定义日期范围选择器 */
 #customDateRange {
-    background-color: rgba(240, 240, 250, 0.5);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    margin-top: 0.75rem;
-    border: 1px dashed var(--border-color);
-    transition: all 0.3s ease;
+    display: none; 
+    transition: all 0.3s ease-in-out;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
 }
 
 #customDateRange.show {
@@ -504,6 +480,13 @@ body {
 }
 
 /* 实时数据展示 */
+.real-time-data-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
 .real-time-item {
     background-color: var(--light-color);
     border-radius: var(--border-radius);
@@ -571,5 +554,17 @@ body {
     
     #realTimeDataContent .col-md-3:last-child {
         margin-bottom: 0;
+    }
+}
+
+@media (max-width: 992px) {
+    .real-time-data-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .real-time-data-grid {
+        grid-template-columns: 1fr;
     }
 } 
