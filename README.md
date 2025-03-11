@@ -153,7 +153,7 @@ python -c "from utils.stock_data import fetch_initial_data; fetch_initial_data()
 python app.py
 ```
 
-访问 http://localhost:5001 查看Web界面
+访问 http://localhost:5003 查看Web界面
 
 ## 使用指南
 
@@ -239,73 +239,6 @@ python app.py
     │   └── privacy.html      # 隐私政策页面
     └── admin/                # 管理员页面模板
 ```
-
-## 文件内容和功能
-
-### 核心文件
-
-#### app.py
-Flask应用的主入口文件，负责初始化应用、注册蓝图、配置数据库连接和启动Web服务器。
-
-#### models.py
-定义数据库模型，包括用户、股票数据、交易记录等表结构。使用SQLAlchemy ORM进行数据库操作。
-
-#### auth.py
-处理用户认证相关的功能，包括登录、注册、密码重置等。
-
-#### config.py
-系统配置文件，包含数据库连接信息、API密钥、应用设置等。
-
-### 工具模块
-
-#### utils/stock_data.py
-负责从Yahoo Finance API获取股票数据，并进行预处理和存储。提供历史数据查询和实时行情获取功能。
-
-#### utils/risk_monitor.py
-实现股票风险分析功能，计算各种风险指标（波动率、贝塔系数、夏普比率等），并提供风险评级。
-
-#### utils/monte_carlo.py
-实现蒙特卡洛模拟算法，基于历史数据模拟股票未来价格走势，并提供统计分析。
-
-#### utils/chat_ai.py
-集成Google Gemini API，提供智能问答功能，处理用户查询并生成回答。
-
-### 路由模块
-
-#### routes/auth_routes.py
-处理用户认证相关的路由，包括登录、注册、登出等。
-
-#### routes/user_routes.py
-处理用户页面相关的路由，包括股票图表、风险分析、账户管理等。
-
-#### routes/admin_routes.py
-处理管理员页面相关的路由，包括用户管理、系统监控等。
-
-#### routes/monte_carlo_routes.py
-处理蒙特卡洛模拟相关的API路由，接收前端请求并返回模拟结果。
-
-### 前端文件
-
-#### templates/user/stock_chart.html
-股票历史走势分析页面，展示交互式股票价格图表和实时行情。
-
-#### templates/user/stock_analysis.html
-股票风险分析页面，提供风险评估和估值分析功能。
-
-#### templates/user/ai_assistant.html
-AI智能助手页面，提供基于Gemini API的智能问答功能。
-
-#### static/js/user/stock_chart.js
-股票图表页面的JavaScript逻辑，处理数据获取、图表绘制和用户交互。
-
-#### static/js/user/stock_analysis.js
-风险分析页面的JavaScript逻辑，处理风险计算请求和结果展示。
-
-#### static/css/stock_chart.css
-股票图表页面的样式定义，包括图表、控件和布局样式。
-
-#### static/css/stock_analysis.css
-风险分析页面的样式定义，包括风险仪表盘、表单和结果展示样式。
 
 ## 贡献指南
 
