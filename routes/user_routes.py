@@ -7,15 +7,17 @@ from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from models import MarketData, db, Order, Transaction, User, FundamentalData, BalanceSheet, IncomeStatement
 import pandas as pd
-import random
-import google.generativeai as genai
+import sys
+import io
+import os
+import json
+import numpy as np
 
 from . import user_bp
+from utils.risk_monitor import run_analysis_text_only_simple
+from utils.chat_ai import chat_with_gemini_api
 
-# 配置Gemini API
-GEMINI_API_KEY = "AIzaSyDYcL5BBKz812t_66bbBq0h3xm9v6DOG-M"
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash')
+# 配置Gemini API已移至utils/chat_ai.py
 
 @user_bp.route('/stock_chart')
 @login_required
@@ -34,18 +36,6 @@ def about():
 def privacy():
     """隐私政策页面"""
     return render_template('user/privacy.html')
-
-@user_bp.route('/page2')
-@login_required
-def page2():
-    """用户页面2路由"""
-    return render_template('user/page2.html')
-
-@user_bp.route('/page3')
-@login_required
-def page3():
-    """用户页面3路由 - 重定向到股票风险分析页面"""
-    return redirect(url_for('user.stock_analysis'))
 
 @user_bp.route('/stock_analysis')
 @login_required
@@ -73,8 +63,19 @@ def api_stock_analysis():
         tickers = data.getlist('tickers') if hasattr(data, 'getlist') else data.get('tickers', '').split(',')
         tickers = [t.strip() for t in tickers if t.strip()]
         
+        # 获取日期范围
         start_date = data.get('start_date')
         end_date = data.get('end_date')
+        
+        # 获取用户自定义的风险阈值
+        volatility_threshold = float(data.get('volatility_threshold', 30)) / 100  # 转换为小数
+        drawdown_threshold = float(data.get('drawdown_threshold', 20)) / 100 * -1  # 转换为负小数
+        sharpe_threshold = float(data.get('sharpe_threshold', 0))
+        
+        # 获取新增的风险阈值
+        beta_threshold = float(data.get('beta_threshold', 1.2))
+        var_threshold = float(data.get('var_threshold', 2)) / 100 * -1  # 转换为负小数
+        sortino_threshold = float(data.get('sortino_threshold', 0))
         
         # 验证输入
         if not tickers:
@@ -83,78 +84,185 @@ def api_stock_analysis():
         if not start_date or not end_date:
             return jsonify({'error': '请提供开始和结束日期'}), 400
         
-        # 导入风险监控模块
-        import sys
-        import io
-        import os
-        import json
-        
-        # 确保当前目录在sys.path中
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if current_dir not in sys.path:
-            sys.path.append(current_dir)
-        
-        print(f"Python路径: {sys.path}")
-        print(f"当前目录: {current_dir}")
-        print(f"工作目录: {os.getcwd()}")
-        
-        # 检查risk_monitor.py文件是否存在
-        risk_monitor_path = os.path.join(current_dir, 'risk_monitor.py')
-        if not os.path.exists(risk_monitor_path):
-            return jsonify({'error': f'找不到risk_monitor.py文件: {risk_monitor_path}'}), 500
-        else:
-            print(f"找到risk_monitor.py文件: {risk_monitor_path}")
-        
-        # 导入模块
-        try:
-            from risk_monitor import run_analysis_text_only_simple
-            print("成功导入 risk_monitor 模块")
-        except ImportError as e:
-            error_msg = f'导入模块失败: {str(e)}'
-            print(error_msg)
-            return jsonify({'error': error_msg}), 500
+        print(f"===== 开始分析股票 {tickers} =====")
+        print(f"日期范围: {start_date} 至 {end_date}")
+        print(f"风险阈值: 波动率={volatility_threshold:.2f}, 最大回撤={drawdown_threshold:.2f}, 夏普比率={sharpe_threshold:.2f}")
+        print(f"额外风险阈值: 贝塔={beta_threshold:.2f}, VaR={var_threshold:.2f}, 索提诺比率={sortino_threshold:.2f}")
         
         # 捕获打印输出
         old_stdout = sys.stdout
         new_stdout = io.StringIO()
         sys.stdout = new_stdout
         
-        # 运行分析
         try:
             # 将股票代码列表转换为逗号分隔的字符串
             tickers_str = ','.join(tickers)
             print(f"开始分析: tickers={tickers_str}, start_date={start_date}, end_date={end_date}")
+            print(f"风险阈值: 波动率={volatility_threshold:.2f}, 最大回撤={drawdown_threshold:.2f}, 夏普比率={sharpe_threshold:.2f}")
             
             # 运行分析
-            analysis_results = run_analysis_text_only_simple(tickers_str, start_date, end_date)
+            monitor = run_analysis_text_only_simple(tickers_str, start_date, end_date)
             analysis_output = new_stdout.getvalue()
             print(f"分析完成，输出长度: {len(analysis_output)}")
             
-            # 准备返回数据
-            response_data = {
-                'tickers': tickers,
-                'start_date': start_date,
-                'end_date': end_date,
-                'data': analysis_results
-            }
+            # 构建前端期望的数据结构
+            result_data = {}
             
-            return jsonify(response_data)
+            # 确保即使没有分析结果，也为每个ticker创建基本结构
+            for ticker in tickers:
+                result_data[ticker] = {
+                    'name': ticker,
+                    'metrics': {},
+                    'alerts': [],
+                    'analysis_text': f"无法获取{ticker}的分析数据"
+                }
+            
+            print(f"===== 初始化结果数据结构 =====")
+            print(f"初始化的result_data: {result_data}")
+            
+            # 如果有分析结果，填充数据
+            if monitor and hasattr(monitor, 'risk_metrics'):
+                print(f"===== 处理分析结果 =====")
+                print(f"monitor.tickers: {monitor.tickers}")
+                print(f"monitor.risk_metrics keys: {list(monitor.risk_metrics.keys())}")
+                
+                for ticker in monitor.tickers:
+                    print(f"\n处理 {ticker} 的风险指标...")
+                    if ticker in monitor.risk_metrics:
+                        risk_data = monitor.risk_metrics[ticker]
+                        print(f"{ticker} risk_data: {risk_data}")
+                        
+                        # 检查数据是否可用
+                        if risk_data.get('data_available', False) == False:
+                            # 数据不可用，提供错误信息
+                            error_message = risk_data.get('error_message', '未知错误')
+                            print(f"{ticker} 数据不可用: {error_message}")
+                            result_data[ticker] = {
+                                'name': ticker,
+                                'metrics': {},
+                                'alerts': [{
+                                    "type": "danger", 
+                                    "message": f"{ticker}数据获取失败: {error_message}"
+                                }],
+                                'analysis_text': analysis_output,
+                                'data_available': False
+                            }
+                            continue
+                        
+                        # 将numpy数据类型转换为Python原生类型
+                        metrics = {}
+                        for key, value in risk_data.items():
+                            if key == 'data_available':
+                                continue
+                            if isinstance(value, (np.float32, np.float64, np.int32, np.int64)):
+                                metrics[key] = float(value)
+                            elif value is None:
+                                metrics[key] = None
+                            else:
+                                metrics[key] = value
+                        
+                        print(f"{ticker} 处理后的metrics: {metrics}")
+                        
+                        # 根据用户自定义阈值生成警报
+                        alerts = []
+                        
+                        # 波动率警报
+                        volatility = metrics.get('volatility')
+                        if volatility is not None and volatility > volatility_threshold:
+                            alerts.append({
+                                "type": "warning", 
+                                "message": f"{ticker}波动率为{volatility:.2%}，超过阈值{volatility_threshold:.2%}"
+                            })
+                        
+                        # 最大回撤警报
+                        max_drawdown = metrics.get('max_drawdown')
+                        if max_drawdown is not None and max_drawdown < drawdown_threshold:
+                            alerts.append({
+                                "type": "danger", 
+                                "message": f"{ticker}最大回撤为{max_drawdown:.2%}，超过阈值{drawdown_threshold:.2%}"
+                            })
+                        
+                        # 夏普比率警报
+                        sharpe_ratio = metrics.get('sharpe_ratio')
+                        if sharpe_ratio is not None and sharpe_ratio < sharpe_threshold:
+                            alerts.append({
+                                "type": "warning", 
+                                "message": f"{ticker}夏普比率为{sharpe_ratio:.2f}，低于阈值{sharpe_threshold:.2f}"
+                            })
+                            
+                        # 贝塔系数警报
+                        beta = metrics.get('beta')
+                        if beta is not None and not np.isnan(beta) and beta > beta_threshold:
+                            alerts.append({
+                                "type": "warning", 
+                                "message": f"{ticker}贝塔系数为{beta:.2f}，高于阈值{beta_threshold:.2f}"
+                            })
+                            
+                        # VaR警报
+                        var_95 = metrics.get('var_95')
+                        if var_95 is not None and var_95 < var_threshold:
+                            alerts.append({
+                                "type": "danger", 
+                                "message": f"{ticker}VaR(95%)为{var_95:.2%}，超过阈值{var_threshold:.2%}"
+                            })
+                            
+                        # 索提诺比率警报
+                        sortino_ratio = metrics.get('sortino_ratio')
+                        if sortino_ratio is not None and sortino_ratio < sortino_threshold:
+                            alerts.append({
+                                "type": "warning", 
+                                "message": f"{ticker}索提诺比率为{sortino_ratio:.2f}，低于阈值{sortino_threshold:.2f}"
+                            })
+                        
+                        print(f"{ticker} 生成的警报: {alerts}")
+                        
+                        # 检查是否有缺失的指标
+                        missing_metrics = []
+                        if 'volatility' not in metrics or metrics['volatility'] is None:
+                            missing_metrics.append('波动率')
+                        if 'max_drawdown' not in metrics or metrics['max_drawdown'] is None:
+                            missing_metrics.append('最大回撤')
+                        if 'sharpe_ratio' not in metrics or metrics['sharpe_ratio'] is None:
+                            missing_metrics.append('夏普比率')
+                        
+                        if missing_metrics:
+                            alerts.append({
+                                "type": "info", 
+                                "message": f"无法计算以下指标: {', '.join(missing_metrics)}"
+                            })
+                        
+                        # 更新结果数据
+                        result_data[ticker] = {
+                            'name': ticker,
+                            'data_available': True,
+                            'analysis_text': analysis_output,
+                            'alerts': alerts
+                        }
+                        
+                        # 直接将指标添加到结果数据的根级别
+                        result_data[ticker].update(metrics)
+                        
+                        print(f"{ticker} 最终结果数据: {result_data[ticker]}")
+            
+            # 恢复标准输出
+            sys.stdout = old_stdout
+            
+            # 返回结果
+            return jsonify({
+                'data': result_data,
+                'start_date': start_date,
+                'end_date': end_date
+            })
             
         except Exception as e:
-            import traceback
-            error_details = traceback.format_exc()
-            error_msg = f'分析过程出错: {str(e)}\n{error_details}'
-            print(error_msg)
-            return jsonify({'error': error_msg}), 500
-        finally:
+            # 恢复标准输出
             sys.stdout = old_stdout
-    
+            print(f"分析过程中出错: {str(e)}")
+            raise
+            
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        error_msg = f"股票分析API错误: {str(e)}\n{error_details}"
-        print(error_msg)
-        return jsonify({'error': f'服务器错误: {str(e)}'}), 500
+        print(f"股票风险分析API错误: {str(e)}")
+        return jsonify({'error': f'分析失败: {str(e)}'}), 500
 
 @user_bp.route('/account')
 @login_required
@@ -303,39 +411,26 @@ def cancel_order(order_id):
 @user_bp.route('/api/market_data')
 @login_required
 def get_market_data():
-    """
-    获取股票市场数据的API端点
-    参数:
-        ticker: 股票代码 (例如: AAPL, MSFT)
-        range: 时间范围 (例如: 7, 30, 90, all)
-    返回:
-        JSON格式的股票市场数据
-    """
-    # 获取请求参数
+    """获取市场数据API"""
     ticker = request.args.get('ticker', 'AAPL')
-    range_param = request.args.get('range', 'all')
+    range_param = request.args.get('range', '30')
     
     try:
-        # 构建查询
-        query = MarketData.query.filter_by(ticker=ticker)
-        
-        # 应用时间范围过滤
-        if range_param != 'all' and range_param.isdigit():
+        # 查询数据库
+        if range_param == 'all':
+            # 获取所有数据
+            market_data = MarketData.query.filter_by(ticker=ticker).order_by(MarketData.date).all()
+        else:
+            # 获取指定天数的数据
             days = int(range_param)
             cutoff_date = datetime.now() - timedelta(days=days)
-            query = query.filter(MarketData.date >= cutoff_date)
+            market_data = MarketData.query.filter_by(ticker=ticker).filter(MarketData.date >= cutoff_date).order_by(MarketData.date).all()
         
-        # 按日期排序
-        query = query.order_by(MarketData.date)
-        
-        # 执行查询
-        market_data = query.all()
-        
-        # 如果没有数据，生成模拟数据
+        # 如果数据库中没有数据，返回错误
         if not market_data:
-            return generate_demo_data(ticker, range_param)
+            return jsonify({'error': f'没有找到 {ticker} 的市场数据'}), 404
         
-        # 转换为JSON格式
+        # 格式化数据
         result = []
         for data in market_data:
             result.append({
@@ -349,68 +444,9 @@ def get_market_data():
             })
         
         return jsonify(result)
-        
+    
     except Exception as e:
-        # 处理错误
         return jsonify({'error': str(e)}), 500
-
-def generate_demo_data(ticker, range_param):
-    """
-    生成演示数据，当数据库中没有数据时使用
-    """
-    result = []
-    today = datetime.now()
-    
-    # 确定生成多少天的数据
-    if range_param == 'all':
-        days = 180  # 默认半年
-    else:
-        days = int(range_param) if range_param.isdigit() else 30
-    
-    # 基础价格 - 不同股票有不同起点
-    base_prices = {
-        'AAPL': 150.0,
-        'MSFT': 300.0,
-        'AMZN': 130.0,
-        'GOOGL': 120.0,
-        'META': 300.0,
-        'NFLX': 400.0,
-        'TSLA': 250.0
-    }
-    
-    base_price = base_prices.get(ticker, 100.0)
-    price = base_price
-    
-    # 生成历史数据
-    for i in range(days):
-        date = today - timedelta(days=days-i)
-        # 随机波动 ±3%
-        change_pct = (random.random() - 0.5) * 0.06
-        price = price * (1 + change_pct)
-        
-        # 确保价格在合理范围内波动
-        if price < base_price * 0.7:
-            price = base_price * 0.7
-        elif price > base_price * 1.3:
-            price = base_price * 1.3
-            
-        # 生成开高低收价格
-        open_price = price * (1 + (random.random() - 0.5) * 0.02)
-        high_price = max(open_price, price) * (1 + random.random() * 0.015)
-        low_price = min(open_price, price) * (1 - random.random() * 0.015)
-        volume = int(random.random() * 10000000 + 5000000)  # 500万到1500万之间
-        
-        result.append({
-            'ticker': ticker,
-            'date': date.isoformat(),
-            'open': round(open_price, 2),
-            'high': round(high_price, 2),
-            'low': round(low_price, 2),
-            'close': round(price, 2),
-            'volume': volume
-        })
-    
-    return jsonify(result)
 
 @user_bp.route('/api/fundamental_data', methods=['GET'])
 @login_required
@@ -547,10 +583,9 @@ def chat():
         if not message:
             return jsonify({'error': '消息不能为空'}), 400
 
-        # 创建聊天会话并发送消息
-        chat = model.start_chat(history=[])
-        response = chat.send_message(message)
+        # 使用utils/chat_ai.py中的功能
+        response_text = chat_with_gemini_api(message)
         
-        return jsonify({'response': response.text})
+        return jsonify({'response': response_text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500 

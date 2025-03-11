@@ -110,31 +110,25 @@ def get_simulation_data(ticker, days=30, simulations=1000):
             simulations=simulations
         )
         
-        return {
-            'status': 'success',
-            'data': simulation_results,
-            'metadata': {
-                'ticker': ticker,
-                'start_price': start_price,
-                'simulation_days': days,
-                'simulation_count': simulations,
-                'generated_at': datetime.now().isoformat()
-            }
-        }
+        return simulation_results, {
+            'mean_price': simulation_results['mean_price'],
+            'percentile_5': simulation_results['percentile_5'],
+            'percentile_95': simulation_results['percentile_95']
+        }, start_price
         
     except Exception as e:
-        return {
-            'status': 'error',
-            'message': str(e)
-        }
+        raise Exception(f"模拟失败: {str(e)}")
 
-if __name__ == "__main__":
-    # 测试代码
+# 测试函数
+def test_monte_carlo():
+    """测试蒙特卡洛模拟功能"""
     test_ticker = "AAPL"
-    results = get_simulation_data(test_ticker)
-    if results['status'] == 'success':
+    try:
+        simulation_results, prediction_stats, current_price = get_simulation_data(test_ticker)
         print(f"模拟成功完成！")
-        print(f"预测{test_ticker}在30天后的平均价格: ${results['data']['mean_price']:.2f}")
-        print(f"90%置信区间: ${results['data']['percentile_5']:.2f} - ${results['data']['percentile_95']:.2f}")
-    else:
-        print(f"模拟失败: {results['message']}") 
+        print(f"预测{test_ticker}在30天后的平均价格: ${prediction_stats['mean_price']:.2f}")
+        print(f"90%置信区间: ${prediction_stats['percentile_5']:.2f} - ${prediction_stats['percentile_95']:.2f}")
+        return True
+    except Exception as e:
+        print(f"模拟失败: {str(e)}")
+        return False 

@@ -1,60 +1,51 @@
+"""
+这个文件是Flask应用的主入口点。它负责以下主要功能：
+1. 配置和初始化Flask应用
+2. 设置数据库连接
+3. 初始化Flask-Login进行用户认证管理
+4. 注册路由和蓝图
+5. 启动开发服务器（当直接运行此文件时）
+
+该应用主要用于股票数据分析和用户管理，包括普通用户和管理员两种角色。
+"""
 # 导入所需的Flask模块和扩展
-from flask import Flask, redirect, url_for
-from flask_login import LoginManager
+from flask import Flask
 
-# 导入自定义的数据库模型和路由
-from models import db, User, Admin, init_db
-from routes import init_routes
-from routes.monte_carlo import monte_carlo_bp  # 导入蒙特卡洛模拟蓝图
+# 导入自定义的配置、认证和路由模块
+from config import SECRET_KEY, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, DEBUG, PORT
+from models import db, init_db
+from auth import init_login_manager
+from routes import register_routes
 
-# 创建Flask应用实例
-app = Flask(__name__)
-
-# 配置应用
-app.config['SECRET_KEY'] = 'your-secret-key'  # 设置密钥，用于会话安全
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:Cyy-20030611@localhost/stock_data_v1'  # 设置数据库连接URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭SQLAlchemy的修改跟踪功能，减少内存使用
-
-# 初始化数据库
-init_db(app)
-
-# 初始化Flask-Login
-login_manager = LoginManager(app)
-login_manager.login_view = 'auth.login'  # 设置登录视图的端点
-login_manager.login_message = "请先登录以访问此页面"  # 设置登录提示消息
-login_manager.login_message_category = "info"  # 设置登录提示消息类别
-
-@login_manager.user_loader
-def load_user(user_id):
+def create_app():
     """
-    Flask-Login用户加载回调函数
-    根据用户ID加载用户对象，支持普通用户和管理员两种类型
+    创建并配置Flask应用
+    
+    返回:
+    Flask: 配置好的Flask应用实例
     """
-    if user_id.startswith('admin_'):
-        # 如果是管理员ID（格式为'admin_数字'）
-        admin_id = int(user_id.split('_')[1])
-        return Admin.query.get(admin_id)
-    else:
-        # 如果是普通用户ID
-        return User.query.get(int(user_id))
+    # 创建Flask应用实例
+    app = Flask(__name__)
 
-# 初始化路由
-init_routes(app)
+    # 配置应用
+    app.config['SECRET_KEY'] = SECRET_KEY
+    app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 
-# 注册蒙特卡洛模拟蓝图
-app.register_blueprint(monte_carlo_bp)
+    # 初始化数据库
+    init_db(app)
 
-# 添加根路由重定向
-@app.route('/')
-def index():
-    return redirect(url_for('auth.index'))
+    # 初始化Flask-Login
+    init_login_manager(app)
 
-# 添加登出路由重定向
-@app.route('/logout')
-def root_logout():
-    """将根路径的登出请求重定向到auth.logout"""
-    return redirect(url_for('auth.logout'))
+    # 注册路由
+    register_routes(app)
+
+    return app
+
+# 创建应用实例
+app = create_app()
 
 # 只有直接运行此文件时才启动应用
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)  # 启动开发服务器，开启调试模式，监听5001端口 
+    app.run(debug=DEBUG, port=PORT) 

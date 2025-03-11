@@ -2,7 +2,7 @@
 蒙特卡洛模拟API路由
 """
 from flask import Blueprint, jsonify, request
-from monte_carlo_simulation import get_simulation_data
+from utils.monte_carlo import get_simulation_data
 
 monte_carlo_bp = Blueprint('monte_carlo', __name__)
 
@@ -21,27 +21,18 @@ def get_monte_carlo_simulation(ticker):
         days = request.args.get('days', default=30, type=int)
         simulations = request.args.get('simulations', default=1000, type=int)
         
-        # 参数验证
-        if days <= 0 or days > 365:
-            return jsonify({
-                'status': 'error',
-                'message': '模拟天数必须在1到365天之间'
-            }), 400
-            
-        if simulations <= 0 or simulations > 10000:
-            return jsonify({
-                'status': 'error',
-                'message': '模拟次数必须在1到10000次之间'
-            }), 400
+        simulation_results, prediction_stats, current_price = get_simulation_data(ticker, days, simulations)
         
-        # 获取模拟数据
-        results = get_simulation_data(ticker, days, simulations)
-        
-        if results['status'] == 'success':
-            return jsonify(results)
-        else:
-            return jsonify(results), 400
-            
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'ticker': ticker,
+                'days': days,
+                'simulations': simulations,
+                'current_price': current_price,
+                'prediction_stats': prediction_stats
+            }
+        })
     except Exception as e:
         return jsonify({
             'status': 'error',

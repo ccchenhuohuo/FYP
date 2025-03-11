@@ -6,18 +6,7 @@ import yfinance as yf
 import pandas as pd
 from sqlalchemy import create_engine
 from datetime import datetime
-
-# 定义主要美国科技公司股票代码列表
-TECH_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "NFLX", "TSLA"]
-
-# 数据库配置
-DB_CONFIG = {
-    'user': 'root',
-    'password': 'Cyy-20030611',
-    'host': 'localhost',
-    'port': '3306',
-    'database': 'stock_data_v1'  # 使用我们已有的数据库
-}
+from config import DB_CONFIG, TECH_TICKERS
 
 def fetch_stock_data():
     """
@@ -215,7 +204,9 @@ def print_data_samples(market_data, fundamental_data, balance_sheet_data, income
         
     print("\n=====================================================")
 
-if __name__ == "__main__":
+# 测试函数
+def run_stock_data_collection():
+    """运行股票数据采集和存储流程"""
     print("开始获取股票数据...")
     
     # 获取所有股票数据
