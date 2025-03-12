@@ -1,26 +1,24 @@
 from app import app
-from models import MarketData
+from models import db
+from sqlalchemy import text
+
+print("检查数据库表结构...")
 
 with app.app_context():
-    # 检查是否有市场数据
-    data = MarketData.query.first()
-    print("市场数据:", data)
+    conn = db.engine.connect()
     
-    if data:
-        # 打印字段名
-        print("字段名:")
-        for column in MarketData.__table__.columns:
-            print(f"  {column.name}")
+    try:
+        # 检查orders表是否有updated_at字段
+        result = conn.execute(text("SHOW COLUMNS FROM orders LIKE 'updated_at'"))
+        updated_at_exists = result.rowcount > 0
+        print(f"updated_at字段是否存在: {updated_at_exists}")
         
-        # 打印第一条数据的详细信息
-        print("\n第一条数据详细信息:")
-        print(f"  ID: {data.id}")
-        print(f"  股票代码: {data.ticker}")
-        print(f"  日期: {data.date}")
-        print(f"  开盘价: {data.open}")
-        print(f"  最高价: {data.high}")
-        print(f"  最低价: {data.low}")
-        print(f"  收盘价: {data.close}")
-        print(f"  交易量: {data.volume}")
-    else:
-        print("数据库中没有市场数据") 
+        # 检查orders表是否有remark字段
+        result = conn.execute(text("SHOW COLUMNS FROM orders LIKE 'remark'"))
+        remark_exists = result.rowcount > 0
+        print(f"remark字段是否存在: {remark_exists}")
+        
+    except Exception as e:
+        print(f"检查字段时出错: {str(e)}")
+    
+    conn.close() 

@@ -9,13 +9,19 @@
 该应用主要用于股票数据分析和用户管理，包括普通用户和管理员两种角色。
 """
 # 导入所需的Flask模块和扩展
-from flask import Flask
+from flask import Flask, redirect, url_for
+from flask_login import LoginManager, current_user
+import os
+from datetime import datetime
 
 # 导入自定义的配置、认证和路由模块
 from config import SECRET_KEY, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS, DEBUG, PORT
-from models import db, init_db
+from models import db, User, Admin, init_db
 from auth import init_login_manager
 from routes import register_routes
+
+# 设置环境变量，禁用兼容性警告
+os.environ['SQLALCHEMY_WARN_20'] = '0'
 
 def create_app():
     """

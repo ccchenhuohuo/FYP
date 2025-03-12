@@ -1,0 +1,84 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}管理员仪表盘{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>管理员仪表盘</h1>
+    
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-card-header">用户总数</div>
+            <div class="stat-card-value">{{ users_count }}</div>
+            <div class="stat-card-footer">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-header">订单总数</div>
+            <div class="stat-card-value">{{ orders_count }}</div>
+            <div class="stat-card-footer">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-header">交易总数</div>
+            <div class="stat-card-value">{{ transactions_count }}</div>
+            <div class="stat-card-footer">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+        </div>
+
+        <div class="stat-card urgent">
+            <div class="stat-card-header">待处理提现</div>
+            <div class="stat-card-value">{{ pending_withdrawals_count }}</div>
+            <div class="stat-card-footer">
+                <a href="{{ url_for('admin.manage_withdrawals') }}" class="btn-sm">查看详情</a>
+            </div>
+        </div>
+        
+        <div class="stat-card urgent">
+            <div class="stat-card-header">待处理充值</div>
+            <div class="stat-card-value">{{ pending_deposits_count }}</div>
+            <div class="stat-card-footer">
+                <a href="{{ url_for('admin.manage_deposits') }}" class="btn-sm">查看详情</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="admin-modules">
+        <div class="module-card">
+            <h3>用户管理</h3>
+            <p>管理系统用户、权限和账户信息</p>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="module-link">进入 →</a>
+        </div>
+        <div class="module-card">
+            <h3>订单管理</h3>
+            <p>查看和管理用户订单</p>
+            <a href="{{ url_for('admin.manage_orders') }}" class="module-link">进入 →</a>
+            {% if pending_orders_count > 0 %}
+            <span class="badge">{{ pending_orders_count }}</span>
+            {% endif %}
+        </div>
+        <div class="module-card">
+            <h3>交易记录</h3>
+            <p>查看和管理所有交易记录</p>
+            <a href="{{ url_for('admin.manage_fund_transactions') }}" class="module-link">进入 →</a>
+        </div>
+        <div class="module-card highlight-card">
+            <h3>提现管理</h3>
+            <p>审核和处理用户提现请求</p>
+            <a href="{{ url_for('admin.manage_withdrawals') }}" class="module-link">进入 →</a>
+            {% if pending_withdrawals_count > 0 %}
+            <span class="badge">{{ pending_withdrawals_count }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

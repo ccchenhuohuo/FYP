@@ -10,9 +10,6 @@ let monteCarloData = null; // 蒙特卡洛模拟数据
 let viewMode = 'history'; // 视图模式：'history'(历史数据)或'simulation'(模拟数据)
 let completeHistoricalData = null; // 存储完整的历史数据
 
-// Alpha Vantage API密钥
-const ALPHA_VANTAGE_API_KEY = '1A7PUM4TI4TAW49K';
-
 /**
  * 页面加载完成后初始化
  */
@@ -374,11 +371,26 @@ async function runMonteCarloSimulation() {
     const simulations = document.getElementById('simulationCount').value;
     
     try {
+        // 显示加载提示
+        document.getElementById('loadingMessage').textContent = '正在运行蒙特卡洛模拟...';
+        document.getElementById('loadingMessage').style.display = 'block';
+        
         const response = await fetch(`/api/monte-carlo/${ticker}?days=${days}&simulations=${simulations}`);
         const data = await response.json();
         
+        // 隐藏加载提示
+        document.getElementById('loadingMessage').style.display = 'none';
+        
         if (data.status === 'success') {
+            console.log("模拟数据获取成功:", data.data);
             monteCarloData = data.data;
+            
+            // 检查必要的字段是否存在
+            if (!monteCarloData.dates || !Array.isArray(monteCarloData.dates)) {
+                console.error("模拟数据缺少必要的日期字段", monteCarloData);
+                alert("模拟数据缺少必要的日期字段，请联系管理员");
+                return;
+            }
             
             // 自动切换到模拟模式
             setViewMode('simulation');
@@ -402,7 +414,18 @@ async function runMonteCarloSimulation() {
  * 使用模拟数据更新图表
  */
 function updateChartWithSimulation() {
-    if (!monteCarloData || !currentData) return;
+    if (!monteCarloData || !currentData || !Array.isArray(currentData) || currentData.length === 0) {
+        console.error("模拟数据或当前数据不可用", {monteCarloData, currentData});
+        alert("请先选择股票并加载历史数据后再进行模拟");
+        return;
+    }
+
+    // 检查monteCarloData中是否有必要的字段
+    if (!monteCarloData.dates || !Array.isArray(monteCarloData.dates)) {
+        console.error("模拟数据格式不正确，缺少dates字段", monteCarloData);
+        alert("模拟数据格式不正确，请联系管理员");
+        return;
+    }
 
     // 获取当前数据（已经根据时间范围过滤后的数据）
     let historicalDates = [...currentData.map(item => formatDate(new Date(item.date)))];
@@ -466,25 +489,27 @@ function updateChartWithSimulation() {
     ];
     
     // 添加模拟路径，但不显示在图例中
-    monteCarloData.all_paths.forEach((path, index) => {
-        if (index < pathsToShow) {
-            const colorIndex = index % colors.length;
-            datasets.push({
-                label: `模拟路径`,
-                data: [...Array(historicalPrices.length).fill(null), ...path],
-                borderColor: colors[colorIndex],
-                borderWidth: 1,
-                pointRadius: 0,
-                tension: 0.1,
-                yAxisID: 'y',
-                simulationPath: true,
-                hidden: viewMode === 'history',
-                showLine: true,
-                // 不在图例中显示
-                display: false
-            });
-        }
-    });
+    if (monteCarloData.all_paths && Array.isArray(monteCarloData.all_paths)) {
+        monteCarloData.all_paths.forEach((path, index) => {
+            if (index < pathsToShow && Array.isArray(path)) {
+                const colorIndex = index % colors.length;
+                datasets.push({
+                    label: `模拟路径`,
+                    data: [...Array(historicalPrices.length).fill(null), ...path],
+                    borderColor: colors[colorIndex],
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: 'y',
+                    simulationPath: true,
+                    hidden: viewMode === 'history',
+                    showLine: true,
+                    // 不在图例中显示
+                    display: false
+                });
+            }
+        });
+    }
 
     // 添加平均预测线，始终显示
     const meanPath = simulationDates.map((_, i) => {
@@ -526,6 +551,19 @@ function updateChartWithSimulation() {
  * 显示模拟统计结果
  */
 function displaySimulationStats() {
+    if (!monteCarloData) {
+        console.error("无模拟数据可显示");
+        return;
+    }
+    
+    // 检查必要的字段
+    if (typeof monteCarloData.mean_price === 'undefined' || 
+        typeof monteCarloData.percentile_5 === 'undefined' || 
+        typeof monteCarloData.percentile_95 === 'undefined') {
+        console.error("模拟数据缺少必要的统计字段", monteCarloData);
+        return;
+    }
+    
     const statsDiv = document.getElementById('simulationStats');
     statsDiv.style.display = 'block';
     statsDiv.innerHTML = `
@@ -550,7 +588,7 @@ function displaySimulationStats() {
             </div>
         </div>
         <div class="mt-3 text-center">
-            <small class="text-muted">基于 ${monteCarloData.all_paths.length} 次蒙特卡洛模拟计算的结果</small>
+            <small class="text-muted">基于 ${monteCarloData.all_paths ? monteCarloData.all_paths.length : '多'} 次蒙特卡洛模拟计算的结果</small>
         </div>
     `;
 }
@@ -587,21 +625,29 @@ async function fetchRealTimeData(symbol) {
     document.getElementById('realTimeDataContent').style.display = 'none';
     
     try {
-        // 构建API URL
-        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+        // 使用正确的路径，包含/user前缀（与Flask蓝图配置匹配）
+        const url = `/user/api/real_time_stock_data?symbol=${symbol}`;
         
         // 发送请求
         const response = await fetch(url);
         
-        if (!response.ok) {
-            throw new Error('网络响应错误');
+        // 检查HTTP状态码
+        if (response.status === 429) {
+            throw new Error('API请求次数限制已达到，请稍后再试。Alpha Vantage免费API每天限制25次请求。');
+        } else if (!response.ok) {
+            throw new Error(`网络响应错误：状态码 ${response.status}`);
         }
         
         const data = await response.json();
         
-        // 检查是否有错误消息或限制信息
-        if (data['Note'] || data['Information']) {
-            throw new Error(data['Note'] || data['Information'] || '请求限制，请稍后再试');
+        // 检查是否有错误
+        if (data.error) {
+            // 检查是否是API限制错误
+            if (data.error.includes('API rate limit') || data.error.includes('standard API rate limit')) {
+                throw new Error(`API请求限制：${data.error}。请考虑升级API计划或等待限制重置。`);
+            } else {
+                throw new Error(data.error);
+            }
         }
         
         // 检查是否有全局报价数据
@@ -636,9 +682,23 @@ async function fetchRealTimeData(symbol) {
         document.getElementById('realTimeDataContent').style.display = 'block';
     } catch (error) {
         console.error('获取实时数据失败:', error);
+        
+        // 显示错误信息
         document.getElementById('loadingRealTimeData').style.display = 'none';
         document.getElementById('realTimeDataError').style.display = 'block';
-        document.getElementById('realTimeDataError').textContent = `获取实时数据失败: ${error.message}`;
+        
+        // 检查是否是API限制错误，提供更友好的消息
+        let errorMessage = error.message;
+        if (errorMessage.includes('API请求限制') || errorMessage.includes('API请求次数限制')) {
+            document.getElementById('realTimeDataError').className = 'alert alert-warning';
+            document.getElementById('realTimeDataError').innerHTML = `
+                <strong>API限制提醒:</strong> ${errorMessage}<br>
+                <small>建议：使用限价单交易，或等待明天API限制重置。</small>
+            `;
+        } else {
+            document.getElementById('realTimeDataError').className = 'alert alert-danger';
+            document.getElementById('realTimeDataError').textContent = `获取实时数据失败: ${errorMessage}`;
+        }
     }
 }
 

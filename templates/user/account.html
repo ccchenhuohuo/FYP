@@ -44,49 +44,167 @@
 <!-- 账户余额和充值 -->
 <div class="balance-display">
     <h2><i class="fas fa-wallet"></i> 账户余额</h2>
-    <p class="current-balance">¥ {{ current_user.balance }}</p>
+    <div class="balance-info">
+        <div class="balance-item">
+            <p class="balance-label">可用余额</p>
+            <p class="current-balance">¥ {{ balance.available_balance|round(2) }}</p>
+        </div>
+        <div class="balance-item">
+            <p class="balance-label">冻结余额</p>
+            <p class="frozen-balance">¥ {{ balance.frozen_balance|round(2) }}</p>
+        </div>
+        <div class="balance-item">
+            <p class="balance-label">总余额</p>
+            <p class="total-balance">¥ {{ balance.total_balance|round(2) }}</p>
+        </div>
+    </div>
     
-    <div class="deposit-form">
-        <h3><i class="fas fa-plus-circle"></i> 充值</h3>
-        <form action="{{ url_for('user.deposit') }}" method="post">
-            <div class="form-group">
-                <label for="amount"><i class="fas fa-money-bill-wave"></i> 充值金额:</label>
-                <input type="number" id="amount" name="amount" min="1" step="0.01" required placeholder="请输入充值金额">
-            </div>
-            <div class="form-actions">
-                <button type="submit"><i class="fas fa-check"></i> 确认充值</button>
-            </div>
-        </form>
+    <!-- 充值和提现按钮 -->
+    <div class="balance-actions">
+        <button class="action-btn deposit-btn" data-bs-toggle="modal" data-bs-target="#depositModal">
+            <i class="fas fa-plus-circle"></i> 充值
+        </button>
+        <button class="action-btn withdraw-btn" data-bs-toggle="modal" data-bs-target="#withdrawalModal">
+            <i class="fas fa-minus-circle"></i> 提现
+        </button>
     </div>
 </div>
 
-<!-- 创建新订单 -->
-<div class="section">
-    <h2><i class="fas fa-file-invoice"></i> 创建新订单</h2>
-    <form action="{{ url_for('user.create_order') }}" method="post" class="order-form">
-        <div class="form-group">
-            <label for="ticker"><i class="fas fa-tag"></i> 股票代码:</label>
-            <input type="text" id="ticker" name="ticker" required placeholder="例如: AAPL">
-        </div>
-        <div class="form-group">
-            <label for="order_type"><i class="fas fa-exchange-alt"></i> 订单类型:</label>
-            <select id="order_type" name="order_type" required>
-                <option value="buy">买入</option>
-                <option value="sell">卖出</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="price"><i class="fas fa-dollar-sign"></i> 价格:</label>
-            <input type="number" id="price" name="price" min="0.01" step="0.01" required placeholder="请输入价格">
-        </div>
-        <div class="form-group">
-            <label for="quantity"><i class="fas fa-sort-amount-up"></i> 数量:</label>
-            <input type="number" id="quantity" name="quantity" min="1" required placeholder="请输入数量">
-        </div>
-        <div class="form-actions">
-            <button type="submit"><i class="fas fa-plus"></i> 创建订单</button>
-        </div>
-    </form>
+<!-- 添加持仓信息板块 -->
+<div class="portfolio-section">
+    <h2><i class="fas fa-chart-pie"></i> 我的持仓</h2>
+    
+    {% if portfolio %}
+    <div class="portfolio-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>股票代码</th>
+                    <th>持仓数量</th>
+                    <th>平均成本</th>
+                    <th>当前价格</th>
+                    <th>市值</th>
+                    <th>盈亏</th>
+                    <th>盈亏比例</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for position in portfolio %}
+                <tr>
+                    <td>{{ position.ticker }}</td>
+                    <td>{{ position.quantity }}</td>
+                    <td>¥ {{ position.average_price|round(2) }}</td>
+                    <td>¥ {{ position.current_price|round(2) }}</td>
+                    <td>¥ {{ position.market_value|round(2) }}</td>
+                    <td class="{% if position.pnl >= 0 %}positive{% else %}negative{% endif %}">
+                        {{ position.pnl|round(2) }}
+                    </td>
+                    <td class="{% if position.pnl_percentage >= 0 %}positive{% else %}negative{% endif %}">
+                        {{ position.pnl_percentage|round(2) }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-portfolio">
+        <p><i class="fas fa-info-circle"></i> 您当前没有持仓。</p>
+        <a href="{{ url_for('user.stock_chart') }}" class="cta-button">去交易</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 添加充值记录部分 -->
+<div class="deposits-section">
+    <h2><i class="fas fa-money-check-alt"></i> 充值记录</h2>
+    
+    {% if deposits %}
+    <div class="deposits-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>充值ID</th>
+                    <th>金额</th>
+                    <th>充值时间</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deposit in deposits %}
+                <tr>
+                    <td>{{ deposit.transaction_id }}</td>
+                    <td>¥ {{ deposit.amount|round(2) }}</td>
+                    <td>{{ deposit.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        {% if deposit.status == 'pending' %}
+                        <span class="badge bg-warning">待审核</span>
+                        {% elif deposit.status == 'completed' %}
+                        <span class="badge bg-success">已完成</span>
+                        {% elif deposit.status == 'rejected' %}
+                        <span class="badge bg-danger">已拒绝</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ deposit.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ deposit.remark or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-deposits">
+        <p><i class="fas fa-info-circle"></i> 您还没有充值记录。</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 添加提现记录部分 -->
+<div class="withdrawals-section">
+    <h2><i class="fas fa-money-bill"></i> 提现记录</h2>
+    
+    {% if withdrawals %}
+    <div class="withdrawals-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>提现ID</th>
+                    <th>金额</th>
+                    <th>提现时间</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for withdrawal in withdrawals %}
+                <tr>
+                    <td>{{ withdrawal.transaction_id }}</td>
+                    <td>¥ {{ withdrawal.amount|round(2) }}</td>
+                    <td>{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="status-{{ withdrawal.status }}">
+                        {% if withdrawal.status == 'pending' %}
+                            待处理
+                        {% elif withdrawal.status == 'completed' %}
+                            已完成
+                        {% elif withdrawal.status == 'rejected' %}
+                            已拒绝
+                        {% else %}
+                            {{ withdrawal.status }}
+                        {% endif %}
+                    </td>
+                    <td>{{ withdrawal.remark or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-withdrawals">
+        <p><i class="fas fa-info-circle"></i> 您还没有提现记录。</p>
+    </div>
+    {% endif %}
 </div>
 
 <!-- 订单列表 -->
@@ -100,6 +218,7 @@
                         <th>订单ID</th>
                         <th>股票代码</th>
                         <th>类型</th>
+                        <th>订单类型</th>
                         <th>价格</th>
                         <th>数量</th>
                         <th>状态</th>
@@ -117,6 +236,13 @@
                                     <span class="transaction-tag tag-buy">买入</span>
                                 {% else %}
                                     <span class="transaction-tag tag-sell">卖出</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.order_execution_type == 'market' %}
+                                    <span class="transaction-tag tag-market">市价单</span>
+                                {% else %}
+                                    <span class="transaction-tag tag-limit">限价单</span>
                                 {% endif %}
                             </td>
                             <td>{{ order.order_price }}</td>
@@ -218,53 +344,60 @@
         <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无交易记录</p>
     {% endif %}
 </div>
+
+<!-- 充值模态框 -->
+<div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="depositModalLabel">账户充值</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{{ url_for('user.deposit') }}" method="post" id="depositForm">
+          <div class="mb-3">
+            <label for="amount" class="form-label">充值金额</label>
+            <div class="input-group">
+              <span class="input-group-text">¥</span>
+              <input type="number" class="form-control" id="amount" name="amount" min="0.01" step="0.01" required>
+            </div>
+            <div class="form-text">请输入您要充值的金额，充值将在管理员审核后到账。</div>
+          </div>
+          <button type="submit" class="btn btn-primary">提交充值申请</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 提现模态框 -->
+<div class="modal fade" id="withdrawalModal" tabindex="-1" aria-labelledby="withdrawalModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="withdrawalModalLabel">账户提现</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="{{ url_for('user.withdraw') }}" method="post" id="withdrawalForm">
+          <div class="mb-3">
+            <label for="withdrawAmount" class="form-label">提现金额</label>
+            <div class="input-group">
+              <span class="input-group-text">¥</span>
+              <input type="number" class="form-control" id="withdrawAmount" name="amount" min="0.01" step="0.01" max="{{ balance.available_balance }}" required>
+            </div>
+            <div class="form-text">可提现金额: ¥{{ balance.available_balance|round(2) }}</div>
+          </div>
+          <button type="submit" class="btn btn-primary">提交提现申请</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // 简单的输入验证
-    document.addEventListener('DOMContentLoaded', function() {
-        const orderForm = document.querySelector('form[action*="create_order"]');
-        if (orderForm) {
-            orderForm.addEventListener('submit', function(e) {
-                const price = parseFloat(document.getElementById('price').value);
-                const quantity = parseInt(document.getElementById('quantity').value);
-                
-                if (price <= 0 || isNaN(price)) {
-                    alert('请输入有效的价格');
-                    e.preventDefault();
-                    return false;
-                }
-                
-                if (quantity <= 0 || isNaN(quantity)) {
-                    alert('请输入有效的数量');
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        }
-        
-        const depositForm = document.querySelector('form[action*="deposit"]');
-        if (depositForm) {
-            depositForm.addEventListener('submit', function(e) {
-                const amount = parseFloat(document.getElementById('amount').value);
-                
-                if (amount <= 0 || isNaN(amount)) {
-                    alert('请输入有效的充值金额');
-                    e.preventDefault();
-                    return false;
-                }
-            });
-        }
-        
-        // 高亮当前导航菜单项
-        const currentPath = window.location.pathname;
-        const navLinks = document.querySelectorAll('nav a');
-        navLinks.forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
-                link.classList.add('active');
-            }
-        });
-    });
-</script>
+<script src="{{ url_for('static', filename='js/user/account.js') }}"></script>
 {% endblock %} 

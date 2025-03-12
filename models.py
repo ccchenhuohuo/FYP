@@ -7,8 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 import pymysql
 import sqlalchemy
-from sqlalchemy.exc import OperationalError
 from datetime import datetime
+import traceback
 
 # 配置 PyMySQL 以兼容 MySQLdb
 pymysql.install_as_MySQLdb()
@@ -27,10 +27,10 @@ class User(db.Model, UserMixin):
     user_name = db.Column(db.String(80), unique=True, nullable=False)
     user_email = db.Column(db.String(120), unique=True, nullable=False)
     user_password = db.Column(db.String(200), nullable=False)
-    balance = db.Column(db.Float, nullable=False, default=0.0)  # 用户余额
     
-    # 添加与Order的关系
-    orders = db.relationship('Order', backref='user', lazy=True)
+    # 关联关系
+    balance = db.relationship('AccountBalance', backref='user', uselist=False, lazy=True)
+    fund_transactions = db.relationship('FundTransaction', backref='user', lazy=True)
     
     def get_id(self):
         """
@@ -172,21 +172,32 @@ class Order(db.Model):
     对应数据库中的order表
     存储用户的股票订单信息
     """
-    __tablename__ = 'order'
+    __tablename__ = 'orders'
     
     order_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False, index=True)
-    ticker = db.Column(db.String(10), nullable=False, index=True)
-    order_type = db.Column(db.String(10), nullable=False)  # 'buy' 或 'sell'
-    order_price = db.Column(db.Float, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
+    ticker = db.Column(db.String(10), nullable=False)
+    order_type = db.Column(db.String(10), nullable=False)  # buy, sell
+    order_execution_type = db.Column(db.String(10), nullable=False, default='limit')  # limit, market
+    order_price = db.Column(db.Float, nullable=True)  # 可以为空，用于市价单
     order_quantity = db.Column(db.Integer, nullable=False)
-    order_status = db.Column(db.String(20), nullable=False, default='pending')  # 'pending', 'executed', 'cancelled'
-    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
+    order_status = db.Column(db.String(20), nullable=False, default='pending')  # pending, executed, cancelled, rejected
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    updated_at = db.Column(db.DateTime, nullable=True)
+    executed_at = db.Column(db.DateTime, nullable=True)
+    remark = db.Column(db.Text, nullable=True)  # 用于存储拒绝原因等备注信息
+
+    user = db.relationship('User', backref=db.backref('orders', lazy=True))
     
-    # 添加与Transaction的关系
-    transaction = db.relationship('Transaction', backref='order', lazy=True, uselist=False)
-    
+    def __init__(self, user_id, ticker, order_type, order_price, order_quantity, order_execution_type='limit'):
+        self.user_id = user_id
+        self.ticker = ticker
+        self.order_type = order_type
+        self.order_execution_type = order_execution_type
+        self.order_price = order_price
+        self.order_quantity = order_quantity
+        self.order_status = 'pending'
+
     def __repr__(self):
         """
         模型的字符串表示
@@ -202,7 +213,7 @@ class Transaction(db.Model):
     __tablename__ = 'transaction'
     
     transaction_id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.order_id'), nullable=False, unique=True, index=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False, unique=True, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False, index=True)
     ticker = db.Column(db.String(10), nullable=False, index=True)
     transaction_type = db.Column(db.String(10), nullable=False)  # 'buy' 或 'sell'
@@ -215,95 +226,156 @@ class Transaction(db.Model):
     # 添加与User的关系
     user = db.relationship('User', backref='transactions', lazy=True)
     
+    # 添加与Order的关系
+    order = db.relationship('Order', backref='transaction', lazy=True, uselist=False)
+    
     def __repr__(self):
         """
         模型的字符串表示
         """
         return f'<Transaction {self.transaction_id}: {self.transaction_type} {self.ticker} x{self.transaction_quantity}>'
 
+class AccountBalance(db.Model):
+    """
+    账户余额模型
+    对应数据库中的account_balance表
+    单独管理用户资金状态
+    """
+    __tablename__ = 'account_balance'
+    
+    balance_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False, unique=True)
+    available_balance = db.Column(db.Float, nullable=False, default=0.0)  # 可用余额
+    frozen_balance = db.Column(db.Float, nullable=False, default=0.0)     # 冻结余额
+    total_balance = db.Column(db.Float, nullable=False, default=0.0)      # 总余额 = 可用 + 冻结
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    def __repr__(self):
+        """
+        模型的字符串表示
+        """
+        return f'<AccountBalance {self.user_id}: available={self.available_balance}, frozen={self.frozen_balance}>'
+
+class FundTransaction(db.Model):
+    """
+    资金交易模型
+    对应数据库中的fund_transaction表
+    统一管理充值、提现等资金操作记录
+    """
+    __tablename__ = 'fund_transaction'
+    
+    transaction_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
+    transaction_type = db.Column(db.String(20), nullable=False)  # deposit, withdrawal
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, completed, rejected
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+    remark = db.Column(db.String(255), nullable=True)
+    operator_id = db.Column(db.Integer, nullable=True)
+    original_id = db.Column(db.Integer, nullable=True)  # 用于记录原始充值/提现ID，方便数据迁移后的参考
+    
+    def __repr__(self):
+        """
+        模型的字符串表示
+        """
+        return f'<FundTransaction {self.transaction_id}: {self.transaction_type} {self.amount} ({self.status})>'
+
+class Portfolio(db.Model):
+    """
+    持仓信息模型
+    对应数据库中的portfolio表
+    记录用户的股票持仓情况
+    """
+    __tablename__ = 'portfolio'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False, index=True)
+    ticker = db.Column(db.String(10), nullable=False, index=True)
+    quantity = db.Column(db.Integer, nullable=False, default=0)
+    average_price = db.Column(db.Float, nullable=True)  # 平均购入价格
+    total_cost = db.Column(db.Float, nullable=True)     # 总成本
+    last_updated = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # 添加与User的关系
+    user = db.relationship('User', backref='portfolio', lazy=True)
+    
+    def __repr__(self):
+        """
+        模型的字符串表示
+        """
+        return f'<Portfolio {self.user_id}-{self.ticker}: {self.quantity} @ {self.average_price}>'
+
 def init_db(app):
-    """
-    初始化数据库
-    只初始化SQLAlchemy，不创建表或修改表结构
-    """
+    """初始化数据库并创建表"""
+    # 初始化SQLAlchemy与应用的关联
     db.init_app(app)
     
-    # 创建数据库表
-    with app.app_context():
-        try:
-            # 检查现有表结构
+    try:
+        # 确保所有表都存在
+        with app.app_context():
             inspector = sqlalchemy.inspect(db.engine)
             tables = inspector.get_table_names()
             
-            # 首先处理数据库迁移
-            if 'user' in tables:
-                columns = [column['name'] for column in inspector.get_columns('user')]
-                if 'user_email' not in columns:
-                    try:
-                        # 添加email列，但允许为null以便添加默认值
-                        with db.engine.connect() as conn:
-                            conn.execute(sqlalchemy.text('ALTER TABLE user ADD COLUMN user_email VARCHAR(120)'))
-                        print("添加user_email列到user表")
-                        
-                        # 为现有用户添加默认邮箱
-                        users = User.query.all()
-                        for user in users:
-                            default_email = f"{user.user_name}@example.com"
-                            with db.engine.connect() as conn:
-                                conn.execute(sqlalchemy.text(f"UPDATE user SET user_email = '{default_email}' WHERE user_id = {user.user_id}"))
-                                conn.commit()
-                        
-                        # 添加唯一约束
-                        with db.engine.connect() as conn:
-                            conn.execute(sqlalchemy.text('ALTER TABLE user MODIFY COLUMN user_email VARCHAR(120) NOT NULL UNIQUE'))
-                            conn.commit()
-                        print("为现有用户添加默认邮箱并设置约束")
-                    except Exception as e:
-                        print(f"迁移数据时出错: {e}")
-                
-                # 检查并添加balance列
-                if 'balance' not in columns:
-                    try:
-                        # 添加balance列，默认值为0
-                        with db.engine.connect() as conn:
-                            conn.execute(sqlalchemy.text('ALTER TABLE user ADD COLUMN balance FLOAT NOT NULL DEFAULT 0.0'))
-                            conn.commit()
-                        print("添加balance列到user表")
-                    except Exception as e:
-                        print(f"添加balance列时出错: {e}")
+            # 检查数据库中是否已有表
+            if not tables:
+                print("数据库为空，开始创建所有表...")
+            else:
+                print(f"数据库中已有表: {tables}")
             
-            # 创建股票数据表 (如果不存在)
-            # 因为我们使用SQLAlchemy的ORM，可以直接使用create_all()，它只会创建不存在的表
+            # 创建所有表
             db.create_all()
+            
+            # 确保有默认管理员账户
+            create_default_admin()
+            
+            # 确保每个用户都有一个账户余额记录
+            ensure_user_balances()
+            
             print("数据库表已同步")
-            
-            # 导入在这里以避免循环导入
-            from werkzeug.security import generate_password_hash
-            
-            # 检查是否有默认管理员
-            admin = Admin.query.filter_by(admin_name='admin').first()
-            if not admin:
-                admin = Admin(
-                    admin_name='admin',
-                    admin_password=generate_password_hash('admin')
-                )
-                db.session.add(admin)
-                db.session.commit()
-                print("默认管理员账户已创建")
-                
-        except OperationalError as e:
-            # 处理数据库操作错误
-            print(f"数据库初始化错误: {e}")
-            # 如果表不存在，创建所有表
-            db.create_all()
-            print("创建所有数据库表")
-            
-            # 创建默认管理员
-            from werkzeug.security import generate_password_hash
-            admin = Admin(
-                admin_name='admin',
-                admin_password=generate_password_hash('admin')
+    except Exception as e:
+        print(f"数据库初始化错误: {str(e)}")
+        traceback.print_exc()
+        # 如果出错，继续尝试创建表
+        try:
+            with app.app_context():
+                db.create_all()
+        except Exception as inner_e:
+            print(f"创建表失败: {str(inner_e)}")
+
+def ensure_user_balances():
+    """确保每个用户都有一个账户余额记录"""
+    try:
+        # 找出所有没有余额记录的用户
+        users_without_balance = User.query.outerjoin(AccountBalance).filter(AccountBalance.balance_id == None).all()
+        
+        for user in users_without_balance:
+            # 创建新的余额记录
+            balance = AccountBalance(
+                user_id=user.user_id,
+                available_balance=0.0,
+                frozen_balance=0.0,
+                total_balance=0.0
             )
-            db.session.add(admin)
+            db.session.add(balance)
+        
+        if users_without_balance:
             db.session.commit()
-            print("默认管理员账户已创建") 
+            print(f"为 {len(users_without_balance)} 个用户创建了账户余额记录")
+    except Exception as e:
+        db.session.rollback()
+        print(f"创建用户账户余额记录时出错: {str(e)}")
+        traceback.print_exc()
+
+def create_default_admin():
+    """创建默认管理员账户"""
+    from werkzeug.security import generate_password_hash
+    admin = Admin.query.filter_by(admin_name='admin').first()
+    if not admin:
+        admin = Admin(
+            admin_name='admin',
+            admin_password=generate_password_hash('admin')
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("默认管理员账户已创建") 

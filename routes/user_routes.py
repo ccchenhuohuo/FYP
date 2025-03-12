@@ -5,24 +5,33 @@
 from flask import render_template, jsonify, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
-from models import MarketData, db, Order, Transaction, User, FundamentalData, BalanceSheet, IncomeStatement
+from models import MarketData, db, Order, Transaction, User, FundamentalData, BalanceSheet, IncomeStatement, Portfolio, AccountBalance, FundTransaction
 import pandas as pd
 import sys
 import io
 import os
 import json
 import numpy as np
+from decimal import Decimal
+import requests  # 添加requests库用于API调用
+import math
 
 from . import user_bp
 from utils.risk_monitor import run_analysis_text_only_simple
 from utils.chat_ai import chat_with_gemini_api
+from config import ALPHA_VANTAGE_API_KEY  # 从配置文件导入API密钥
 
 # 配置Gemini API已移至utils/chat_ai.py
 
 @user_bp.route('/stock_chart')
 @login_required
 def stock_chart():
-    """股票历史走势图页面"""
+    """显示股票历史走势页面"""
+    # 检查当前用户是否为管理员
+    if hasattr(current_user, 'admin_id'):
+        flash('管理员账户无法访问用户股票交易页面', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+        
     return render_template('user/stock_chart.html')
 
 @user_bp.route('/about')
@@ -267,119 +276,373 @@ def api_stock_analysis():
 @user_bp.route('/account')
 @login_required
 def account():
-    """用户账户详情页面，显示用户订单、交易记录和余额"""
-    # 获取当前用户的订单
+    """显示用户账户页面"""
+    # 检查当前用户是否为管理员
+    if hasattr(current_user, 'admin_id'):
+        flash('管理员账户无法访问用户账户页面', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    # 获取用户余额信息
+    account_balance = AccountBalance.query.filter_by(user_id=current_user.user_id).first()
+    if not account_balance:
+        # 如果用户没有余额记录，创建一个
+        account_balance = AccountBalance(
+            user_id=current_user.user_id,
+            available_balance=0,
+            frozen_balance=0,
+            total_balance=0
+        )
+        db.session.add(account_balance)
+        db.session.commit()
+    
+    # 获取用户资金交易记录
+    deposits = FundTransaction.query.filter_by(
+        user_id=current_user.user_id, 
+        transaction_type='deposit'
+    ).order_by(FundTransaction.created_at.desc()).all()
+    
+    withdrawals = FundTransaction.query.filter_by(
+        user_id=current_user.user_id, 
+        transaction_type='withdrawal'
+    ).order_by(FundTransaction.created_at.desc()).all()
+    
+    # 获取用户订单
     orders = Order.query.filter_by(user_id=current_user.user_id).order_by(Order.created_at.desc()).all()
     
-    # 获取当前用户的交易记录
+    # 获取用户交易记录
     transactions = Transaction.query.filter_by(user_id=current_user.user_id).order_by(Transaction.transaction_time.desc()).all()
     
-    return render_template('user/account.html', orders=orders, transactions=transactions)
+    # 获取用户持仓
+    portfolio = Portfolio.query.filter_by(user_id=current_user.user_id).all()
+    
+    # 计算浮动盈亏
+    total_pnl = 0
+    for position in portfolio:
+        # 使用新的函数获取价格和可能的错误消息
+        current_price, error_msg = get_market_price_with_message(position.ticker)
+        if current_price:
+            position.current_price = current_price
+            position.market_value = position.quantity * current_price
+            position.pnl = position.market_value - (position.average_price * position.quantity)
+            position.pnl_percentage = (position.pnl / (position.average_price * position.quantity)) * 100 if position.average_price > 0 else 0
+            total_pnl += position.pnl
+        else:
+            # 处理价格获取失败的情况
+            position.current_price = None
+            position.market_value = None
+            position.pnl = None
+            position.pnl_percentage = None
+            position.price_error = error_msg
+    
+    return render_template('user/account.html', 
+                          balance=account_balance,
+                          deposits=deposits, 
+                          withdrawals=withdrawals,
+                          orders=orders, 
+                          transactions=transactions,
+                          portfolio=portfolio,
+                          total_pnl=total_pnl)
 
 @user_bp.route('/api/deposit', methods=['POST'])
 @login_required
 def deposit():
     """处理用户充值请求"""
-    amount = request.form.get('amount', type=float)
+    # 检查当前用户是否为管理员
+    if hasattr(current_user, 'admin_id'):
+        flash('管理员账户无法进行充值操作', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
     
-    if not amount or amount <= 0:
-        flash('请输入有效的充值金额', 'danger')
+    amount = Decimal(request.form.get('amount', 0))
+    
+    if amount <= 0:
+        flash('充值金额必须大于0', 'danger')
         return redirect(url_for('user.account'))
     
+    # 创建充值记录，状态为pending
+    deposit = FundTransaction(
+        user_id=current_user.user_id,
+        transaction_type='deposit',
+        amount=float(amount),  # 转换为float类型
+        status='pending',  # 默认为pending，需要管理员审核
+        remark='用户充值申请'
+    )
+    
     try:
-        # 更新用户余额
-        user = User.query.get(current_user.user_id)
-        user.balance += amount
-        
-        # 创建一个特殊的交易记录，用于记录充值
-        # 为了适应Transaction表的结构，我们需要创建一个虚拟订单
-        deposit_order = Order(
-            user_id=current_user.user_id,
-            ticker='DEPOSIT',  # 使用特殊的代码表示充值
-            order_type='deposit',
-            order_price=amount,
-            order_quantity=1,
-            order_status='executed'
-        )
-        db.session.add(deposit_order)
-        db.session.flush()  # 获取order_id
-        
-        # 创建交易记录
-        deposit_transaction = Transaction(
-            order_id=deposit_order.order_id,
-            user_id=current_user.user_id,
-            ticker='DEPOSIT',
-            transaction_type='deposit',
-            transaction_price=amount,
-            transaction_quantity=1,
-            transaction_amount=amount,
-            transaction_status='completed'
-        )
-        db.session.add(deposit_transaction)
+        db.session.add(deposit)
         db.session.commit()
-        
-        flash(f'充值成功: {amount}元已添加到您的账户', 'success')
+        flash('充值请求已提交，等待管理员审核', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'充值失败: {str(e)}', 'danger')
+        flash(f'充值请求提交失败: {str(e)}', 'danger')
     
     return redirect(url_for('user.account'))
 
-@user_bp.route('/api/orders', methods=['POST'])
+@user_bp.route('/api/create_order', methods=['POST'])
 @login_required
 def create_order():
     """创建新订单"""
+    # 检查当前用户是否为管理员
+    if hasattr(current_user, 'admin_id'):
+        flash('管理员账户无法创建交易订单', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+        
     ticker = request.form.get('ticker')
     order_type = request.form.get('order_type')
-    order_price = request.form.get('price', type=float)
-    order_quantity = request.form.get('quantity', type=int)
+    order_execution_type = request.form.get('order_execution_type', 'limit')
+    price = request.form.get('price', type=float)
+    quantity = request.form.get('quantity', type=int)
     
-    if not all([ticker, order_type, order_price, order_quantity]):
-        flash('请填写所有必填字段', 'danger')
-        return redirect(url_for('user.account'))
+    # 验证输入
+    if not ticker or not order_type or not quantity or quantity <= 0:
+        flash('请填写所有必填字段，并确保数量为正数', 'danger')
+        return redirect(url_for('user.stock_chart'))
     
-    if order_quantity <= 0 or order_price <= 0:
-        flash('价格和数量必须大于零', 'danger')
-        return redirect(url_for('user.account'))
+    # 对于限价单，价格是必需的
+    if order_execution_type == 'limit' and (not price or price <= 0):
+        flash('限价单必须指定有效的价格', 'danger')
+        return redirect(url_for('user.stock_chart'))
     
-    # 检查用户余额是否足够（如果是买入订单）
+    # 对于市价单，获取最新价格
+    if order_execution_type == 'market':
+        try:
+            # 调用API获取最新价格
+            latest_price, api_message = get_market_price_with_message(ticker)
+            if not latest_price:
+                if api_message and "API rate limit" in api_message:
+                    # 专门处理API限制错误
+                    flash(f'无法获取 {ticker} 的最新价格: {api_message}。建议：(1)等待次日重置；(2)使用限价单；(3)升级API计划移除限制。', 'danger')
+                else:
+                    # 处理其他错误
+                    flash(f'无法获取 {ticker} 的最新价格: {api_message or "未知错误"}', 'danger')
+                return redirect(url_for('user.stock_chart'))
+            price = latest_price
+        except Exception as e:
+            flash(f'获取最新价格时出错: {str(e)}', 'danger')
+            return redirect(url_for('user.stock_chart'))
+    
+    # 计算订单总价值
+    total_value = price * quantity
+    
+    # 检查买入订单的余额
     if order_type == 'buy':
-        total_cost = order_price * order_quantity
-        if current_user.balance < total_cost:
-            flash('余额不足，无法创建订单', 'danger')
-            return redirect(url_for('user.account'))
+        account_balance = AccountBalance.query.filter_by(user_id=current_user.user_id).first()
+        if not account_balance or account_balance.available_balance < total_value:
+            flash('余额不足，无法创建买入订单', 'danger')
+            return redirect(url_for('user.stock_chart'))
     
     try:
-        # 创建新订单
+        # 创建订单
         new_order = Order(
             user_id=current_user.user_id,
             ticker=ticker,
             order_type=order_type,
-            order_price=order_price,
-            order_quantity=order_quantity,
-            order_status='pending'
+            order_price=price,
+            order_quantity=quantity,
+            order_execution_type=order_execution_type
         )
-        db.session.add(new_order)
-        db.session.commit()
         
         # 如果是买入订单，冻结用户余额
         if order_type == 'buy':
-            user = User.query.get(current_user.user_id)
-            user.balance -= order_price * order_quantity
-            db.session.commit()
+            account_balance = AccountBalance.query.filter_by(user_id=current_user.user_id).first()
+            account_balance.available_balance -= total_value
+            account_balance.frozen_balance += total_value
         
-        flash('订单创建成功', 'success')
+        db.session.add(new_order)
+        db.session.commit()
+        
+        # 如果是市价单，立即执行
+        if order_execution_type == 'market':
+            success = execute_market_order(new_order)
+            if success:
+                flash(f'市价单已创建并执行成功，价格: ${price:.2f}', 'success')
+            else:
+                # 回滚到待执行状态，因为执行失败了
+                new_order.order_status = 'pending'
+                db.session.commit()
+                flash(f'市价单已创建，但执行失败，将以待执行状态保留', 'warning')
+        else:
+            flash(f'限价单已创建，等待执行', 'success')
+            
+        # 订单创建成功后，重定向到账户页面
+        return redirect(url_for('user.account'))
+            
     except Exception as e:
         db.session.rollback()
-        flash(f'订单创建失败: {str(e)}', 'danger')
-    
-    return redirect(url_for('user.account'))
+        flash(f'创建订单失败: {str(e)}', 'danger')
+        print(f"创建订单错误: {str(e)}")
+        # 创建订单失败，仍然重定向到股票图表页面
+        return redirect(url_for('user.stock_chart'))
 
-@user_bp.route('/api/orders/<int:order_id>/cancel', methods=['POST'])
+def get_latest_price(ticker):
+    """获取股票最新价格，从实际的API获取"""
+    try:
+        # 使用Alpha Vantage API获取实时价格
+        # 从配置文件中获取API密钥
+        api_url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_VANTAGE_API_KEY}"
+        
+        # 调用API
+        response = requests.get(api_url)
+        
+        # 检查响应状态
+        if response.status_code != 200:
+            print(f"API请求失败: 状态码 {response.status_code}")
+            return None
+        
+        # 解析响应数据
+        data = response.json()
+        
+        # 检查API限制信息 - 修改判断条件以匹配实际响应格式
+        if 'Information' in data and ('API rate limit' in data['Information'] or 'standard API rate limit' in data['Information']):
+            print(f"API调用次数限制: {data['Information']}")
+            return None
+        
+        # 检查是否有错误消息
+        if 'Error Message' in data:
+            print(f"API错误: {data['Error Message']}")
+            return None
+            
+        # 检查是否达到API调用限制
+        if 'Note' in data and 'API call frequency' in data['Note']:
+            print(f"API调用频率限制: {data['Note']}")
+            return None
+        
+        # 检查是否有全局报价数据
+        if 'Global Quote' in data and data['Global Quote']:
+            # 提取最新价格
+            quote = data['Global Quote']
+            if '05. price' in quote:
+                price = float(quote['05. price'])
+                print(f"成功获取{ticker}最新价格: ${price}")
+                return price
+                
+        # API可能返回了空数据或不包含价格信息 - 检查是否因为API限制而无数据
+        if 'Information' in data and not 'Global Quote' in data:
+            print(f"API响应中没有价格数据，可能达到了API调用限制: {data['Information']}")
+            return None
+            
+        print(f"无法从API响应中获取{ticker}的价格信息: {data}")
+        return None
+        
+    except Exception as e:
+        print(f"获取最新价格时出错: {str(e)}")
+        return None
+
+def execute_market_order(order):
+    """执行市价单"""
+    try:
+        # 更新订单状态
+        order.order_status = 'executed'
+        order.executed_at = datetime.now()
+        
+        # 如果是买入订单，解冻余额并创建持仓
+        if order.order_type == 'buy':
+            # 获取账户余额
+            account_balance = AccountBalance.query.filter_by(user_id=order.user_id).first()
+            if not account_balance:
+                raise Exception("用户账户余额记录不存在")
+                
+            total_value = order.order_price * order.order_quantity
+            
+            # 解冻余额（已在创建订单时扣除）
+            account_balance.frozen_balance -= total_value
+            
+            # 检查是否已有该股票的持仓
+            portfolio_item = Portfolio.query.filter_by(
+                user_id=order.user_id,
+                ticker=order.ticker
+            ).first()
+            
+            if portfolio_item:
+                # 更新现有持仓
+                portfolio_item.quantity += order.order_quantity
+                portfolio_item.average_price = ((portfolio_item.average_price * (portfolio_item.quantity - order.order_quantity)) + 
+                                        (order.order_price * order.order_quantity)) / portfolio_item.quantity
+                portfolio_item.total_cost = portfolio_item.average_price * portfolio_item.quantity
+                portfolio_item.last_updated = datetime.now()
+            else:
+                # 创建新持仓，确保average_price和total_cost不为null
+                average_price = float(order.order_price)  # 确保转换为float类型
+                total_cost = float(order.order_price * order.order_quantity)  # 确保转换为float类型
+                
+                # 检查计算结果是否为None或NaN
+                if average_price is None or math.isnan(average_price):
+                    average_price = 0.0
+                if total_cost is None or math.isnan(total_cost):
+                    total_cost = 0.0
+                
+                new_portfolio = Portfolio(
+                    user_id=order.user_id,
+                    ticker=order.ticker,
+                    quantity=order.order_quantity,
+                    average_price=average_price,
+                    total_cost=total_cost,
+                    last_updated=datetime.now()
+                )
+                db.session.add(new_portfolio)
+        
+        # 如果是卖出订单，更新持仓并增加余额
+        elif order.order_type == 'sell':
+            # 获取账户余额
+            account_balance = AccountBalance.query.filter_by(user_id=order.user_id).first()
+            if not account_balance:
+                raise Exception("用户账户余额记录不存在")
+                
+            total_value = order.order_price * order.order_quantity
+            
+            # 增加用户余额
+            account_balance.available_balance += total_value
+            account_balance.total_balance += total_value
+            
+            # 更新持仓
+            portfolio_item = Portfolio.query.filter_by(
+                user_id=order.user_id,
+                ticker=order.ticker
+            ).first()
+            
+            if portfolio_item and portfolio_item.quantity >= order.order_quantity:
+                portfolio_item.quantity -= order.order_quantity
+                portfolio_item.last_updated = datetime.now()
+                # 如果持仓数量为0，删除该持仓记录
+                if portfolio_item.quantity == 0:
+                    db.session.delete(portfolio_item)
+            else:
+                # 持仓不足，回滚交易
+                db.session.rollback()
+                order.order_status = 'cancelled'
+                order.remark = '持仓不足，无法执行卖出订单'
+                db.session.commit()
+                return False
+        
+        # 创建交易记录
+        transaction = Transaction(
+            user_id=order.user_id,
+            order_id=order.order_id,
+            ticker=order.ticker,
+            transaction_type=order.order_type,
+            transaction_price=order.order_price,
+            transaction_quantity=order.order_quantity,
+            transaction_amount=order.order_price * order.order_quantity
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        return True
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"执行市价单错误: {str(e)}")
+        return False
+
+@user_bp.route('/orders/<order_id>/cancel', methods=['POST'])
 @login_required
 def cancel_order(order_id):
     """取消订单"""
-    order = Order.query.get_or_404(order_id)
+    # 检查当前用户是否为管理员
+    if hasattr(current_user, 'admin_id'):
+        flash('管理员账户无法取消用户订单', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+        
+    # 查找订单
+    order = Order.query.filter_by(order_id=order_id, user_id=current_user.user_id).first()
     
     # 确保只能取消自己的订单
     if order.user_id != current_user.user_id:
@@ -397,8 +660,11 @@ def cancel_order(order_id):
         
         # 如果是买入订单，返还冻结的余额
         if order.order_type == 'buy':
-            user = User.query.get(current_user.user_id)
-            user.balance += order.order_price * order.order_quantity
+            account_balance = AccountBalance.query.filter_by(user_id=current_user.user_id).first()
+            if account_balance:
+                total_value = order.order_price * order.order_quantity
+                account_balance.frozen_balance -= total_value
+                account_balance.available_balance += total_value
         
         db.session.commit()
         flash('订单已取消', 'success')
@@ -588,4 +854,132 @@ def chat():
         
         return jsonify({'response': response_text})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500 
+        return jsonify({'error': str(e)}), 500
+
+@user_bp.route('/api/withdraw', methods=['POST'])
+@login_required
+def withdraw():
+    """处理用户提现请求"""
+    # 检查当前用户是否为管理员
+    if hasattr(current_user, 'admin_id'):
+        flash('管理员账户无法进行提现操作', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+        
+    amount = Decimal(request.form.get('amount', 0))
+    
+    if amount <= 0:
+        flash('提现金额必须大于0', 'danger')
+        return redirect(url_for('user.account'))
+    
+    # 获取用户余额
+    balance = AccountBalance.query.filter_by(user_id=current_user.user_id).first()
+    
+    if not balance or balance.available_balance < float(amount):
+        flash('余额不足，无法提现', 'danger')
+        return redirect(url_for('user.account'))
+    
+    try:
+        # 创建提现记录
+        withdrawal = FundTransaction(
+            user_id=current_user.user_id,
+            transaction_type='withdrawal',
+            amount=float(amount),  # 转换为float类型
+            status='pending',  # 默认为pending，需要管理员审核
+            remark='用户提现申请'
+        )
+        
+        # 暂时冻结用户余额，将amount转换为float类型
+        amount_float = float(amount)
+        balance.available_balance -= amount_float
+        balance.frozen_balance += amount_float
+        # 总余额保持不变
+        
+        db.session.add(withdrawal)
+        db.session.commit()
+        flash('提现申请已提交，等待管理员审核', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'提现申请提交失败: {str(e)}', 'danger')
+    
+    return redirect(url_for('user.account'))
+
+def get_market_price_with_message(ticker):
+    """获取股票最新价格，同时返回API消息（如有）"""
+    try:
+        # 使用Alpha Vantage API获取实时价格
+        # 从配置文件中获取API密钥
+        api_url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_VANTAGE_API_KEY}"
+        
+        # 调用API
+        response = requests.get(api_url)
+        
+        # 检查响应状态
+        if response.status_code != 200:
+            return None, f"API请求失败: 状态码 {response.status_code}"
+        
+        # 解析响应数据
+        data = response.json()
+        
+        # 检查API限制信息
+        if 'Information' in data:
+            if 'API rate limit' in data['Information'] or 'standard API rate limit' in data['Information']:
+                return None, data['Information']
+        
+        # 检查是否有错误消息
+        if 'Error Message' in data:
+            return None, data['Error Message']
+            
+        # 检查是否达到API调用限制
+        if 'Note' in data and 'API call frequency' in data['Note']:
+            return None, data['Note']
+        
+        # 检查是否有全局报价数据
+        if 'Global Quote' in data and data['Global Quote']:
+            # 提取最新价格
+            quote = data['Global Quote']
+            if '05. price' in quote:
+                price = float(quote['05. price'])
+                print(f"成功获取{ticker}最新价格: ${price}")
+                return price, None
+                
+        # API可能返回了空数据或不包含价格信息
+        if 'Information' in data and not 'Global Quote' in data:
+            return None, data['Information']
+            
+        return None, f"无法解析API响应: {data}"
+        
+    except Exception as e:
+        error_msg = f"获取最新价格时出错: {str(e)}"
+        print(error_msg)
+        return None, error_msg 
+
+@user_bp.route('/api/real_time_stock_data')
+@login_required
+def get_real_time_stock_data():
+    """获取实时股票数据API，代理Alpha Vantage请求"""
+    symbol = request.args.get('symbol', 'AAPL')
+    
+    try:
+        # 从配置文件获取API密钥
+        api_url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={ALPHA_VANTAGE_API_KEY}"
+        
+        # 发送请求到Alpha Vantage
+        response = requests.get(api_url)
+        
+        if response.status_code != 200:
+            return jsonify({"error": "网络响应错误"}), 500
+            
+        data = response.json()
+        
+        # 检查是否有错误消息或限制信息
+        if data.get('Note') or data.get('Information'):
+            return jsonify({
+                "error": data.get('Note') or data.get('Information') or '请求限制，请稍后再试'
+            }), 429
+            
+        # 将Alpha Vantage响应直接传递给前端
+        return jsonify(data)
+        
+    except Exception as e:
+        app.logger.error(f"获取实时股票数据失败: {str(e)}")
+        return jsonify({"error": f"获取实时数据失败: {str(e)}"}), 500 

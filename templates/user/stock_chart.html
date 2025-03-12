@@ -146,13 +146,13 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="simulationDays"><i class="fas fa-calendar"></i> 模拟天数</label>
-                        <input type="number" class="form-control" id="simulationDays" value="30" min="1" max="365">
+                        <input type="number" class="form-control" id="simulationDays" value="60" min="1" max="365">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="simulationCount"><i class="fas fa-dice"></i> 模拟次数</label>
-                        <input type="number" class="form-control" id="simulationCount" value="1000" min="100" max="10000">
+                        <input type="number" class="form-control" id="simulationCount" value="200" min="100" max="10000">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -352,6 +352,66 @@
             </div>
         </div>
     </div>
+
+    <!-- 添加创建订单表单 -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3><i class="fas fa-file-invoice"></i> 创建新订单</h3>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('user.create_order') }}" method="post" id="orderForm" class="order-form">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="ticker"><i class="fas fa-tag"></i> 股票代码:</label>
+                            <input type="text" id="ticker" name="ticker" class="form-control" required placeholder="例如: AAPL">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="order_type"><i class="fas fa-exchange-alt"></i> 订单类型:</label>
+                            <select id="order_type" name="order_type" class="form-control" required>
+                                <option value="buy">买入</option>
+                                <option value="sell">卖出</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="order_execution_type"><i class="fas fa-cogs"></i> 执行类型:</label>
+                            <select id="order_execution_type" name="order_execution_type" class="form-control" required>
+                                <option value="limit">限价单</option>
+                                <option value="market">市价单</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3 price-field">
+                            <label for="price"><i class="fas fa-dollar-sign"></i> 价格:</label>
+                            <input type="number" id="price" name="price" class="form-control" min="0.01" step="0.01" required placeholder="请输入价格">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="quantity"><i class="fas fa-sort-amount-up"></i> 数量:</label>
+                            <input type="number" id="quantity" name="quantity" class="form-control" min="1" required placeholder="请输入数量">
+                        </div>
+                    </div>
+                    <div class="col-md-6 align-self-end">
+                        <div class="form-group mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-plus-circle"></i> 创建订单
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -363,189 +423,5 @@
 
 <!-- 引入自定义JavaScript -->
 <script src="{{ url_for('static', filename='js/user/stock_chart.js') }}"></script>
-
-<!-- 基本面数据处理脚本 -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 选项卡切换功能
-    const tabs = document.querySelectorAll('.tab-button');
-    const contents = document.querySelectorAll('.tab-content');
-    
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            // 移除所有活动状态
-            tabs.forEach(t => t.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
-            
-            // 添加当前活动状态
-            tab.classList.add('active');
-            const target = tab.id.replace('tab', 'content');
-            document.getElementById(target).classList.add('active');
-        });
-    });
-    
-    // 加载基本面数据
-    const stockSelector = document.getElementById('stockSelector');
-    
-    function formatNumber(num) {
-        if (num === null || num === undefined) return '-';
-        
-        // 对于大数值，转换为适当的单位（百万或十亿）
-        if (Math.abs(num) >= 1e9) {
-            return (num / 1e9).toFixed(2) + '十亿';
-        } else if (Math.abs(num) >= 1e6) {
-            return (num / 1e6).toFixed(2) + '百万';
-        } else {
-            return num.toLocaleString();
-        }
-    }
-    
-    function formatPercentage(num) {
-        if (num === null || num === undefined) return '-';
-        return num.toFixed(2) + '%';
-    }
-    
-    function formatRatio(num) {
-        if (num === null || num === undefined) return '-';
-        return num.toFixed(2);
-    }
-    
-    function loadFundamentalData(ticker) {
-        document.getElementById('loadingFundamental').style.display = 'block';
-        document.getElementById('fundamentalData').style.display = 'none';
-        document.getElementById('errorFundamental').style.display = 'none';
-        
-        fetch(`${window.location.origin}/user/api/fundamental_data?ticker=${ticker}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // 填充数据
-                    document.getElementById('marketCap').textContent = formatNumber(data.data.market_cap);
-                    document.getElementById('peRatio').textContent = formatRatio(data.data.pe_ratio);
-                    document.getElementById('pbRatio').textContent = formatRatio(data.data.pb_ratio);
-                    document.getElementById('dividendYield').textContent = formatPercentage(data.data.dividend_yield);
-                    document.getElementById('revenue').textContent = formatNumber(data.data.revenue);
-                    document.getElementById('netIncome').textContent = formatNumber(data.data.net_income);
-                    document.getElementById('operatingCashFlow').textContent = formatNumber(data.data.operating_cash_flow);
-                    
-                    document.getElementById('fundamentalDate').textContent = `数据更新日期: ${data.data.date}`;
-                    
-                    document.getElementById('fundamentalData').style.display = 'grid';
-                } else {
-                    document.getElementById('errorFundamental').querySelector('span').textContent = data.message || '加载基本面数据失败';
-                    document.getElementById('errorFundamental').style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('加载基本面数据错误:', error);
-                document.getElementById('errorFundamental').querySelector('span').textContent = `请求基本面数据时发生错误: ${error.message}`;
-                document.getElementById('errorFundamental').style.display = 'block';
-            })
-            .finally(() => {
-                document.getElementById('loadingFundamental').style.display = 'none';
-            });
-    }
-    
-    function loadBalanceSheet(ticker) {
-        document.getElementById('loadingBalance').style.display = 'block';
-        document.getElementById('balanceData').style.display = 'none';
-        document.getElementById('errorBalance').style.display = 'none';
-        
-        fetch(`${window.location.origin}/user/api/balance_sheet?ticker=${ticker}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // 填充数据
-                    document.getElementById('currentAssets').textContent = formatNumber(data.data.current_assets);
-                    document.getElementById('nonCurrentAssets').textContent = formatNumber(data.data.non_current_assets);
-                    document.getElementById('totalAssets').textContent = formatNumber(data.data.total_assets);
-                    document.getElementById('currentLiabilities').textContent = formatNumber(data.data.current_liabilities);
-                    document.getElementById('nonCurrentLiabilities').textContent = formatNumber(data.data.non_current_liabilities);
-                    document.getElementById('totalLiabilities').textContent = formatNumber(data.data.total_liabilities);
-                    document.getElementById('equity').textContent = formatNumber(data.data.equity);
-                    
-                    document.getElementById('balanceDate').textContent = `数据更新日期: ${data.data.date}`;
-                    
-                    document.getElementById('balanceData').style.display = 'block';
-                } else {
-                    document.getElementById('errorBalance').querySelector('span').textContent = data.message || '加载资产负债表数据失败';
-                    document.getElementById('errorBalance').style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('加载资产负债表数据错误:', error);
-                document.getElementById('errorBalance').querySelector('span').textContent = `请求资产负债表数据时发生错误: ${error.message}`;
-                document.getElementById('errorBalance').style.display = 'block';
-            })
-            .finally(() => {
-                document.getElementById('loadingBalance').style.display = 'none';
-            });
-    }
-    
-    function loadIncomeStatement(ticker) {
-        document.getElementById('loadingIncome').style.display = 'block';
-        document.getElementById('incomeData').style.display = 'none';
-        document.getElementById('errorIncome').style.display = 'none';
-        
-        fetch(`${window.location.origin}/user/api/income_statement?ticker=${ticker}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // 填充数据
-                    document.getElementById('incomeRevenue').textContent = formatNumber(data.data.revenue);
-                    document.getElementById('costOfRevenue').textContent = formatNumber(data.data.cost_of_revenue);
-                    document.getElementById('grossProfit').textContent = formatNumber(data.data.gross_profit);
-                    document.getElementById('operatingIncome').textContent = formatNumber(data.data.operating_income);
-                    document.getElementById('incomeBeforeTax').textContent = formatNumber(data.data.income_before_tax);
-                    document.getElementById('incomeNetIncome').textContent = formatNumber(data.data.net_income);
-                    document.getElementById('profitMargin').textContent = formatPercentage(data.data.profit_margin);
-                    
-                    document.getElementById('incomeDate').textContent = `数据更新日期: ${data.data.date}`;
-                    
-                    document.getElementById('incomeData').style.display = 'block';
-                } else {
-                    document.getElementById('errorIncome').querySelector('span').textContent = data.message || '加载利润表数据失败';
-                    document.getElementById('errorIncome').style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('加载利润表数据错误:', error);
-                document.getElementById('errorIncome').querySelector('span').textContent = `请求利润表数据时发生错误: ${error.message}`;
-                document.getElementById('errorIncome').style.display = 'block';
-            })
-            .finally(() => {
-                document.getElementById('loadingIncome').style.display = 'none';
-            });
-    }
-    
-    function loadAllData(ticker) {
-        loadFundamentalData(ticker);
-        loadBalanceSheet(ticker);
-        loadIncomeStatement(ticker);
-    }
-    
-    // 初始加载
-    loadAllData(stockSelector.value);
-    
-    // 股票选择变化时重新加载数据
-    stockSelector.addEventListener('change', function() {
-        loadAllData(this.value);
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/user/stock_chart_extra.js') }}"></script>
 {% endblock %} 

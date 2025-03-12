@@ -16,8 +16,11 @@ SECRET_KEY = 'your-secret-key'  # 设置密钥，用于会话安全
 SQLALCHEMY_DATABASE_URI = 'mysql://root:Cyy-20030611@localhost/stock_data_v1'  # 设置数据库连接URI
 SQLALCHEMY_TRACK_MODIFICATIONS = False  # 关闭SQLAlchemy的修改跟踪功能，减少内存使用
 
-# 股票数据API配置
+# gemini ai API配置
 GEMINI_API_KEY = "AIzaSyDYcL5BBKz812t_66bbBq0h3xm9v6DOG-M"
+
+# Alpha Vantage API配置
+ALPHA_VANTAGE_API_KEY = "TPVDFZ9V7WDEXEEZ"  # Alpha Vantage API密钥，用于获取实时股票价格
 
 # 数据库连接配置
 DB_CONFIG = {

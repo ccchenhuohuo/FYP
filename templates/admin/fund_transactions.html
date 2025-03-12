@@ -1,0 +1,190 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}资金交易管理{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_fund_transactions.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <h1><i class="fas fa-money-bill-wave"></i> 资金交易管理</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="alert-icon fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- 过滤器 -->
+    <div class="filter-section">
+        <form action="{{ url_for('admin.manage_fund_transactions') }}" method="get" class="filters-form">
+            <div class="filter-group">
+                <label for="type">交易类型</label>
+                <select name="type" id="type" class="form-control" onchange="this.form.submit()">
+                    <option value="all" {% if current_type == 'all' %}selected{% endif %}>全部</option>
+                    <option value="deposit" {% if current_type == 'deposit' %}selected{% endif %}>充值</option>
+                    <option value="withdrawal" {% if current_type == 'withdrawal' %}selected{% endif %}>提现</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="status">状态</label>
+                <select name="status" id="status" class="form-control" onchange="this.form.submit()">
+                    <option value="all" {% if current_status == 'all' %}selected{% endif %}>全部</option>
+                    <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>待处理</option>
+                    <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>已完成</option>
+                    <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>已拒绝</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    
+    {% if transactions %}
+        <table class="admin-table transactions-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户</th>
+                    <th>类型</th>
+                    <th>金额</th>
+                    <th>申请时间</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td><small>{{ transaction.transaction_id }}</small></td>
+                    <td>{{ transaction.user.user_name }}</td>
+                    <td>
+                        <span class="transaction-tag tag-{{ transaction.transaction_type }}">
+                            {% if transaction.transaction_type == 'deposit' %}
+                                充值
+                            {% elif transaction.transaction_type == 'withdrawal' %}
+                                提现
+                            {% else %}
+                                {{ transaction.transaction_type }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>¥{{ "%.2f"|format(transaction.amount) }}</td>
+                    <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <span class="status-badge status-{{ transaction.status }}">
+                            {% if transaction.status == 'pending' %}
+                                待审核
+                            {% elif transaction.status == 'completed' %}
+                                已完成
+                            {% elif transaction.status == 'rejected' %}
+                                已拒绝
+                            {% else %}
+                                {{ transaction.status }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>{{ transaction.remark or '-' }}</td>
+                    <td>
+                        {% if transaction.status == 'pending' %}
+                        <div class="action-buttons">
+                            <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
+                                <button type="submit" class="btn btn-success btn-small">
+                                    <i class="fas fa-check"></i> 批准
+                                </button>
+                            </form>
+                            <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
+                                <i class="fas fa-times"></i> 拒绝
+                            </button>
+                        </div>
+                        {% else %}
+                        <span class="no-action">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-money-bill-wave empty-state-icon"></i>
+            <p>当前没有交易记录</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 拒绝交易的模态框 -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">拒绝交易请求</h3>
+            <button type="button" class="close-button" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>请输入拒绝理由：</p>
+            <form id="rejectForm" method="post" action="" data-base-url="{{ url_for('admin.reject_fund_transaction', transaction_id=0) }}">
+                <div class="form-group">
+                    <textarea name="rejection_reason" rows="4" class="form-control" required></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">取消</button>
+            <button type="button" class="btn btn-danger" onclick="submitRejectForm()">确认拒绝</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 打开拒绝交易模态框
+    function openRejectModal(transactionId) {
+        const modal = document.getElementById('rejectModal');
+        const form = document.getElementById('rejectForm');
+        const baseUrl = form.getAttribute('data-base-url');
+        
+        // 设置表单提交地址
+        form.action = baseUrl.replace('/0/reject', `/${transactionId}/reject`);
+        
+        // 显示模态框
+        modal.style.display = 'block';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+    
+    // 关闭拒绝交易模态框
+    function closeRejectModal() {
+        const modal = document.getElementById('rejectModal');
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+        document.getElementById('rejectForm').reset();
+    }
+    
+    // 提交拒绝表单
+    function submitRejectForm() {
+        const form = document.getElementById('rejectForm');
+        const reason = form.querySelector('textarea[name="rejection_reason"]').value.trim();
+        
+        if (reason) {
+            form.submit();
+        } else {
+            alert('请输入拒绝理由');
+        }
+    }
+    
+    // 点击模态框外部关闭
+    window.onclick = function(event) {
+        const modal = document.getElementById('rejectModal');
+        if (event.target === modal) {
+            closeRejectModal();
+        }
+    };
+</script>
+{% endblock %} 

@@ -1,0 +1,295 @@
+/* 
+ * 管理员通用页面样式
+ * 用于提现管理和充值管理页面的统一样式
+ */
+
+/* 基础布局 */
+.fund-management {
+    padding: 1.5rem;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.fund-management h1 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+    font-size: 1.8rem;
+    font-weight: 600;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+/* 状态标签样式 */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.status-pending {
+    background-color: #fff8e1;
+    color: #f39c12;
+    border: 1px solid #ffeaa7;
+}
+
+.status-completed {
+    background-color: #e8f5e9;
+    color: #27ae60;
+    border: 1px solid #a5d6a7;
+}
+
+.status-rejected {
+    background-color: #ffebee;
+    color: #e74c3c;
+    border: 1px solid #ef9a9a;
+}
+
+/* 表格样式 */
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 2rem;
+    background-color: #fff;
+    box-shadow: 0 1px 15px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem 1.2rem;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+}
+
+.data-table tr:not(:last-child) td {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.data-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* 按钮样式 */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.btn-approve {
+    background-color: #2563eb;
+    color: white;
+}
+
+.btn-approve:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-reject {
+    background-color: #ef4444;
+    color: white;
+}
+
+.btn-reject:hover {
+    background-color: #dc2626;
+}
+
+/* 空状态 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+}
+
+.empty-state p {
+    color: #64748b;
+    margin-top: 0.75rem;
+    font-size: 1rem;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 450px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    transform: scale(0.95);
+    opacity: 0;
+}
+
+.modal.show .modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.close-modal {
+    color: #94a3b8;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: #475569;
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* 表单控件 */
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #f8fafc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+}
+
+.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
+}
+
+/* 提示和警告 */
+.alert {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+}
+
+.alert-icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border-left-color: #22c55e;
+}
+
+.alert-danger {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-left-color: #ef4444;
+}
+
+.alert-warning {
+    background-color: #fffbeb;
+    color: #92400e;
+    border-left-color: #f59e0b;
+}
+
+/* 金额显示 */
+.amount {
+    font-weight: 600;
+    font-family: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .data-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .modal-content {
+        width: 90%;
+        max-width: 450px;
+    }
+} 

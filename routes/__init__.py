@@ -6,8 +6,12 @@ routes/__init__.py
 2. 导入各个路由模块
 3. 提供注册所有路由的函数
 
-通过这种方式，我们可以将不同功能的路由分散到不同的模块中，
-提高代码的组织性和可维护性。
+routes/
+├── __init__.py             # 定义蓝图并提供路由注册函数
+├── auth_routes.py          # 认证相关路由
+├── user_routes.py          # 用户相关路由
+├── admin_routes.py         # 管理员相关路由
+└── monte_carlo_routes.py   # 蒙特卡洛模拟API路由
 """
 from flask import Blueprint, redirect, url_for
 
@@ -29,11 +33,11 @@ def logout():
     """将根路径的登出请求重定向到auth.logout"""
     return redirect(url_for('auth.logout'))
 
-# 导入路由模块
-from . import auth_routes
-from . import user_routes
-from . import admin_routes
-from .monte_carlo_routes import monte_carlo_bp
+# 移动导入语句到register_routes函数内，防止循环导入
+# from . import auth_routes
+# from . import user_routes
+# from . import admin_routes
+# from .monte_carlo_routes import monte_carlo_bp
 
 def register_routes(app):
     """
@@ -42,6 +46,12 @@ def register_routes(app):
     参数:
     app (Flask): Flask应用实例
     """
+    # 导入路由模块
+    from . import auth_routes
+    from . import user_routes
+    from . import admin_routes
+    from .monte_carlo_routes import monte_carlo_bp
+    
     # 注册主路由蓝图
     app.register_blueprint(main_bp)
     

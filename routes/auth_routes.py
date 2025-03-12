@@ -109,7 +109,7 @@ def admin_login():
     # 如果用户已登录，根据用户类型重定向
     if current_user.is_authenticated:
         if isinstance(current_user, Admin):
-            return redirect(url_for('admin.dashboard'))
+            return redirect(url_for('admin.admin_dashboard'))
         else:
             return redirect(url_for('user.stock_chart'))
     
@@ -124,7 +124,7 @@ def admin_login():
         if admin and check_password_hash(admin.admin_password, password):
             # 登录成功
             login_user(admin)
-            return redirect(url_for('admin.dashboard'))
+            return redirect(url_for('admin.admin_dashboard'))
         else:
             # 登录失败
             flash('管理员登录失败，请检查用户名和密码')

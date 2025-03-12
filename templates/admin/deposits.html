@@ -1,0 +1,146 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}充值管理{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_common.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_deposits.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="fund-management">
+    <h1>充值管理</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="alert-icon fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    {% if deposits %}
+        <table class="data-table deposits-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户</th>
+                    <th>金额</th>
+                    <th>申请时间</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deposit in deposits %}
+                <tr>
+                    <td>{{ deposit.deposit_id }}</td>
+                    <td>{{ deposit.user.user_name }}</td>
+                    <td class="amount">¥{{ "%.2f"|format(deposit.amount) }}</td>
+                    <td>{{ deposit.deposit_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <span class="status-badge status-{{ deposit.status }}">
+                            {% if deposit.status == 'pending' %}
+                                待审核
+                            {% elif deposit.status == 'completed' %}
+                                已完成
+                            {% elif deposit.status == 'rejected' %}
+                                已拒绝
+                            {% else %}
+                                {{ deposit.status }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>{{ deposit.remark or '-' }}</td>
+                    <td>
+                        {% if deposit.status == 'pending' %}
+                        <div class="action-buttons">
+                            <form action="{{ url_for('admin.approve_deposit', deposit_id=deposit.deposit_id) }}" method="post">
+                                <button type="submit" class="btn btn-approve">
+                                    <i class="fas fa-check mr-1"></i> 批准
+                                </button>
+                            </form>
+                            <button class="btn btn-reject" onclick="openRejectModal('{{ deposit.deposit_id }}')">
+                                <i class="fas fa-times mr-1"></i> 拒绝
+                            </button>
+                        </div>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-coins empty-state-icon"></i>
+            <p>当前没有充值申请记录</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 拒绝充值的模态框 -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">拒绝充值申请</h3>
+            <button type="button" class="close-modal" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>请输入拒绝理由：</p>
+            <form id="rejectForm" method="post">
+                <textarea name="rejection_reason" class="form-control" rows="4" placeholder="请输入拒绝理由" required></textarea>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn" onclick="closeRejectModal()">取消</button>
+            <button type="button" class="btn btn-reject" onclick="submitRejectForm()">确认拒绝</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentDepositId = null;
+    
+    // 打开拒绝模态框
+    function openRejectModal(depositId) {
+        currentDepositId = depositId;
+        document.getElementById('rejectForm').action = `/admin/deposits/${depositId}/reject`;
+        const modal = document.getElementById('rejectModal');
+        modal.style.display = 'block';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+    
+    // 关闭拒绝模态框
+    function closeRejectModal() {
+        const modal = document.getElementById('rejectModal');
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+        document.getElementById('rejectForm').reset();
+    }
+    
+    // 提交拒绝表单
+    function submitRejectForm() {
+        if (document.querySelector('#rejectForm textarea').value.trim()) {
+            document.getElementById('rejectForm').submit();
+        } else {
+            alert('请输入拒绝理由');
+        }
+    }
+    
+    // 当点击模态框外部区域时关闭模态框
+    window.onclick = function(event) {
+        const modal = document.getElementById('rejectModal');
+        if (event.target === modal) {
+            closeRejectModal();
+        }
+    }
+</script>
+{% endblock %} 

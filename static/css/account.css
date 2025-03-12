@@ -182,4 +182,156 @@
         flex-direction: column;
         align-items: flex-start;
     }
+}
+
+/* 余额信息样式 */
+.balance-info {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+}
+
+/* 资金操作区域样式 */
+.fund-operations {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.deposit-form, .withdraw-form {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.withdraw-form h3 {
+    margin-bottom: 1rem;
+    color: var(--dark-gray);
+}
+
+.withdraw-form button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.withdraw-form button:hover {
+    background-color: var(--primary-dark);
+}
+
+.balance-item {
+    flex: 1;
+    min-width: 200px;
+}
+
+.balance-label {
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+    margin-bottom: 0.5rem;
+}
+
+.current-balance, .net-worth {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.floating-pnl {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.floating-pnl.positive {
+    color: #27ae60;
+}
+
+.floating-pnl.negative {
+    color: #c0392b;
+}
+
+.pnl-indicator {
+    font-size: 1rem;
+    margin-left: 0.5rem;
+}
+
+/* 持仓信息样式 */
+.portfolio-section, .deposits-section, .withdrawals-section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.portfolio-section h2, .deposits-section h2, .withdrawals-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.portfolio-table, .deposits-table, .withdrawals-table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.portfolio-table table, .deposits-table table, .withdrawals-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.portfolio-table th, .deposits-table th, .withdrawals-table th {
+    background-color: var(--light-gray);
+    padding: 0.8rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.portfolio-table td, .deposits-table td, .withdrawals-table td {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.portfolio-table tr:hover, .deposits-table tr:hover, .withdrawals-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.positive {
+    color: #27ae60;
+}
+
+.negative {
+    color: #c0392b;
+}
+
+.empty-portfolio, .empty-deposits, .empty-withdrawals {
+    text-align: center;
+    padding: 2rem;
+    color: var(--dark-gray);
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+}
+
+.cta-button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.cta-button:hover {
+    background-color: var(--primary-dark);
 } 

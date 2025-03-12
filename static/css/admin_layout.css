@@ -1,0 +1,201 @@
+/* 管理系统布局样式 */
+:root {
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 70px;
+    --primary-color: #3f51b5;
+    --primary-dark: #303f9f;
+    --accent-color: #ff4081;
+    --text-color: #333;
+    --text-light: #757575;
+    --bg-color: #f5f5f5;
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --success-color: #4caf50;
+    --warning-color: #ff9800;
+    --danger-color: #f44336;
+    --transition-speed: 0.3s;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    line-height: 1.6;
+}
+
+/* 布局结构 */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    transition: all var(--transition-speed);
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--primary-color);
+    color: white;
+    transition: width var(--transition-speed);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    overflow-x: hidden;
+}
+
+.sidebar-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header h2 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-header h2 i {
+    margin-right: 10px;
+}
+
+.sidebar-toggle {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: none;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar-nav li {
+    margin: 5px 0;
+}
+
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-nav a i {
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-nav a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.sidebar-nav li.active a {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-left: 4px solid var(--accent-color);
+}
+
+.nav-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 10px 0;
+}
+
+/* 主内容区域 */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition-speed);
+}
+
+.top-header {
+    background-color: var(--card-bg);
+    padding: 15px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 10;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-info span {
+    margin-left: 10px;
+    font-weight: 500;
+}
+
+.content-area {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 992px) {
+    .sidebar {
+        position: fixed;
+        height: 100%;
+        left: 0;
+    }
+    
+    .sidebar-toggle {
+        display: block;
+    }
+    
+    .admin-layout.sidebar-collapsed .sidebar {
+        width: 0;
+        padding: 0;
+    }
+    
+    .admin-layout.sidebar-collapsed .main-content {
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 993px) {
+    .admin-layout.sidebar-collapsed .sidebar {
+        width: var(--sidebar-collapsed-width);
+    }
+    
+    .admin-layout.sidebar-collapsed .sidebar-header h2 {
+        display: none;
+    }
+    
+    .admin-layout.sidebar-collapsed .sidebar-nav a span {
+        display: none;
+    }
+    
+    .admin-layout.sidebar-collapsed .sidebar-nav a {
+        justify-content: center;
+        padding: 15px 0;
+    }
+    
+    .admin-layout.sidebar-collapsed .sidebar-nav a i {
+        margin-right: 0;
+        font-size: 1.2rem;
+    }
+} 

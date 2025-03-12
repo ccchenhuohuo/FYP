@@ -1,0 +1,272 @@
+/* 订单管理页面样式 */
+.orders-management {
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.orders-management h1 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.orders-management h1 i {
+    margin-right: 10px;
+    color: #4a6fa5;
+}
+
+/* 提醒消息样式 */
+.alert {
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+    color: #3c763d;
+}
+
+.alert-danger {
+    background-color: #f2dede;
+    border-color: #ebccd1;
+    color: #a94442;
+}
+
+.alert-warning {
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+    color: #8a6d3b;
+}
+
+/* 过滤区域样式 */
+.filter-section {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.filters-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* 表格样式 */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.orders-table th, 
+.orders-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.orders-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+}
+
+.orders-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* 订单标签样式 */
+.order-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.tag-buy {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.tag-sell {
+    background-color: #fce4ec;
+    color: #e91e63;
+}
+
+.tag-market {
+    background-color: #f3e5f5;
+    color: #9c27b0;
+}
+
+.tag-limit {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+/* 订单状态样式 */
+.status-pending, .status-executed, .status-cancelled, .status-rejected {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.status-pending {
+    background-color: #fff8e1;
+    color: #f39c12;
+    border: 1px solid #ffeaa7;
+}
+
+.status-executed {
+    background-color: #e8f5e9;
+    color: #27ae60;
+    border: 1px solid #a5d6a7;
+}
+
+.status-cancelled {
+    background-color: #f1f8e9;
+    color: #689f38;
+    border: 1px solid #dcedc8;
+}
+
+.status-rejected {
+    background-color: #ffebee;
+    color: #e74c3c;
+    border: 1px solid #ef9a9a;
+}
+
+/* 按钮样式 */
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+.success {
+    background-color: #10b981;
+    color: white;
+}
+
+.success:hover {
+    background-color: #059669;
+}
+
+.danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.danger:hover {
+    background-color: #dc2626;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.no-action {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* 无数据提示 */
+.no-data-message {
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    color: #64748b;
+    border: 1px dashed #cbd5e1;
+}
+
+.no-data-message i {
+    margin-right: 0.5rem;
+    color: #94a3b8;
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 5px;
+    width: 50%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    color: #555;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+} 
