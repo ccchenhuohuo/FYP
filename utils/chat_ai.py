@@ -38,11 +38,24 @@ def chat_with_gemini_api(message):
     str: Gemini的响应文本
     """
     try:
+        print(f"开始处理AI请求，消息: {message[:50]}...")
+        
+        # 检查API密钥
+        if not GEMINI_API_KEY or GEMINI_API_KEY == "AIzaSyDYcL5BBKz812t_66bbBq0h3xm9v6DOG-M":
+            print("警告: 使用的是示例API密钥，可能无效")
+        
         # 创建聊天会话并发送消息
         chat = model.start_chat(history=[])
+        print("已创建聊天会话")
+        
         response = chat.send_message(message)
+        print("已收到AI响应")
+        
         return response.text
     except Exception as e:
+        import traceback
+        print(f"AI聊天出错: {str(e)}")
+        traceback.print_exc()
         raise Exception(f"AI聊天出错: {str(e)}")
 
 def chat_with_gemini():

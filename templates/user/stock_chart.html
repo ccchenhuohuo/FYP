@@ -413,6 +413,11 @@
         </div>
     </div>
 </div>
+<footer>
+    <p>&copy;{{ 2023 }}DSEMBA67 Final Project : 股票交易系统 | <a href="{{ url_for('main.about') }}">关于我们</a> | <a href="{{ url_for('main.privacy') }}">隐私政策</a></p>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/user/navigation.js') }}"></script>
 {% endblock %}
 
 {% block scripts %}

@@ -47,15 +47,15 @@
     <div class="balance-info">
         <div class="balance-item">
             <p class="balance-label">可用余额</p>
-            <p class="current-balance">¥ {{ balance.available_balance|round(2) }}</p>
+            <p class="current-balance">¥ {{ balance.available_balance|safe_round(2) }}</p>
         </div>
         <div class="balance-item">
             <p class="balance-label">冻结余额</p>
-            <p class="frozen-balance">¥ {{ balance.frozen_balance|round(2) }}</p>
+            <p class="frozen-balance">¥ {{ balance.frozen_balance|safe_round(2) }}</p>
         </div>
         <div class="balance-item">
             <p class="balance-label">总余额</p>
-            <p class="total-balance">¥ {{ balance.total_balance|round(2) }}</p>
+            <p class="total-balance">¥ {{ balance.total_balance|safe_round(2) }}</p>
         </div>
     </div>
     
@@ -93,14 +93,14 @@
                 <tr>
                     <td>{{ position.ticker }}</td>
                     <td>{{ position.quantity }}</td>
-                    <td>¥ {{ position.average_price|round(2) }}</td>
-                    <td>¥ {{ position.current_price|round(2) }}</td>
-                    <td>¥ {{ position.market_value|round(2) }}</td>
+                    <td>¥ {{ position.average_price|safe_round(2) }}</td>
+                    <td>¥ {{ position.current_price|safe_round(2) }}</td>
+                    <td>¥ {{ position.market_value|safe_round(2) }}</td>
                     <td class="{% if position.pnl >= 0 %}positive{% else %}negative{% endif %}">
-                        {{ position.pnl|round(2) }}
+                        {{ position.pnl|safe_round(2) }}
                     </td>
                     <td class="{% if position.pnl_percentage >= 0 %}positive{% else %}negative{% endif %}">
-                        {{ position.pnl_percentage|round(2) }}%
+                        {{ position.pnl_percentage|safe_round(2) }}%
                     </td>
                 </tr>
                 {% endfor %}
@@ -125,30 +125,20 @@
             <thead>
                 <tr>
                     <th>充值ID</th>
+                    <th>类型</th>
+                    <th>状态</th>
                     <th>金额</th>
                     <th>充值时间</th>
-                    <th>状态</th>
-                    <th>备注</th>
                 </tr>
             </thead>
             <tbody>
                 {% for deposit in deposits %}
                 <tr>
                     <td>{{ deposit.transaction_id }}</td>
-                    <td>¥ {{ deposit.amount|round(2) }}</td>
-                    <td>{{ deposit.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                        {% if deposit.status == 'pending' %}
-                        <span class="badge bg-warning">待审核</span>
-                        {% elif deposit.status == 'completed' %}
-                        <span class="badge bg-success">已完成</span>
-                        {% elif deposit.status == 'rejected' %}
-                        <span class="badge bg-danger">已拒绝</span>
-                        {% else %}
-                        <span class="badge bg-secondary">{{ deposit.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ deposit.remark or '-' }}</td>
+                    <td>{{ deposit.transaction_type }}</td>
+                    <td>{{ deposit.status }}</td>
+                    <td>¥ {{ deposit.amount|safe_round(2) }}</td>
+                    <td>{{ deposit.created_at }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -171,30 +161,20 @@
             <thead>
                 <tr>
                     <th>提现ID</th>
+                    <th>类型</th>
+                    <th>状态</th>
                     <th>金额</th>
                     <th>提现时间</th>
-                    <th>状态</th>
-                    <th>备注</th>
                 </tr>
             </thead>
             <tbody>
                 {% for withdrawal in withdrawals %}
                 <tr>
-                    <td>{{ withdrawal.transaction_id }}</td>
-                    <td>¥ {{ withdrawal.amount|round(2) }}</td>
-                    <td>{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td class="status-{{ withdrawal.status }}">
-                        {% if withdrawal.status == 'pending' %}
-                            待处理
-                        {% elif withdrawal.status == 'completed' %}
-                            已完成
-                        {% elif withdrawal.status == 'rejected' %}
-                            已拒绝
-                        {% else %}
-                            {{ withdrawal.status }}
-                        {% endif %}
-                    </td>
-                    <td>{{ withdrawal.remark or '-' }}</td>
+                    <td>{{ withdrawal.id }}</td>
+                    <td>{{ withdrawal.transaction_type }}</td>
+                    <td>{{ withdrawal.status }}</td>
+                    <td>¥ {{ withdrawal.amount|safe_round(2) }}</td>
+                    <td>{{ withdrawal.created_at }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -387,7 +367,7 @@
               <span class="input-group-text">¥</span>
               <input type="number" class="form-control" id="withdrawAmount" name="amount" min="0.01" step="0.01" max="{{ balance.available_balance }}" required>
             </div>
-            <div class="form-text">可提现金额: ¥{{ balance.available_balance|round(2) }}</div>
+            <div class="form-text">可提现金额: ¥{{ balance.available_balance|safe_round(2) }}</div>
           </div>
           <button type="submit" class="btn btn-primary">提交提现申请</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>

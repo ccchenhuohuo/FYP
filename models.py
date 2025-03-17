@@ -255,6 +255,20 @@ class AccountBalance(db.Model):
         模型的字符串表示
         """
         return f'<AccountBalance {self.user_id}: available={self.available_balance}, frozen={self.frozen_balance}>'
+        
+    def __round__(self, precision=0):
+        """
+        实现四舍五入方法，使模板中的round过滤器可以正常工作
+        
+        参数:
+        precision (int): 保留的小数位数
+        
+        返回:
+        float: 四舍五入后的值
+        """
+        # 根据上下文决定要四舍五入的值
+        # 默认返回总余额的四舍五入值
+        return round(self.total_balance, precision)
 
 class FundTransaction(db.Model):
     """
@@ -305,6 +319,20 @@ class Portfolio(db.Model):
         模型的字符串表示
         """
         return f'<Portfolio {self.user_id}-{self.ticker}: {self.quantity} @ {self.average_price}>'
+        
+    def __round__(self, precision=0):
+        """
+        实现四舍五入方法，使模板中的round过滤器可以正常工作
+        
+        参数:
+        precision (int): 保留的小数位数
+        
+        返回:
+        float: 四舍五入后的值
+        """
+        # 根据上下文决定要四舍五入的值
+        # 默认返回平均价格的四舍五入值
+        return round(self.average_price, precision)
 
 def init_db(app):
     """初始化数据库并创建表"""

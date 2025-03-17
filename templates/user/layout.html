@@ -31,7 +31,7 @@
                     <ul>
                         <li><a href="{{ url_for('user.stock_chart') }}"><i class="fas fa-chart-area"></i> 股票历史走势</a></li>
                         <li><a href="{{ url_for('user.account') }}"><i class="fas fa-user-circle"></i> 我的账户</a></li>
-                        <li><a href="{{ url_for('user.ai_assistant') }}"><i class="fas fa-robot"></i> AI智能助手</a></li>
+                        <li><a href="{{ url_for('user.ai_assistant_page') }}"><i class="fas fa-robot"></i> AI智能助手</a></li>
                         <li><a href="{{ url_for('user.stock_analysis') }}"><i class="fas fa-info-circle"></i> 股票风险分析</a></li>
                         <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> 登出</a></li>
                     </ul>
@@ -46,7 +46,7 @@
     
     <footer>
         <div class="container">
-            <p>&copy; 2025 ISOM4007 Final Project : 股票交易系统 | <a href="{{ url_for('user.about') }}">关于我们</a> | <a href="{{ url_for('user.privacy') }}">隐私政策</a></p>
+            <p>&copy; 2025 ISOM4007 Final Project : 股票交易系统 | <a href="{{ url_for('main.about') }}">关于我们</a> | <a href="{{ url_for('main.privacy') }}">隐私政策</a></p>
         </div>
     </footer>
     

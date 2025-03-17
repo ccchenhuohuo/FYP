@@ -12,6 +12,7 @@ from . import stock_data
 from . import monte_carlo
 from . import risk_monitor
 from . import chat_ai
+from . import number_utils
 
 # 导出常用函数
 # 股票数据模块
@@ -24,4 +25,7 @@ from .monte_carlo import calculate_stock_parameters, monte_carlo_simulation, get
 from .risk_monitor import ValuationRiskMonitor, run_analysis, run_analysis_text_only_simple, test_risk_analysis
 
 # AI聊天模块
-from .chat_ai import print_markdown, chat_with_gemini, run_chat 
+from .chat_ai import print_markdown, chat_with_gemini, run_chat
+
+# 数字处理模块
+from .number_utils import db_round 

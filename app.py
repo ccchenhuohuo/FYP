@@ -46,6 +46,20 @@ def create_app():
 
     # 注册路由
     register_routes(app)
+    
+    # 添加自定义过滤器
+    @app.template_filter('safe_round')
+    def safe_round(value, precision=0):
+        """安全的四舍五入过滤器，处理各种类型的值"""
+        try:
+            if hasattr(value, '__round__'):
+                return round(value, precision)
+            elif isinstance(value, (int, float)):
+                return round(float(value), precision)
+            else:
+                return value
+        except (TypeError, ValueError):
+            return value
 
     return app
 

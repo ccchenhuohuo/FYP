@@ -1,102 +1,60 @@
 # 股票交易与分析系统
 
-这是一个综合性的股票交易与分析系统，提供股票数据采集、历史走势分析、风险评估、基本面数据展示以及模拟交易功能。系统使用Flask框架构建Web界面，通过Yahoo Finance API获取股票数据，并将数据存储在MySQL数据库中进行管理和分析。
+这是一个基于Flask的股票交易与分析系统，提供用户账户管理、股票数据分析、交易模拟、蒙特卡洛模拟以及AI助手等功能。
 
 ## 功能特性
 
-### 1. 用户管理系统
-- 用户注册和登录
-- 管理员登录和管理
-- 用户权限控制
-- 个人账户管理
+### 用户管理
+- 用户注册与登录
+- 管理员账户管理
+- 个人资料管理
 
-### 2. 股票历史走势分析
-- 交互式股票价格图表
-- 多种时间范围选择（1个月、3个月、6个月、1年、全部）
-- 自定义日期范围分析
-- 实时股票行情展示（价格、交易量、最高价、最低价）
-- 技术指标分析（移动平均线、相对强弱指数等）
+### 账户与资金
+- 账户余额查看
+- 资金充值与提现
+- 交易记录查询
 
-### 3. 蒙特卡洛模拟预测
-- 基于历史数据的股票价格模拟
-- 可配置模拟天数和模拟次数
-- 可视化模拟结果
-- 多种视图模式切换
-- 预测结果统计分析
+### 股票交易
+- 股票行情查看
+- 买入/卖出股票
+- 订单管理
+- 持仓查询
 
-### 4. 公司基本面数据分析
-- 基本财务指标（市值、市盈率、市净率、股息收益率等）
-- 资产负债表数据（流动资产、非流动资产、总资产、负债等）
-- 利润表数据（营业收入、营业成本、毛利润、净利润等）
-- 数据可视化展示
-- 财务比率分析
+### 数据分析
+- 股票历史数据查询
+- 技术指标分析（MA、RSI、MACD等）
+- 蒙特卡洛模拟预测
+- 风险评估
 
-### 5. 股票风险分析
-- 多股票风险评估
-- 估值指标和风险指标分析
-- 风险评级和警报系统
-- 可视化风险仪表盘
-- 自定义风险阈值设置
-
-### 6. AI智能助手
-- 基于Gemini API的智能问答
-- 股票相关问题解答
-- 投资建议和市场分析
-- 实时数据查询
+### AI助手
+- 基于Gemini AI的智能助手
+- 股票相关问题咨询
+- 投资建议与市场分析
 
 ## 技术栈
 
-### 前端
-- HTML5 / CSS3 / JavaScript
-- Bootstrap 5 框架
-- Chart.js 图表库
-- Font Awesome 图标库
-- 响应式设计
+- **后端**: Flask, SQLAlchemy, PyMySQL
+- **前端**: HTML, CSS, JavaScript, Bootstrap
+- **数据库**: MySQL
+- **AI**: Google Generative AI (Gemini)
+- **数据分析**: Pandas, NumPy
 
-### 后端
+## 安装步骤
+
+### 前提条件
 - Python 3.8+
-- Flask Web框架 (2.2.3)
-- Flask-Login 用户认证 (0.6.2)
-- Flask-SQLAlchemy ORM (3.0.3)
-- Werkzeug 安全工具 (2.2.3)
+- MySQL 5.7+
+- pip (Python包管理器)
 
-### 数据库
-- MySQL 8.0+
-- PyMySQL 数据库连接器 (1.0.3)
-- mysql-connector-python (8.0.33)
+### 安装过程
 
-### 数据分析
-- Pandas 数据处理 (2.0.1)
-- NumPy 数学计算 (1.24.3)
-- yfinance 股票数据API (0.2.20)
-
-### AI集成
-- Google Gemini API
-
-## 系统要求
-
-- 操作系统：Windows 10+/macOS 10.15+/Linux
-- Python 3.8+
-- MySQL 8.0+
-- 至少2GB RAM
-- 至少1GB可用磁盘空间
-- 现代网络浏览器（Chrome、Firefox、Safari、Edge等）
-- 互联网连接（用于获取股票数据和AI功能）
-
-## 安装指南
-
-### 1. 系统准备
-- 安装Python 3.8+
-- 安装MySQL 8.0+
-- 安装pip包管理器
-
-### 2. 克隆项目
+1. 克隆仓库
 ```bash
-git clone https://github.com/yourusername/stock-trading-analysis-system.git
-cd stock-trading-analysis-system
+git clone <仓库URL>
+cd <项目目录>
 ```
 
-### 3. 虚拟环境设置
+2. 创建并激活虚拟环境
 ```bash
 # 创建虚拟环境
 python -m venv flask_env
@@ -107,110 +65,110 @@ source flask_env/bin/activate  # Linux/macOS
 .\flask_env\Scripts\activate  # Windows
 ```
 
-### 4. 安装依赖
+3. 安装依赖
 ```bash
-# 确保在虚拟环境中
 pip install -r requirements.txt
 ```
 
-### 5. 配置文件设置
-编辑`config.py`文件，设置数据库连接信息和其他配置参数：
-```python
-# 数据库配置
-DB_USERNAME = 'your_username'
-DB_PASSWORD = 'your_password'
-DB_HOST = 'localhost'
-DB_NAME = 'stock_data_v1'
-
-# AI配置（如果使用）
-GEMINI_API_KEY = 'your_gemini_api_key'
-```
-
-### 6. 数据库配置
+4. 配置数据库
+- 创建MySQL数据库
 ```sql
-# 登录MySQL
-mysql -u root -p
-
-# 创建数据库
 CREATE DATABASE stock_data_v1;
 ```
+- 修改`config.py`中的数据库连接信息
 
-### 7. 初始化数据库
+5. 配置API密钥
+- 获取Gemini AI API密钥: [Google AI Studio](https://ai.google.dev/)
+- 获取Alpha Vantage API密钥: [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
+- 更新`config.py`中的API密钥或设置环境变量:
 ```bash
-# 确保在虚拟环境中
-python app.py init-db
+export GEMINI_API_KEY="您的Gemini API密钥"
+export ALPHA_VANTAGE_API_KEY="您的Alpha Vantage API密钥"
 ```
 
-### 8. 采集股票数据
+6. 初始化数据库
 ```bash
-# 确保在虚拟环境中
-python -c "from utils.stock_data import fetch_initial_data; fetch_initial_data()"
+flask db init
+flask db migrate
+flask db upgrade
 ```
 
-### 9. 启动应用
+7. 运行应用
 ```bash
-# 确保在虚拟环境中
 python app.py
 ```
-
-访问 http://localhost:5003 查看Web界面
 
 ## 项目结构
 
 ```
-.
-├── app.py                    # Flask应用主文件
-├── models.py                 # 数据库模型定义
-├── auth.py                   # 认证相关功能
-├── config.py                 # 配置文件
-├── check_db.py               # 数据库检查工具
-├── requirements.txt          # 项目依赖文件
-├── README.md                 # 项目说明文档
-├── __init__.py               # 包初始化文件
-├── utils/                    # 工具函数目录
-│   ├── __init__.py           # 工具包初始化
-│   ├── stock_data.py         # 股票数据获取和处理
-│   ├── risk_monitor.py       # 风险监控和分析
-│   ├── monte_carlo.py        # 蒙特卡洛模拟
-│   └── chat_ai.py            # AI聊天功能
-├── routes/                   # 路由模块目录
-│   ├── __init__.py           # 路由初始化
-│   ├── auth_routes.py        # 认证相关路由
-│   ├── user_routes.py        # 用户相关路由
-│   ├── admin_routes.py       # 管理员相关路由
-│   └── monte_carlo_routes.py # 蒙特卡洛模拟路由
-├── static/                   # 静态资源目录
-│   ├── css/                  # CSS样式文件
-│   │   ├── main.css          # 主样式文件
-│   │   ├── stock_chart.css   # 股票图表样式
-│   │   ├── stock_analysis.css # 风险分析样式
-│   │   ├── account.css       # 账户页面样式
-│   │   ├── auth.css          # 认证页面样式
-│   │   ├── ai_assistant.css  # AI助手页面样式
-│   │   ├── about.css         # 关于页面样式
-│   │   └── privacy.css       # 隐私政策页面样式
-│   ├── js/                   # JavaScript文件
-│   │   ├── auth/             # 认证相关JS
-│   │   │   ├── login.js      # 登录逻辑
-│   │   │   └── register.js   # 注册逻辑
-│   │   ├── admin/            # 管理员页面JS
-│   │   └── user/             # 用户页面JS
-│   │       ├── stock_chart.js # 股票图表逻辑
-│   │       ├── stock_analysis.js # 风险分析逻辑
-│   │       ├── ai_assistant.js # AI助手逻辑
-│   │       └── navigation.js # 导航逻辑
-│   └── picture.png           # 系统图片资源
-└── templates/                # HTML模板目录
-    ├── auth/                 # 认证相关模板
-    │   ├── login.html        # 用户登录页面
-    │   └── register.html     # 用户注册页面
-    ├── user/                 # 用户页面模板
-    │   ├── layout.html       # 用户页面布局
-    │   ├── stock_chart.html  # 股票图表页面
-    │   ├── stock_analysis.html # 风险分析页面
-    │   ├── ai_assistant.html # AI助手页面
-    │   ├── account.html      # 账户管理页面
-    │   ├── about.html        # 关于页面
-    │   └── privacy.html      # 隐私政策页面
-    └── admin/                # 管理员页面模板
+/
+├── app.py                 # 应用入口点
+├── config.py              # 配置文件
+├── models.py              # 数据库模型
+├── auth.py                # 认证相关功能
+├── routes/                # 路由模块
+│   ├── __init__.py        # 路由注册
+│   ├── auth/              # 认证路由
+│   ├── user/              # 用户路由
+│   ├── admin/             # 管理员路由
+│   └── core/              # 核心路由
+├── static/                # 静态资源
+│   ├── css/               # 样式表
+│   ├── js/                # JavaScript文件
+│   └── picture.png        # 图片资源
+├── templates/             # HTML模板
+│   ├── auth/              # 认证相关模板
+│   ├── user/              # 用户相关模板
+│   ├── admin/             # 管理员相关模板
+│   ├── about.html         # 关于页面
+│   └── privacy.html       # 隐私政策页面
+└── utils/                 # 工具函数
+    ├── stock_data.py      # 股票数据处理
+    ├── monte_carlo.py     # 蒙特卡洛模拟
+    ├── risk_monitor.py    # 风险监测
+    ├── chat_ai.py         # AI聊天功能
+    └── number_utils.py    # 数字处理工具
 ```
+
+## 使用说明
+
+### 用户功能
+1. 注册/登录账户
+2. 查看账户余额和持仓情况
+3. 浏览股票行情
+4. 进行股票交易
+5. 使用蒙特卡洛模拟进行预测
+6. 与AI助手交流获取投资建议
+
+### 管理员功能
+1. 管理用户账户
+2. 审核充值/提现请求
+3. 监控系统运行状态
+4. 管理股票数据
+
+## API文档
+
+### 用户API
+- `POST /user/api/chat`: AI助手聊天接口
+- `POST /user/api/deposit`: 资金充值接口
+- `POST /user/api/withdraw`: 资金提现接口
+- `POST /user/api/order`: 下单交易接口
+
+### 股票数据API
+- `GET /api/stock/{ticker}`: 获取股票数据
+- `GET /api/stock/{ticker}/indicators`: 获取股票技术指标
+
+## 注意事项
+
+- 本系统仅用于模拟交易和学习，不涉及真实资金交易
+- 股票数据来源于Alpha Vantage API，可能存在延迟
+- AI助手基于Gemini AI，需要有效的API密钥才能正常使用
+- 默认管理员账户: 用户名 `admin`，密码 `admin`
+
+## 许可证
+
+[MIT License](LICENSE)
+
+## 联系方式
+
+如有问题或建议，请联系项目维护者。
