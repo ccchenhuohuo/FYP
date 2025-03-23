@@ -32,7 +32,7 @@
         <div class="main-content">
             <header class="top-header">
                 <div class="user-info">
-                    <span>欢迎，{{ current_user.user_name }}</span>
+                    <span>欢迎，管理员{% if current_user.admin_name %} {{ current_user.admin_name }}{% endif %}</span>
                 </div>
             </header>
             

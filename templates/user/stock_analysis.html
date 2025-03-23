@@ -1,18 +1,61 @@
 {% extends "user/layout.html" %}
 
-{% block title %}股票风险分析{% endblock %}
+{% block title %}股票风险阈值评估{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/stock_analysis.css') }}">
+<style>
+    /* 多股票结果布局 */
+    #risk-dashboard {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    
+    .risk-card {
+        flex: 1 1 calc(50% - 20px);
+        min-width: 300px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    @media (max-width: 768px) {
+        .risk-card {
+            flex: 1 1 100%;
+        }
+    }
+    
+    /* 股票输入样式 */
+    .ticker-input {
+        transition: all 0.3s ease;
+    }
+    
+    .ticker-input:hover {
+        transform: translateY(-2px);
+    }
+    
+    .remove-ticker {
+        transition: all 0.2s ease;
+    }
+    
+    .remove-ticker:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="my-4">股票风险分析</h1>
+    <h1 class="my-4">股票风险阈值评估</h1>
+    <p class="lead mb-4">设置您的风险阈值，获取个性化的股票风险评估</p>
     
     <div class="analysis-card">
         <div class="card-header">
-            <h2 class="h5 mb-0">分析设置</h2>
+            <h2 class="h5 mb-0">评估设置</h2>
         </div>
         <div class="card-body">
             <form id="stock-analysis-form">
@@ -20,16 +63,14 @@
                 <div class="mb-4">
                     <label class="form-label">股票代码</label>
                     <div id="tickers-container">
-                        <div class="ticker-input input-group">
+                        <div class="ticker-input input-group mb-2">
                             <input type="text" name="tickers" class="form-control" placeholder="输入股票代码 (例如: AAPL)" required>
+                            <button type="button" class="btn btn-outline-primary add-ticker" id="add-ticker">
+                                <i class="fas fa-plus"></i> 添加股票
+                            </button>
                         </div>
                     </div>
-                    <div class="mt-2">
-                        <button type="button" id="add-ticker" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-plus"></i> 添加股票
-                        </button>
-                        <small class="form-text text-muted ms-2">支持多个股票代码，例如：AAPL, MSFT, GOOG</small>
-                    </div>
+                    <small class="form-text text-muted">输入您想要评估风险的股票代码，可添加多只股票进行比较分析</small>
                 </div>
                 
                 <!-- 日期范围选择 -->
@@ -44,64 +85,61 @@
                     </div>
                 </div>
                 
-                <!-- 风险阈值设置（可折叠） -->
+                <!-- 风险阈值设置 -->
                 <div class="threshold-settings mb-4">
-                    <div class="threshold-header" id="threshold-toggle">
-                        <h5 class="mb-0">风险阈值设置</h5>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="threshold-body" id="threshold-body">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="volatility_threshold" class="form-label">波动率阈值 (<span id="volatility_value">30%</span>)</label>
-                                <input type="range" class="form-range" id="volatility_threshold" name="volatility_threshold" 
-                                       min="10" max="50" step="5" value="30" 
-                                       oninput="document.getElementById('volatility_value').textContent = this.value + '%'">
-                                <small class="form-text text-muted">超过此波动率将触发警告</small>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="drawdown_threshold" class="form-label">最大回撤阈值 (<span id="drawdown_value">20%</span>)</label>
-                                <input type="range" class="form-range" id="drawdown_threshold" name="drawdown_threshold" 
-                                       min="5" max="40" step="5" value="20" 
-                                       oninput="document.getElementById('drawdown_value').textContent = this.value + '%'">
-                                <small class="form-text text-muted">超过此回撤将触发警告</small>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="sharpe_threshold" class="form-label">夏普比率阈值 (<span id="sharpe_value">0</span>)</label>
-                                <input type="range" class="form-range" id="sharpe_threshold" name="sharpe_threshold" 
-                                       min="-1" max="2" step="0.5" value="0" 
-                                       oninput="document.getElementById('sharpe_value').textContent = this.value">
-                                <small class="form-text text-muted">低于此夏普比率将触发警告</small>
-                            </div>
+                    <h4 class="mb-3">风险阈值设置</h4>
+                    <p class="text-muted mb-3">根据您的风险偏好自定义以下阈值，系统将基于这些阈值评估股票风险</p>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="volatility_threshold" class="form-label fw-bold">波动率阈值 (<span id="volatility_value">30%</span>)</label>
+                            <input type="range" class="form-range" id="volatility_threshold" name="volatility_threshold" 
+                                   min="10" max="50" step="5" value="30" 
+                                   oninput="document.getElementById('volatility_value').textContent = this.value + '%'">
+                            <small class="form-text text-muted">年化波动率超过此值将被视为高风险</small>
                         </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="beta_threshold" class="form-label">贝塔系数阈值 (<span id="beta_value">1.2</span>)</label>
-                                <input type="range" class="form-range" id="beta_threshold" name="beta_threshold" 
-                                       min="0.5" max="2" step="0.1" value="1.2" 
-                                       oninput="document.getElementById('beta_value').textContent = this.value">
-                                <small class="form-text text-muted">超过此贝塔系数将触发警告</small>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="var_threshold" class="form-label">VaR(95%)阈值 (<span id="var_value">2%</span>)</label>
-                                <input type="range" class="form-range" id="var_threshold" name="var_threshold" 
-                                       min="1" max="5" step="0.5" value="2" 
-                                       oninput="document.getElementById('var_value').textContent = this.value + '%'">
-                                <small class="form-text text-muted">超过此VaR将触发警告</small>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="sortino_threshold" class="form-label">索提诺比率阈值 (<span id="sortino_value">0</span>)</label>
-                                <input type="range" class="form-range" id="sortino_threshold" name="sortino_threshold" 
-                                       min="-1" max="2" step="0.5" value="0" 
-                                       oninput="document.getElementById('sortino_value').textContent = this.value">
-                                <small class="form-text text-muted">低于此索提诺比率将触发警告</small>
-                            </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="drawdown_threshold" class="form-label fw-bold">最大回撤阈值 (<span id="drawdown_value">20%</span>)</label>
+                            <input type="range" class="form-range" id="drawdown_threshold" name="drawdown_threshold" 
+                                   min="5" max="40" step="5" value="20" 
+                                   oninput="document.getElementById('drawdown_value').textContent = this.value + '%'">
+                            <small class="form-text text-muted">最大回撤超过此值将被视为高风险</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="sharpe_threshold" class="form-label fw-bold">夏普比率阈值 (<span id="sharpe_value">0</span>)</label>
+                            <input type="range" class="form-range" id="sharpe_threshold" name="sharpe_threshold" 
+                                   min="-1" max="2" step="0.5" value="0" 
+                                   oninput="document.getElementById('sharpe_value').textContent = this.value">
+                            <small class="form-text text-muted">夏普比率低于此值将被视为高风险</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="beta_threshold" class="form-label fw-bold">贝塔系数阈值 (<span id="beta_value">1.2</span>)</label>
+                            <input type="range" class="form-range" id="beta_threshold" name="beta_threshold" 
+                                   min="0.5" max="2" step="0.1" value="1.2" 
+                                   oninput="document.getElementById('beta_value').textContent = this.value">
+                            <small class="form-text text-muted">贝塔系数高于此值将被视为高风险</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="var_threshold" class="form-label fw-bold">VaR(95%)阈值 (<span id="var_value">2%</span>)</label>
+                            <input type="range" class="form-range" id="var_threshold" name="var_threshold" 
+                                   min="1" max="5" step="0.5" value="2" 
+                                   oninput="document.getElementById('var_value').textContent = this.value + '%'">
+                            <small class="form-text text-muted">VaR超过此值将被视为高风险</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="sortino_threshold" class="form-label fw-bold">索提诺比率阈值 (<span id="sortino_value">0</span>)</label>
+                            <input type="range" class="form-range" id="sortino_threshold" name="sortino_threshold" 
+                                   min="-1" max="2" step="0.5" value="0" 
+                                   oninput="document.getElementById('sortino_value').textContent = this.value">
+                            <small class="form-text text-muted">索提诺比率低于此值将被视为高风险</small>
                         </div>
                     </div>
                 </div>
                 
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-chart-line me-2"></i>分析风险
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>评估风险
                 </button>
             </form>
         </div>
@@ -120,7 +158,7 @@
     <div id="results-container" class="d-none">
         <div class="analysis-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h2 class="h5 mb-0">风险分析结果</h2>
+                <h2 class="h5 mb-0">风险评估结果</h2>
                 <span id="analysis-date-range" class="text-muted"></span>
             </div>
             <div class="card-body">
@@ -132,5 +170,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script src="{{ url_for('static', filename='js/user/stock_analysis.js') }}"></script>
 {% endblock %} 

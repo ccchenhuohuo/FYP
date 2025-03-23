@@ -164,10 +164,10 @@
             
             <!-- 视图模式切换 -->
             <div id="viewModeToggle" class="btn-group mt-4" style="display: none;">
-                <button type="button" class="btn btn-outline-secondary active" id="historyModeBtn">
+                <button type="button" class="btn btn-outline-secondary" id="historyModeBtn">
                     <i class="fas fa-history"></i> 重点查看历史数据
                 </button>
-                <button type="button" class="btn btn-outline-secondary" id="simulationModeBtn">
+                <button type="button" class="btn btn-outline-secondary active" id="simulationModeBtn">
                     <i class="fas fa-chart-line"></i> 重点查看模拟路径
                 </button>
             </div>
@@ -357,16 +357,11 @@
     <div class="card mt-4">
         <div class="card-header">
             <h3><i class="fas fa-file-invoice"></i> 创建新订单</h3>
+            <p class="text-muted mb-0">使用上方选择的股票创建订单</p>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('user.create_order') }}" method="post" id="orderForm" class="order-form">
+            <form id="orderForm" class="order-form">
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group mb-3">
-                            <label for="ticker"><i class="fas fa-tag"></i> 股票代码:</label>
-                            <input type="text" id="ticker" name="ticker" class="form-control" required placeholder="例如: AAPL">
-                        </div>
-                    </div>
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="order_type"><i class="fas fa-exchange-alt"></i> 订单类型:</label>
@@ -376,8 +371,6 @@
                             </select>
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="order_execution_type"><i class="fas fa-cogs"></i> 执行类型:</label>
@@ -387,21 +380,23 @@
                             </select>
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group mb-3 price-field">
                             <label for="price"><i class="fas fa-dollar-sign"></i> 价格:</label>
                             <input type="number" id="price" name="price" class="form-control" min="0.01" step="0.01" required placeholder="请输入价格">
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <label for="quantity"><i class="fas fa-sort-amount-up"></i> 数量:</label>
                             <input type="number" id="quantity" name="quantity" class="form-control" min="1" required placeholder="请输入数量">
                         </div>
                     </div>
-                    <div class="col-md-6 align-self-end">
+                </div>
+                <div class="row">
+                    <div class="col-12">
                         <div class="form-group mb-3">
                             <button type="submit" class="btn btn-primary btn-lg w-100">
                                 <i class="fas fa-plus-circle"></i> 创建订单
@@ -413,11 +408,6 @@
         </div>
     </div>
 </div>
-<footer>
-    <p>&copy;{{ 2023 }}DSEMBA67 Final Project : 股票交易系统 | <a href="{{ url_for('main.about') }}">关于我们</a> | <a href="{{ url_for('main.privacy') }}">隐私政策</a></p>
-</footer>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/user/navigation.js') }}"></script>
 {% endblock %}
 
 {% block scripts %}

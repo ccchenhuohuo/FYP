@@ -27,22 +27,22 @@
             {% endif %}
         {% endwith %}
         
-        <form id="registerForm" method="post">
+        <form id="registerForm" method="post" action="{{ url_for('auth.register') }}">
             <div class="form-group">
-                <label for="username">用户名</label>
-                <input type="text" id="username" name="username" placeholder="请创建用户名" required>
+                <label for="user_name">用户名</label>
+                <input type="text" id="user_name" name="user_name" placeholder="请创建用户名" required>
             </div>
             <div class="form-group">
-                <label for="email">邮箱</label>
-                <input type="email" id="email" name="email" placeholder="请输入您的邮箱" required>
+                <label for="user_email">邮箱</label>
+                <input type="email" id="user_email" name="user_email" placeholder="请输入您的邮箱" required>
             </div>
             <div class="form-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" name="password" placeholder="请设置您的密码" required>
+                <label for="user_password">密码</label>
+                <input type="password" id="user_password" name="user_password" placeholder="请设置您的密码" required>
             </div>
             <div class="form-group">
-                <label for="confirm-password">确认密码</label>
-                <input type="password" id="confirm-password" name="confirm-password" placeholder="请再次输入密码" required>
+                <label for="confirm_password">确认密码</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="请再次输入密码" required>
             </div>
             <div class="button-group">
                 <button type="submit"><i class="fas fa-user-plus"></i> 注册</button>

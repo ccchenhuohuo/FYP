@@ -48,6 +48,6 @@ def register_routes(app):
     # 注册蓝图
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(monte_carlo_bp) 
+    app.register_blueprint(user_bp, url_prefix='/user')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(monte_carlo_bp, url_prefix='/user') 

@@ -5,7 +5,7 @@
 from flask import jsonify, request
 from flask_login import login_required, current_user
 from datetime import datetime
-from models import db, Order, AccountBalance, Portfolio
+from models import db, Order, AccountBalance, Portfolio, MarketData
 
 from . import user_bp
 
@@ -16,85 +16,159 @@ def create_order():
     创建订单API
     处理用户买入或卖出股票的请求
     """
-    data = request.get_json()
+    print("=== 开始处理订单创建请求 ===")
+    print("请求方法:", request.method)
+    print("请求头:", dict(request.headers))
+    print("请求内容类型:", request.content_type)
+    
+    try:
+        data = request.get_json()
+        print("收到订单数据:", data)
+    except Exception as e:
+        print("解析JSON数据失败:", str(e))
+        return jsonify({'error': '无效的请求数据格式'}), 400
+    
+    # 获取所有必要参数
     ticker = data.get('ticker')
-    quantity = data.get('quantity')
-    order_type = data.get('order_type')  # 'buy' 或 'sell'
+    order_quantity = data.get('order_quantity')
+    order_type = data.get('order_type')
+    order_execution_type = data.get('order_execution_type')
+    order_price = data.get('order_price')
+    
+    print("解析后的参数:")
+    print(f"- ticker: {ticker}")
+    print(f"- order_quantity: {order_quantity}")
+    print(f"- order_type: {order_type}")
+    print(f"- order_execution_type: {order_execution_type}")
+    print(f"- order_price: {order_price}")
     
     # 参数验证
-    if not ticker or not quantity or not order_type:
-        return jsonify({'error': '缺少必要参数'}), 400
+    if not all([ticker, order_quantity, order_type, order_execution_type]):
+        missing_params = []
+        if not ticker: missing_params.append('ticker')
+        if not order_quantity: missing_params.append('order_quantity')
+        if not order_type: missing_params.append('order_type')
+        if not order_execution_type: missing_params.append('order_execution_type')
+        print("缺少必要参数:", missing_params)
+        return jsonify({'error': f'缺少必要参数: {", ".join(missing_params)}'}), 400
     
     try:
         # 转换并验证数量
-        quantity = int(quantity)
-        if quantity <= 0:
+        order_quantity = int(order_quantity)
+        if order_quantity <= 0:
             return jsonify({'error': '数量必须为正整数'}), 400
         
         # 验证订单类型
         if order_type not in ['buy', 'sell']:
             return jsonify({'error': '无效的订单类型'}), 400
+            
+        # 验证执行类型
+        if order_execution_type not in ['market', 'limit']:
+            return jsonify({'error': '无效的执行类型'}), 400
+            
+        # 验证价格（对于限价单）
+        if order_execution_type == 'limit':
+            if order_price is None:
+                return jsonify({'error': '限价单必须指定价格'}), 400
+            try:
+                order_price = float(order_price)
+                if order_price <= 0:
+                    return jsonify({'error': '价格必须大于0'}), 400
+            except (TypeError, ValueError):
+                return jsonify({'error': '无效的价格格式'}), 400
         
         # 对于卖单，验证用户是否持有足够的股票
         if order_type == 'sell':
             portfolio = Portfolio.query.filter_by(
-                user_id=current_user.id,
+                user_id=current_user.user_id,
                 ticker=ticker
             ).first()
             
             if not portfolio:
                 return jsonify({'error': f'您没有持有{ticker}的股票'}), 400
                 
-            if portfolio.quantity < quantity:
-                return jsonify({'error': f'您只持有{portfolio.quantity}股{ticker}，无法卖出{quantity}股'}), 400
+            if portfolio.quantity < order_quantity:
+                return jsonify({'error': f'您只持有{portfolio.quantity}股{ticker}，无法卖出{order_quantity}股'}), 400
         
-        # 获取市场价格 (这里简化处理，实际应从市场数据获取)
-        market_price = get_market_price_with_message(ticker)
-        if isinstance(market_price, tuple) and len(market_price) == 2 and isinstance(market_price[0], str):
-            # 返回错误消息
-            return jsonify({'error': market_price[0]}), 400
+        # 获取市场价格
+        market_price_result = get_market_price_with_message(ticker)
+        if isinstance(market_price_result, tuple):
+            return jsonify({'error': market_price_result[0]}), market_price_result[1]
+        market_price = market_price_result
         
         # 对于买单，验证用户是否有足够的资金
         if order_type == 'buy':
-            account = AccountBalance.query.filter_by(user_id=current_user.id).first()
+            account = AccountBalance.query.filter_by(user_id=current_user.user_id).first()
             
             if not account:
-                return jsonify({'error': '您的账户余额不足'}), 400
+                return jsonify({'error': '未找到您的账户信息'}), 400
                 
-            estimated_cost = market_price * quantity
+            estimated_cost = market_price * order_quantity if order_execution_type == 'market' else order_price * order_quantity
             
-            if account.balance < estimated_cost:
+            if account.available_balance < estimated_cost:
                 return jsonify({
-                    'error': f'账户余额不足。估计成本: ${estimated_cost:.2f}, 您的余额: ${float(account.balance):.2f}'
+                    'error': f'账户余额不足。估计成本: ¥{estimated_cost:.2f}, 您的可用余额: ¥{account.available_balance:.2f}'
                 }), 400
         
         # 创建订单
         order = Order(
-            user_id=current_user.id,
+            user_id=current_user.user_id,
             ticker=ticker,
-            quantity=quantity,
             order_type=order_type,
-            status='pending',
-            created_at=datetime.utcnow()
+            order_execution_type=order_execution_type,
+            order_price=order_price if order_execution_type == 'limit' else None,
+            order_quantity=order_quantity,
+            order_status='pending'
         )
+        
+        # 检查限价单是否可以立即执行
+        can_execute_immediately = False
+        if order_execution_type == 'limit':
+            if order_type == 'buy' and market_price <= order_price:
+                can_execute_immediately = True
+                print(f"买入限价单可以立即执行：市场价格({market_price}) <= 限价({order_price})")
+            elif order_type == 'sell' and market_price >= order_price:
+                can_execute_immediately = True
+                print(f"卖出限价单可以立即执行：市场价格({market_price}) >= 限价({order_price})")
         
         db.session.add(order)
         db.session.commit()
+        print(f"订单创建成功: #{order.order_id}")
         
-        # 根据系统设置，可以选择自动执行市价单或等待管理员审核
-        if False:  # 设置为自动执行市价单的条件
-            execute_market_order(order)
+        # 如果是限价单且可以立即执行，尝试执行订单
+        if order_execution_type == 'limit' and can_execute_immediately:
+            print("尝试立即执行限价单")
+            if execute_market_order(order):
+                return jsonify({
+                    'message': f'限价单已立即执行',
+                    'order_id': order.order_id,
+                    'executed_price': market_price,
+                    'total_amount': market_price * order_quantity
+                })
         
+        # 如果是限价单但不能立即执行，或者执行失败
+        if order_execution_type == 'limit':
+            execution_condition = "高于" if order_type == 'sell' else "低于"
+            return jsonify({
+                'message': f'限价单已创建，将在市场价格{execution_condition}{order_price}时执行',
+                'order_id': order.order_id,
+                'limit_price': order_price,
+                'current_market_price': market_price
+            })
+        
+        # 如果是市价单
         return jsonify({
-            'message': f'已创建{order_type}单',
-            'order_id': order.id,
+            'message': f'市价单已创建',
+            'order_id': order.order_id,
             'estimated_price': market_price,
-            'estimated_total': market_price * quantity
+            'estimated_total': market_price * order_quantity
         })
         
     except ValueError as e:
-        return jsonify({'error': f'无效的数量格式: {str(e)}'}), 400
+        print(f"数据格式错误: {str(e)}")
+        return jsonify({'error': f'无效的数据格式: {str(e)}'}), 400
     except Exception as e:
+        print(f"创建订单失败: {str(e)}")
         db.session.rollback()
         return jsonify({'error': f'创建订单失败: {str(e)}'}), 500
 
@@ -110,7 +184,7 @@ def cancel_order(order_id):
         order = Order.query.get_or_404(order_id)
         
         # 检查订单是否属于当前用户
-        if order.user_id != current_user.id:
+        if order.user_id != current_user.user_id:
             return jsonify({'error': '您没有权限取消此订单'}), 403
         
         # 检查订单状态是否为待处理
@@ -148,8 +222,6 @@ def get_market_price_with_message(ticker):
         float 或 tuple: 价格或包含错误消息的元组 (message, error_code)
     """
     try:
-        from models import MarketData
-        
         # 获取最新的市场数据
         latest_data = MarketData.query.filter_by(ticker=ticker).order_by(MarketData.date.desc()).first()
         

@@ -7,8 +7,16 @@
 let stockChart = null; // 图表实例
 let currentData = null; // 当前加载的数据
 let monteCarloData = null; // 蒙特卡洛模拟数据
-let viewMode = 'history'; // 视图模式：'history'(历史数据)或'simulation'(模拟数据)
+let viewMode = 'simulation'; // 视图模式：'history'(历史数据)或'simulation'(模拟数据)
 let completeHistoricalData = null; // 存储完整的历史数据
+
+// 添加全局函数用于视图模式切换
+window.updateChartViewMode = function(mode) {
+    viewMode = mode;
+    if (stockChart && monteCarloData) {
+        updateChartWithSimulation();
+    }
+};
 
 /**
  * 页面加载完成后初始化
@@ -52,16 +60,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 添加视图模式切换事件监听
     if (historyModeBtn) {
+        // 更新按钮文本和图标
+        historyModeBtn.innerHTML = '<i class="fas fa-history"></i> 历史数据视图';
         historyModeBtn.addEventListener('click', function() {
             setViewMode('history');
         });
     }
     
     if (simulationModeBtn) {
+        // 更新按钮文本和图标
+        simulationModeBtn.innerHTML = '<i class="fas fa-chart-line"></i> 模拟预测视图';
         simulationModeBtn.addEventListener('click', function() {
             setViewMode('simulation');
         });
     }
+    
+    // 监听蒙特卡洛模拟事件
+    document.addEventListener('monte-carlo-ready', function() {
+        // 如果全局变量中存在蒙特卡洛模拟数据，更新图表
+        if (window.monteCarloData) {
+            monteCarloData = window.monteCarloData;
+            updateChartWithSimulation();
+        }
+    });
     
     // 初始加载图表
     loadStockData('AAPL', 'all');
@@ -81,6 +102,119 @@ document.addEventListener('DOMContentLoaded', function() {
     // 加载初始股票的实时数据
     const initialSymbol = document.getElementById('stockSelector').value;
     fetchRealTimeData(initialSymbol);
+    
+    // 初始化实时数据功能
+    addRealTimeDataListeners();
+    
+    // 初始化时间范围选择
+    initTimeRangeSelector();
+    
+    // 初始化图表
+    initStockChart();
+    
+    // 设置初始视图模式
+    // 注意：确保这行代码在按钮初始化后执行
+    setViewMode(viewMode); // 使用全局变量中的初始视图模式
+    
+    console.log('所有功能初始化完成');
+
+    // 获取订单表单
+    const orderForm = document.getElementById('orderForm');
+    if (orderForm) {
+        // 监听表单提交事件
+        orderForm.addEventListener('submit', async function(e) {
+            e.preventDefault(); // 阻止表单默认提交
+            console.log('订单表单提交事件触发');
+            
+            // 获取表单数据
+            const ticker = document.getElementById('stockSelector').value;  // 使用stockSelector的值
+            const orderType = document.getElementById('order_type').value;
+            const executionType = document.getElementById('order_execution_type').value;
+            const price = executionType === 'market' ? null : parseFloat(document.getElementById('price').value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            
+            console.log('获取到的原始表单数据:', {
+                ticker, orderType, executionType, price, quantity
+            });
+            
+            // 验证数据
+            if (!ticker) {
+                console.log('验证失败: 未选择股票');
+                alert('请选择股票');
+                return;
+            }
+            
+            if (isNaN(quantity) || quantity <= 0) {
+                console.log('验证失败: 无效的数量');
+                alert('请输入有效的数量');
+                return;
+            }
+            
+            if (executionType === 'limit' && (isNaN(price) || price <= 0)) {
+                console.log('验证失败: 无效的价格');
+                alert('请输入有效的价格');
+                return;
+            }
+            
+            const requestData = {
+                ticker: ticker,
+                order_type: orderType,
+                order_execution_type: executionType,
+                order_price: price,
+                order_quantity: quantity
+            };
+            
+            console.log('验证通过，准备发送的订单数据:', requestData);
+            
+            try {
+                console.log('开始发送API请求到:', '/user/api/create_order');
+                // 发送API请求
+                const response = await fetch('/user/api/create_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('API响应状态:', response.status);
+                console.log('API响应头:', Object.fromEntries(response.headers.entries()));
+                
+                const data = await response.json();
+                console.log('API响应数据:', data);
+                
+                if (response.ok) {
+                    alert('订单创建成功！');
+                    // 重置表单
+                    orderForm.reset();
+                    // 刷新页面以显示新订单
+                    location.reload();
+                } else {
+                    alert(data.error || '创建订单失败');
+                }
+            } catch (error) {
+                console.error('请求错误详情:', error);
+                console.error('错误堆栈:', error.stack);
+                alert('创建订单时发生错误');
+            }
+        });
+        
+        // 监听执行类型变化
+        const executionTypeSelect = document.getElementById('order_execution_type');
+        const priceField = document.querySelector('.price-field');
+        
+        executionTypeSelect.addEventListener('change', function() {
+            console.log('执行类型变更为:', this.value);
+            if (this.value === 'market') {
+                priceField.style.display = 'none';
+                document.getElementById('price').removeAttribute('required');
+                document.getElementById('price').value = '';  // 清空价格输入
+            } else {
+                priceField.style.display = 'block';
+                document.getElementById('price').setAttribute('required', 'required');
+            }
+        });
+    }
 });
 
 /**
@@ -88,6 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * @param {string} mode - 视图模式 ('history' 或 'simulation')
  */
 function setViewMode(mode) {
+    console.log(`切换视图模式: ${viewMode} => ${mode}`);
     viewMode = mode;
     
     // 更新按钮状态
@@ -106,7 +241,29 @@ function setViewMode(mode) {
     
     // 如果已经有蒙特卡洛数据，则更新图表
     if (monteCarloData) {
-        updateChartWithSimulation();
+        // 显示或隐藏相关UI元素
+        const simulationStatsDiv = document.getElementById('simulationStats');
+        if (simulationStatsDiv) {
+            simulationStatsDiv.style.display = viewMode === 'simulation' ? 'block' : 'none';
+        }
+        
+        // 获取当前选择的股票和时间范围
+        const ticker = document.getElementById('stockSelector').value;
+        const range = document.getElementById('timeRange').value;
+        
+        // 如果是历史模式，考虑重新加载完整的历史数据
+        if (mode === 'history' && completeHistoricalData) {
+            console.log(`历史模式: 重新加载 ${ticker} 的完整历史数据`);
+            // 使用完整历史数据更新图表，同时保持模拟数据
+            currentData = [...completeHistoricalData];
+            // 更新带有模拟数据的图表
+            updateChartWithSimulation();
+        } else {
+            // 直接更新图表，使用现有数据
+            updateChartWithSimulation();
+        }
+    } else {
+        console.log("无蒙特卡洛模拟数据可显示");
     }
 }
 
@@ -129,6 +286,8 @@ function loadStockData(ticker, range, dateRange) {
         url += `&start_date=${dateRange.startDate}&end_date=${dateRange.endDate}`;
     }
     
+    console.log(`正在获取股票数据: ${url}`); // 调试日志
+    
     // 发送AJAX请求
     fetch(url)
         .then(response => {
@@ -138,9 +297,13 @@ function loadStockData(ticker, range, dateRange) {
             return response.json();
         })
         .then(data => {
+            console.log(`收到 ${ticker} 的数据: ${data.length} 条记录`); // 调试日志
+            console.log(`数据时间范围: ${data.length > 0 ? data[0].date : '无'} 至 ${data.length > 0 ? data[data.length-1].date : '无'}`);
+            
             // 保存完整的历史数据
             if (range === 'all' || !completeHistoricalData) {
                 completeHistoricalData = [...data];
+                console.log(`已保存 ${completeHistoricalData.length} 条完整历史数据`);
             }
             
             // 根据选定的时间范围在前端对数据进行筛选
@@ -178,14 +341,17 @@ function loadStockData(ticker, range, dateRange) {
                                 const itemDate = new Date(item.date);
                                 return itemDate >= startDate && itemDate <= endDateObj;
                             });
+                            console.log(`自定义日期范围筛选后: ${filteredData.length} 条记录`);
                             break;
                         }
                         // 如果没有提供有效的日期范围，则默认回退到显示全部数据
                         filteredData = completeHistoricalData;
+                        console.log(`使用完整历史数据: ${filteredData.length} 条记录`);
                         break;
                     default:
                         // 默认使用所有数据
                         filteredData = completeHistoricalData;
+                        console.log(`默认使用完整历史数据: ${filteredData.length} 条记录`);
                 }
                 
                 // 对于非自定义日期范围，只筛选开始日期
@@ -193,6 +359,7 @@ function loadStockData(ticker, range, dateRange) {
                     filteredData = completeHistoricalData.filter(item => {
                         return new Date(item.date) >= startDate;
                     });
+                    console.log(`时间范围 ${range} 筛选后: ${filteredData.length} 条记录`);
                 }
             }
             
@@ -375,38 +542,42 @@ async function runMonteCarloSimulation() {
         document.getElementById('loadingMessage').textContent = '正在运行蒙特卡洛模拟...';
         document.getElementById('loadingMessage').style.display = 'block';
         
-        const response = await fetch(`/api/monte-carlo/${ticker}?days=${days}&simulations=${simulations}`);
-        const data = await response.json();
+        // 调用API
+        const response = await fetch(`/user/api/monte-carlo/${ticker}?days=${days}&simulations=${simulations}`);
         
         // 隐藏加载提示
         document.getElementById('loadingMessage').style.display = 'none';
         
-        if (data.status === 'success') {
-            console.log("模拟数据获取成功:", data.data);
-            monteCarloData = data.data;
-            
-            // 检查必要的字段是否存在
-            if (!monteCarloData.dates || !Array.isArray(monteCarloData.dates)) {
-                console.error("模拟数据缺少必要的日期字段", monteCarloData);
-                alert("模拟数据缺少必要的日期字段，请联系管理员");
-                return;
-            }
-            
-            // 自动切换到模拟模式
-            setViewMode('simulation');
-            
-            // 更新图表
-            updateChartWithSimulation();
-            displaySimulationStats();
-            
-            // 显示视图模式切换按钮
-            document.getElementById('viewModeToggle').style.display = 'flex';
-        } else {
-            alert('模拟失败: ' + data.message);
+        // 检查响应状态
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `服务器返回错误: ${response.status}`);
         }
+        
+        // 解析数据
+        const data = await response.json();
+        console.log("蒙特卡洛模拟数据:", data);
+        
+        // 检查数据格式
+        if (!data || !data.dates || !Array.isArray(data.dates) || !data.all_paths || !Array.isArray(data.all_paths)) {
+            throw new Error("接收到的数据格式无效，缺少必要字段");
+        }
+        
+        // 保存模拟数据
+        monteCarloData = data;
+        
+        // 自动切换到模拟模式
+        setViewMode('simulation');
+        
+        // 更新图表和统计数据
+        updateChartWithSimulation();
+        displaySimulationStats();
+        
+        // 显示视图模式切换按钮
+        document.getElementById('viewModeToggle').style.display = 'flex';
     } catch (error) {
-        console.error('Error:', error);
-        alert('请求失败，请稍后重试');
+        console.error('蒙特卡洛模拟失败:', error);
+        alert(`蒙特卡洛模拟失败: ${error.message}`);
     }
 }
 
@@ -416,52 +587,52 @@ async function runMonteCarloSimulation() {
 function updateChartWithSimulation() {
     if (!monteCarloData || !currentData || !Array.isArray(currentData) || currentData.length === 0) {
         console.error("模拟数据或当前数据不可用", {monteCarloData, currentData});
-        alert("请先选择股票并加载历史数据后再进行模拟");
         return;
     }
 
-    // 检查monteCarloData中是否有必要的字段
-    if (!monteCarloData.dates || !Array.isArray(monteCarloData.dates)) {
-        console.error("模拟数据格式不正确，缺少dates字段", monteCarloData);
-        alert("模拟数据格式不正确，请联系管理员");
+    // 检查必要字段
+    if (!monteCarloData.dates || !Array.isArray(monteCarloData.dates) || 
+        !monteCarloData.all_paths || !Array.isArray(monteCarloData.all_paths)) {
+        console.error("模拟数据格式不正确", monteCarloData);
         return;
     }
 
-    // 获取当前数据（已经根据时间范围过滤后的数据）
+    // 获取历史数据（根据视图模式决定显示多少历史数据）
     let historicalDates = [...currentData.map(item => formatDate(new Date(item.date)))];
     let historicalPrices = [...currentData.map(item => item.close)];
     let volumes = [...currentData.map(item => item.volume)];
-
-    // 在模拟模式下，只显示最近的历史数据以使图表清晰
-    const displayHistoryDays = 60; // 可调整的常数
-    if (viewMode === 'simulation' && historicalDates.length > displayHistoryDays) {
-        historicalDates = historicalDates.slice(-displayHistoryDays);
-        historicalPrices = historicalPrices.slice(-displayHistoryDays);
-        volumes = volumes.slice(-displayHistoryDays);
+    
+    // 在历史模式下显示完整的历史数据，在模拟模式下仅显示最近60天数据
+    const maxHistoryDays = viewMode === 'history' ? historicalDates.length : 60;
+    if (historicalDates.length > maxHistoryDays && viewMode === 'simulation') {
+        historicalDates = historicalDates.slice(-maxHistoryDays);
+        historicalPrices = historicalPrices.slice(-maxHistoryDays);
+        volumes = volumes.slice(-maxHistoryDays);
     }
 
-    // 准备模拟数据，确保从最后一个历史数据点开始
-    const lastHistoricalDate = new Date(currentData[currentData.length - 1].date);
+    // 准备日期数据
     const simulationDates = monteCarloData.dates.map(d => formatDate(new Date(d)));
     const allDates = [...historicalDates, ...simulationDates];
 
-    // 基础数据集
+    // 准备图表数据集
     const datasets = [];
     
-    // 根据视图模式确定历史数据的显示方式
-    const historyOpacity = viewMode === 'history' ? 1 : 0.5;
-    
-    // 历史价格数据
+    // 历史价格 - 根据模式调整样式
     datasets.push({
         label: '历史价格',
         data: historicalPrices,
-        borderColor: `rgba(75, 192, 192, ${historyOpacity})`,
+        borderColor: viewMode === 'history' ? 'rgba(75, 192, 192, 1.0)' : 'rgba(75, 192, 192, 0.8)',
+        borderWidth: viewMode === 'history' ? 3 : 2,
+        pointRadius: viewMode === 'history' ? 2 : 0,
         tension: 0.1,
         yAxisID: 'y',
-        borderWidth: viewMode === 'history' ? 2 : 1
+        fill: viewMode === 'history' ? {
+            target: 'origin',
+            above: 'rgba(75, 192, 192, 0.1)'
+        } : false
     });
     
-    // 交易量数据
+    // 交易量
     datasets.push({
         label: '交易量',
         data: [...volumes, ...Array(simulationDates.length).fill(null)],
@@ -471,63 +642,73 @@ function updateChartWithSimulation() {
         yAxisID: 'y1'
     });
 
-    // 根据视图模式确定模拟路径的显示方式
-    const pathsToShow = viewMode === 'simulation' ? 500 : 50;
+    // 添加模拟路径 - 根据模式调整透明度和数量
+    const pathOpacity = viewMode === 'simulation' ? 0.4 : 0.1;
+    const pathsToShow = Math.min(monteCarloData.all_paths.length, viewMode === 'simulation' ? 500 : 30);
     
-    // 生成一组彩色但半透明的颜色
+    // 颜色列表
     const colors = [
-        'rgba(255, 99, 132, 0.3)',   // 红色
-        'rgba(54, 162, 235, 0.3)',   // 蓝色
-        'rgba(255, 206, 86, 0.3)',   // 黄色
-        'rgba(75, 192, 192, 0.3)',   // 青色
-        'rgba(153, 102, 255, 0.3)',  // 紫色
-        'rgba(255, 159, 64, 0.3)',   // 橙色
-        'rgba(199, 199, 199, 0.3)',  // 灰色
-        'rgba(83, 102, 255, 0.3)',   // 蓝紫色
-        'rgba(255, 99, 71, 0.3)',    // 番茄色
-        'rgba(50, 205, 50, 0.3)'     // 绿色
+        `rgba(255, 99, 132, ${pathOpacity})`,   // 红色
+        `rgba(54, 162, 235, ${pathOpacity})`,   // 蓝色
+        `rgba(255, 206, 86, ${pathOpacity})`,   // 黄色
+        `rgba(75, 192, 192, ${pathOpacity})`,   // 青色
+        `rgba(153, 102, 255, ${pathOpacity})`,  // 紫色
+        `rgba(255, 159, 64, ${pathOpacity})`,   // 橙色
+        `rgba(199, 199, 199, ${pathOpacity})`,  // 灰色
+        `rgba(83, 102, 255, ${pathOpacity})`,   // 蓝紫色
+        `rgba(255, 99, 71, ${pathOpacity})`,    // 番茄色
+        `rgba(50, 205, 50, ${pathOpacity})`     // 绿色
     ];
     
-    // 添加模拟路径，但不显示在图例中
-    if (monteCarloData.all_paths && Array.isArray(monteCarloData.all_paths)) {
-        monteCarloData.all_paths.forEach((path, index) => {
-            if (index < pathsToShow && Array.isArray(path)) {
-                const colorIndex = index % colors.length;
+    // 添加所有路径
+    for (let i = 0; i < pathsToShow; i++) {
+        if (i < monteCarloData.all_paths.length) {
+            const path = monteCarloData.all_paths[i];
+            if (Array.isArray(path)) {
+                const colorIndex = i % colors.length;
                 datasets.push({
-                    label: `模拟路径`,
+                    label: '模拟路径',
                     data: [...Array(historicalPrices.length).fill(null), ...path],
                     borderColor: colors[colorIndex],
-                    borderWidth: 1,
+                    borderWidth: viewMode === 'simulation' ? 1 : 0.5,
                     pointRadius: 0,
                     tension: 0.1,
                     yAxisID: 'y',
                     simulationPath: true,
-                    hidden: viewMode === 'history',
+                    hidden: false,
                     showLine: true,
-                    // 不在图例中显示
-                    display: false
+                    display: false  // 不在图例中显示
                 });
             }
-        });
+        }
     }
 
-    // 添加平均预测线，始终显示
-    const meanPath = simulationDates.map((_, i) => {
-        return monteCarloData.all_paths.reduce((sum, path) => sum + path[i], 0) / monteCarloData.all_paths.length;
+    // 添加主要百分位数线
+    const percentileColors = {
+        'median': `rgba(255, 99, 132, ${viewMode === 'simulation' ? 1 : 0.5})`,     // 中位数 - 红色
+        'p25_p75': `rgba(255, 159, 64, ${viewMode === 'simulation' ? 1 : 0.4})`,    // 25-75百分位 - 橙色
+        'p5_p95': `rgba(54, 162, 235, ${viewMode === 'simulation' ? 1 : 0.4})`      // 5-95百分位 - 蓝色
+    };
+    
+    // 计算每个时间点的中位数（50百分位）
+    const medianLine = simulationDates.map((_, i) => {
+        const values = monteCarloData.all_paths.map(path => path[i]);
+        return values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
     });
-
+    
+    // 添加中位数线
     datasets.push({
-        label: '平均预测价格',
-        data: [...Array(historicalPrices.length).fill(null), ...meanPath],
-        borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 2,
+        label: '预测中位数',
+        data: [...Array(historicalPrices.length).fill(null), ...medianLine],
+        borderColor: percentileColors.median,
+        borderWidth: viewMode === 'simulation' ? 2 : 1,
         pointRadius: 0,
+        borderDash: [],
         tension: 0.1,
-        yAxisID: 'y',
-        hidden: false // 始终显示
+        yAxisID: 'y'
     });
 
-    // 更新图表数据
+    // 更新图表
     stockChart.data.labels = allDates;
     stockChart.data.datasets = datasets;
     
@@ -536,15 +717,23 @@ function updateChartWithSimulation() {
         display: true,
         position: 'top',
         labels: {
-            filter: function(legendItem, chartData) {
-                // 只显示主要数据集的图例项
+            filter: function(legendItem) {
                 return !legendItem.text.includes('模拟路径');
             }
         }
     };
     
+    // 根据视图模式调整图表显示
+    stockChart.options.scales.y.title.text = viewMode === 'history' ? '历史价格 ($)' : '价格预测 ($)';
+    
     // 更新图表
     stockChart.update();
+    
+    // 显示或隐藏模拟统计信息
+    const statsDiv = document.getElementById('simulationStats');
+    if (statsDiv) {
+        statsDiv.style.display = viewMode === 'simulation' ? 'block' : 'none';
+    }
 }
 
 /**
@@ -564,6 +753,16 @@ function displaySimulationStats() {
         return;
     }
     
+    // 格式化函数
+    const formatCurrency = (value) => {
+        return value ? `$${value.toFixed(2)}` : 'N/A';
+    };
+    
+    const formatPercent = (value) => {
+        return value ? `${value.toFixed(2)}%` : 'N/A';
+    };
+    
+    // 更新统计区域
     const statsDiv = document.getElementById('simulationStats');
     statsDiv.style.display = 'block';
     statsDiv.innerHTML = `
@@ -571,19 +770,39 @@ function displaySimulationStats() {
             <div class="col-md-4">
                 <div class="data-item">
                     <h4><i class="fas fa-calculator"></i> 预测平均价格</h4>
-                    <p class="value text-primary">$${monteCarloData.mean_price.toFixed(2)}</p>
+                    <p class="value text-primary">${formatCurrency(monteCarloData.mean_price)}</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="data-item">
                     <h4><i class="fas fa-chart-area"></i> 90% 置信区间下限</h4>
-                    <p class="value text-danger">$${monteCarloData.percentile_5.toFixed(2)}</p>
+                    <p class="value text-danger">${formatCurrency(monteCarloData.percentile_5)}</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="data-item">
                     <h4><i class="fas fa-chart-line"></i> 90% 置信区间上限</h4>
-                    <p class="value text-success">$${monteCarloData.percentile_95.toFixed(2)}</p>
+                    <p class="value text-success">${formatCurrency(monteCarloData.percentile_95)}</p>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="data-item">
+                    <h4><i class="fas fa-percentage"></i> 年化收益率</h4>
+                    <p class="value text-info">${formatPercent(monteCarloData.annual_return)}</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="data-item">
+                    <h4><i class="fas fa-chart-bar"></i> 年化波动率</h4>
+                    <p class="value text-secondary">${formatPercent(monteCarloData.annual_volatility)}</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="data-item">
+                    <h4><i class="fas fa-coins"></i> 当前价格</h4>
+                    <p class="value text-primary">${formatCurrency(monteCarloData.current_price)}</p>
                 </div>
             </div>
         </div>
@@ -619,100 +838,140 @@ function formatDateForInput(date) {
 
 // 添加获取实时股票数据的函数
 async function fetchRealTimeData(symbol) {
-    // 显示加载中状态
-    document.getElementById('loadingRealTimeData').style.display = 'block';
-    document.getElementById('realTimeDataError').style.display = 'none';
-    document.getElementById('realTimeDataContent').style.display = 'none';
-    
     try {
-        // 使用正确的路径，包含/user前缀（与Flask蓝图配置匹配）
-        const url = `/user/api/real_time_stock_data?symbol=${symbol}`;
+        // 显示加载状态
+        const loadingElement = document.getElementById('loadingRealTimeData');
+        const contentElement = document.getElementById('realTimeDataContent');
+        const errorElement = document.getElementById('realTimeDataError');
         
-        // 发送请求
-        const response = await fetch(url);
+        // 检查元素是否存在
+        if (loadingElement) loadingElement.style.display = 'block';
+        if (contentElement) contentElement.style.display = 'none';
+        if (errorElement) errorElement.style.display = 'none';
         
-        // 检查HTTP状态码
-        if (response.status === 429) {
-            throw new Error('API请求次数限制已达到，请稍后再试。Alpha Vantage免费API每天限制25次请求。');
-        } else if (!response.ok) {
-            throw new Error(`网络响应错误：状态码 ${response.status}`);
+        const response = await fetch(`/user/api/real_time_stock_data?symbol=${symbol}`);
+        if (!response.ok) {
+            throw new Error(`HTTP状态码: ${response.status}`);
         }
-        
         const data = await response.json();
         
-        // 检查是否有错误
+        console.log('实时行情数据:', data); // 调试输出
+        
         if (data.error) {
-            // 检查是否是API限制错误
-            if (data.error.includes('API rate limit') || data.error.includes('standard API rate limit')) {
-                throw new Error(`API请求限制：${data.error}。请考虑升级API计划或等待限制重置。`);
+            throw new Error(data.error);
+        }
+        
+        // 安全地更新DOM元素内容
+        const safeUpdateElement = (id, content) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = content;
             } else {
-                throw new Error(data.error);
+                console.warn(`实时行情更新: 元素 #${id} 不存在`);
             }
-        }
+        };
         
-        // 检查是否有全局报价数据
-        if (!data['Global Quote'] || Object.keys(data['Global Quote']).length === 0) {
-            throw new Error('无法获取股票数据');
-        }
+        // 安全地更新DOM元素类名
+        const safeUpdateClass = (id, className) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.className = className;
+            } else {
+                console.warn(`实时行情更新: 元素 #${id} 不存在`);
+            }
+        };
         
-        // 提取所需数据
-        const quote = data['Global Quote'];
-        const price = parseFloat(quote['05. price']).toFixed(2);
-        const previousClose = parseFloat(quote['08. previous close']).toFixed(2);
-        const change = parseFloat(quote['09. change']).toFixed(2);
-        const changePercent = quote['10. change percent'].replace('%', '');
-        const volume = parseInt(quote['06. volume']).toLocaleString();
-        const highPrice = parseFloat(quote['03. high']).toFixed(2);
-        const lowPrice = parseFloat(quote['04. low']).toFixed(2);
+        // 更新价格
+        safeUpdateElement('rtPrice', `¥${data.price.toFixed(2)}`);
         
-        // 更新DOM
-        document.getElementById('rtPrice').textContent = price;
-        document.getElementById('rtPriceChange').textContent = `${change} (${changePercent}%)`;
-        document.getElementById('rtPriceChange').className = parseFloat(change) >= 0 ? 'change positive' : 'change negative';
-        document.getElementById('rtVolume').textContent = volume;
-        document.getElementById('rtHigh').textContent = highPrice;
-        document.getElementById('rtLow').textContent = lowPrice;
+        // 更新价格变化
+        const changeValue = data.change;
+        const changePercent = data.change_percent;
+        const changeClass = changeValue >= 0 ? 'positive' : 'negative';
+        const changeSign = changeValue >= 0 ? '+' : '';
         
-        // 更新最后更新时间
-        const now = new Date();
-        document.getElementById('lastUpdated').textContent = `最后更新: ${now.toLocaleTimeString()}`;
+        safeUpdateElement('rtPriceChange', `${changeSign}${changeValue.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`);
         
-        // 显示数据内容
-        document.getElementById('loadingRealTimeData').style.display = 'none';
-        document.getElementById('realTimeDataContent').style.display = 'block';
+        // 更新其他信息
+        safeUpdateElement('rtVolume', formatNumber(data.volume));
+        safeUpdateElement('rtHigh', `¥${data.high.toFixed(2)}`);
+        safeUpdateElement('rtLow', `¥${data.low.toFixed(2)}`);
+        safeUpdateElement('lastUpdated', `最后更新: ${data.last_updated || new Date().toLocaleTimeString()}`);
+        
+        // 隐藏加载状态，显示内容
+        if (loadingElement) loadingElement.style.display = 'none';
+        if (contentElement) contentElement.style.display = 'block';
+        
     } catch (error) {
         console.error('获取实时数据失败:', error);
         
         // 显示错误信息
-        document.getElementById('loadingRealTimeData').style.display = 'none';
-        document.getElementById('realTimeDataError').style.display = 'block';
+        const errorElement = document.getElementById('realTimeDataError');
+        const loadingElement = document.getElementById('loadingRealTimeData');
         
-        // 检查是否是API限制错误，提供更友好的消息
-        let errorMessage = error.message;
-        if (errorMessage.includes('API请求限制') || errorMessage.includes('API请求次数限制')) {
-            document.getElementById('realTimeDataError').className = 'alert alert-warning';
-            document.getElementById('realTimeDataError').innerHTML = `
-                <strong>API限制提醒:</strong> ${errorMessage}<br>
-                <small>建议：使用限价单交易，或等待明天API限制重置。</small>
-            `;
-        } else {
-            document.getElementById('realTimeDataError').className = 'alert alert-danger';
-            document.getElementById('realTimeDataError').textContent = `获取实时数据失败: ${errorMessage}`;
+        if (errorElement) {
+            errorElement.textContent = `获取实时数据失败: ${error.message}`;
+            errorElement.style.display = 'block';
+        }
+        
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
         }
     }
 }
 
-// 在股票选择器变化时更新实时数据
+function formatNumber(num) {
+    if (!num && num !== 0) return '-';
+    
+    if (num >= 1e9) {
+        return (num / 1e9).toFixed(2) + '十亿';
+    } else if (num >= 1e6) {
+        return (num / 1e6).toFixed(2) + '百万';
+    } else if (num >= 1e3) {
+        return (num / 1e3).toFixed(2) + '千';
+    }
+    return num.toString();
+}
+
 function addRealTimeDataListeners() {
-    // 添加刷新按钮的事件监听器
-    document.getElementById('refreshRealTimeData').addEventListener('click', function() {
-        const symbol = document.getElementById('stockSelector').value;
-        fetchRealTimeData(symbol);
+    // 获取股票选择器
+    const stockSelector = document.getElementById('stockSelector');
+    
+    if (!stockSelector) {
+        console.error('无法找到股票选择器元素');
+        return;
+    }
+    
+    // 初始加载
+    fetchRealTimeData(stockSelector.value);
+    
+    // 添加change事件监听器
+    stockSelector.addEventListener('change', function() {
+        fetchRealTimeData(this.value);
     });
     
-    // 在选择新股票时更新实时数据
-    document.getElementById('stockSelector').addEventListener('change', function() {
-        const symbol = this.value;
-        fetchRealTimeData(symbol);
-    });
-} 
+    // 添加刷新按钮事件监听
+    const refreshButton = document.getElementById('refreshRealTimeData');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', function() {
+            fetchRealTimeData(stockSelector.value);
+        });
+    }
+}
+
+// 文档加载完成后执行的函数
+function initializeAll() {
+    // 初始化实时数据功能
+    addRealTimeDataListeners();
+    
+    // 初始化时间范围选择
+    initTimeRangeSelector();
+    
+    // 初始化图表
+    initStockChart();
+    
+    console.log('所有功能初始化完成');
+}
+
+// 当文档加载完成时执行初始化
+document.addEventListener('DOMContentLoaded', initializeAll); 

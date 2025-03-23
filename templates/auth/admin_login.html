@@ -27,7 +27,7 @@
             {% endif %}
         {% endwith %}
         
-        <form id="adminLoginForm" method="post">
+        <form id="adminLoginForm" method="post" action="{{ url_for('auth.admin_login') }}">
             <div class="form-group">
                 <label for="username">管理员用户名</label>
                 <input type="text" id="username" name="username" placeholder="请输入管理员用户名" required>

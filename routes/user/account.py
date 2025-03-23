@@ -9,6 +9,7 @@ from models import db, Order, Transaction, User, Portfolio, AccountBalance, Fund
 from decimal import Decimal
 import json
 from utils.number_utils import RoundableDict
+from utils.datetime_utils import safe_date_format
 
 from . import user_bp
 
@@ -67,7 +68,7 @@ def account():
             'quantity': order.order_quantity,
             'order_type': order.order_type,
             'status': order.order_status,
-            'created_at': order.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': safe_date_format(order.created_at)
         }))
     
     # 获取用户交易历史
@@ -77,13 +78,14 @@ def account():
     for transaction in transactions:
         transaction_history.append(RoundableDict({
             'id': transaction.transaction_id,
+            'order_id': transaction.order_id,
             'ticker': transaction.ticker,
             'quantity': transaction.transaction_quantity,
             'price': float(transaction.transaction_price),
             'total_amount': float(transaction.transaction_amount),
             'transaction_type': transaction.transaction_type,
             'status': transaction.transaction_status,
-            'created_at': transaction.transaction_time.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': safe_date_format(transaction.transaction_time)
         }))
     
     # 获取用户资金交易历史
@@ -96,7 +98,7 @@ def account():
             'amount': float(fund_tx.amount),
             'transaction_type': fund_tx.transaction_type,
             'status': fund_tx.status,
-            'created_at': fund_tx.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            'created_at': safe_date_format(fund_tx.created_at)
         }))
     
     return render_template(
@@ -142,7 +144,7 @@ def deposit():
         
         return jsonify({
             'message': '存款请求已提交，等待管理员审核',
-            'transaction_id': fund_transaction.id
+            'transaction_id': fund_transaction.transaction_id
         })
         
     except ValueError:
@@ -177,7 +179,7 @@ def withdraw():
             return jsonify({'error': '未找到账户信息'}), 404
         
         # 验证余额是否足够
-        if account.balance_id < amount:
+        if account.available_balance < amount:
             return jsonify({'error': '账户余额不足'}), 400
         
         # 创建取款交易记录
@@ -189,12 +191,18 @@ def withdraw():
             created_at=datetime.utcnow()
         )
         
+        # 将金额从可用余额转移到冻结余额
+        account.available_balance -= amount
+        account.frozen_balance += amount
+        # 总余额保持不变，因为只是在两个余额之间转移
+        
         db.session.add(fund_transaction)
+        db.session.add(account)
         db.session.commit()
         
         return jsonify({
             'message': '取款请求已提交，等待管理员审核',
-            'transaction_id': fund_transaction.id
+            'transaction_id': fund_transaction.transaction_id
         })
         
     except ValueError:

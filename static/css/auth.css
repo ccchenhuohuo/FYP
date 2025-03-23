@@ -265,24 +265,43 @@ body.admin-login button:hover {
     transform: translateY(-1px);
 }
 
-/* 消息样式 */
+/* 错误消息样式 */
+.error-message {
+    color: var(--error-color);
+    font-size: 0.85em;
+    margin-top: 6px;
+    padding-left: 2px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 错误输入框样式 */
+input.error {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
+}
+
+/* 消息列表样式 */
 .messages {
     list-style: none;
-    margin: 0 0 20px 0;
-    padding: 0;
-    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid var(--error-color);
+    border-radius: 4px;
 }
 
 .messages li {
-    padding: 12px 15px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background-color: var(--error-color);
-    color: white;
-    font-size: 0.95em;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    animation: fadeIn 0.5s ease;
+    color: var(--error-color);
+    margin-bottom: 5px;
+}
+
+.messages li:last-child {
+    margin-bottom: 0;
 }
 
 /* 响应式设计 */

@@ -31,8 +31,8 @@ def fetch_stock_data():
             # 获取股票信息
             stock = yf.Ticker(ticker)
             
-            # 获取历史价格数据 (5年)
-            hist = stock.history(period="5y")
+            # 获取历史价格数据 (从2018年开始)
+            hist = stock.history(start="2018-01-01")
             if hist.empty:
                 print(f"警告: 未能获取到 {ticker} 的历史数据")
                 continue
@@ -136,25 +136,25 @@ def save_to_database(market_data, fundamental_data, balance_sheet_data, income_s
         
         # 检查是否有数据要保存
         if not market_data.empty:
-            market_data.to_sql(name='market_data', con=engine, if_exists='append', index=False)
+            market_data.to_sql(name='market_data', con=engine, if_exists='replace', index=False)
             print(f"已保存 {len(market_data)} 条市场数据记录")
         else:
             print("没有市场数据可保存")
             
         if not fundamental_data.empty:
-            fundamental_data.to_sql(name='fundamental_data', con=engine, if_exists='append', index=False)
+            fundamental_data.to_sql(name='fundamental_data', con=engine, if_exists='replace', index=False)
             print(f"已保存 {len(fundamental_data)} 条基本面数据记录")
         else:
             print("没有基本面数据可保存")
             
         if not balance_sheet_data.empty:
-            balance_sheet_data.to_sql(name='balance_sheet', con=engine, if_exists='append', index=False)
+            balance_sheet_data.to_sql(name='balance_sheet', con=engine, if_exists='replace', index=False)
             print(f"已保存 {len(balance_sheet_data)} 条资产负债表数据记录")
         else:
             print("没有资产负债表数据可保存")
             
         if not income_statement_data.empty:
-            income_statement_data.to_sql(name='income_statement', con=engine, if_exists='append', index=False)
+            income_statement_data.to_sql(name='income_statement', con=engine, if_exists='replace', index=False)
             print(f"已保存 {len(income_statement_data)} 条利润表数据记录")
         else:
             print("没有利润表数据可保存")
@@ -163,6 +163,29 @@ def save_to_database(market_data, fundamental_data, balance_sheet_data, income_s
         
     except Exception as e:
         print(f"保存数据到数据库时出错: {str(e)}")
+
+def clear_database():
+    """
+    清空数据库中的所有股票数据表
+    """
+    # 创建数据库连接字符串
+    connection_string = f"mysql+mysqlconnector://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?charset=utf8mb4"
+    
+    try:
+        # 创建数据库引擎
+        engine = create_engine(connection_string, echo=False)
+        
+        # 清空各个表
+        with engine.connect() as connection:
+            connection.execute("DELETE FROM market_data")
+            connection.execute("DELETE FROM fundamental_data")
+            connection.execute("DELETE FROM balance_sheet")
+            connection.execute("DELETE FROM income_statement")
+        
+        print("所有数据表已成功清空!")
+        
+    except Exception as e:
+        print(f"清空数据表时出错: {str(e)}")
 
 def print_data_samples(market_data, fundamental_data, balance_sheet_data, income_statement_data):
     """

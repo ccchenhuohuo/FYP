@@ -495,15 +495,15 @@ def run_analysis(tickers, start_date=None, end_date=None):
 
 def run_analysis_text_only_simple(tickers, start_date=None, end_date=None):
     """
-    运行简化版的文本分析
+    运行简化版的文本分析，返回JSON格式的风险分析结果
     
     参数:
-    tickers (list or str): 股票代码列表或逗号分隔的股票代码字符串
+    tickers (list or str): 股票代码列表或单个股票代码字符串
     start_date (str): 起始日期，格式 'YYYY-MM-DD'
     end_date (str): 结束日期，格式 'YYYY-MM-DD'
     
     返回:
-    ValuationRiskMonitor: 分析器实例
+    dict: 包含风险分析结果的JSON对象
     """
     # 如果tickers是字符串，将其转换为列表
     if isinstance(tickers, str):
@@ -519,164 +519,189 @@ def run_analysis_text_only_simple(tickers, start_date=None, end_date=None):
         # 计算风险指标
         risk_metrics = monitor.calculate_risk_metrics()
         
-        # 打印结果
-        print("\n风险分析结果:")
-        for ticker in monitor.tickers:
-            if ticker in risk_metrics:
-                print(f"\n{ticker}:")
-                print("-" * 40)
-                
-                # 波动率
-                volatility = risk_metrics[ticker].get('volatility')
-                if volatility is not None:
-                    print(f"年化波动率: {volatility:.2%}")
-                
-                # 最大回撤
-                max_drawdown = risk_metrics[ticker].get('max_drawdown')
-                if max_drawdown is not None:
-                    print(f"最大回撤: {max_drawdown:.2%}")
-                
-                # 贝塔系数
-                beta = risk_metrics[ticker].get('beta')
-                if beta is not None and not np.isnan(beta):
-                    print(f"贝塔系数: {beta:.2f}")
-                    if beta > 1.5:
-                        print("  (高于市场波动性)")
-                    elif beta < 0.5:
-                        print("  (低于市场波动性)")
-                    else:
-                        print("  (接近市场波动性)")
-                
-                # R方值
-                r_squared = risk_metrics[ticker].get('r_squared')
-                if r_squared is not None:
-                    print(f"R方值: {r_squared:.2f}")
-                    if r_squared > 0.7:
-                        print("  (与市场高度相关)")
-                    elif r_squared < 0.3:
-                        print("  (与市场相关性低)")
-                
-                # 系统性风险占比
-                systematic_risk_pct = risk_metrics[ticker].get('systematic_risk_pct')
-                if systematic_risk_pct is not None:
-                    print(f"系统性风险占比: {systematic_risk_pct:.2%}")
-                
-                # 残差风险
-                residual_risk = risk_metrics[ticker].get('residual_risk')
-                if residual_risk is not None:
-                    print(f"残差风险: {residual_risk:.2%}")
-                
-                # 风险价值(VaR)
-                var_95 = risk_metrics[ticker].get('var_95')
-                if var_95 is not None:
-                    print(f"95% 风险价值(VaR): {var_95:.2%}")
-                
-                # 夏普比率
-                sharpe = risk_metrics[ticker].get('sharpe_ratio')
-                if sharpe is not None:
-                    print(f"夏普比率: {sharpe:.2f}")
-                    if sharpe > 1:
-                        print("  (良好的风险调整回报)")
-                    elif sharpe < 0:
-                        print("  (负风险调整回报)")
-                    else:
-                        print("  (风险调整回报一般)")
-                
-                # 信息比率
-                info_ratio = risk_metrics[ticker].get('information_ratio')
-                if info_ratio is not None:
-                    print(f"信息比率: {info_ratio:.2f}")
-                    if info_ratio > 0.5:
-                        print("  (优秀的超额收益能力)")
-                    elif info_ratio < 0:
-                        print("  (相对基准表现不佳)")
-                
-                # 特雷诺比率
-                treynor = risk_metrics[ticker].get('treynor_ratio')
-                if treynor is not None:
-                    print(f"特雷诺比率: {treynor:.2f}")
-                    if treynor > 0.1:
-                        print("  (良好的系统性风险调整回报)")
-                    elif treynor < 0:
-                        print("  (负的系统性风险调整回报)")
-                
-                # 索提诺比率
-                sortino = risk_metrics[ticker].get('sortino_ratio')
-                if sortino is not None:
-                    if sortino == float('inf'):
-                        print(f"索提诺比率: 无穷大 (无下行风险)")
-                    else:
-                        print(f"索提诺比率: {sortino:.2f}")
-                        if sortino > 1:
-                            print("  (优秀的下行风险调整回报)")
-                        elif sortino < 0:
-                            print("  (负的下行风险调整回报)")
-                
-                # 下行偏差
-                downside_dev = risk_metrics[ticker].get('downside_deviation')
-                if downside_dev is not None:
-                    print(f"下行偏差: {downside_dev:.2%}")
-                
-                # 偏度和峰度
-                skew = risk_metrics[ticker].get('skewness')
-                kurt = risk_metrics[ticker].get('kurtosis')
-                if skew is not None:
-                    print(f"收益分布偏度: {skew:.2f}")
-                if kurt is not None:
-                    print(f"收益分布峰度: {kurt:.2f}")
-                
-                if skew is not None and skew < -0.5:
-                    print("  (收益分布向左偏，大亏损风险较高)")
-                elif skew is not None and skew > 0.5:
-                    print("  (收益分布向右偏，大收益可能性较高)")
-                
-                if kurt is not None and kurt > 3:
-                    print("  (收益分布尾部较厚，极端事件风险较高)")
-                
-                # 风险评估总结
-                print("\n风险评估总结:")
-                
-                # 总体风险水平
-                if volatility is not None:
-                    if volatility > 0.3:
-                        print("- 高波动性股票，总体风险较高")
-                    elif volatility < 0.15:
-                        print("- 低波动性股票，总体风险较低")
-                    else:
-                        print("- 中等波动性股票")
-                
-                # 市场相关性
-                if beta is not None and r_squared is not None:
-                    if beta > 1.2 and r_squared > 0.6:
-                        print("- 与市场高度相关且放大市场波动")
-                    elif beta < 0.8 and r_squared > 0.6:
-                        print("- 与市场高度相关但波动较小")
-                    elif r_squared < 0.3:
-                        print("- 与市场相关性低，可能具有良好的分散化效果")
-                
-                # 风险调整回报
-                if sharpe is not None and sortino is not None:
-                    if sharpe > 1 and sortino > 1:
-                        print("- 风险调整回报优秀")
-                    elif sharpe < 0 and sortino < 0:
-                        print("- 风险调整回报不佳")
-                    else:
-                        print("- 风险调整回报一般")
-                
-                # 极端风险
-                if var_95 is not None and max_drawdown is not None and kurt is not None:
-                    if var_95 < -0.03 and max_drawdown < -0.2 and kurt > 3:
-                        print("- 存在显著的极端风险，需要谨慎")
-                    elif var_95 > -0.015 and max_drawdown > -0.1:
-                        print("- 极端风险相对较低")
+        # 收集第一个股票代码的结果（或唯一的一个）
+        ticker = tickers[0] if tickers else None
         
-        return monitor
+        if not ticker or ticker not in risk_metrics:
+            return {"error": "未能获取股票风险数据"}
+        
+        metrics = risk_metrics[ticker]
+        
+        # 创建结果字典
+        result = {}
+        
+        # 波动率
+        volatility = metrics.get('volatility')
+        if volatility is not None:
+            result["volatility"] = round(volatility * 100, 2)  # 转为百分比
+            # 添加风险评级
+            if volatility > 0.3:
+                result["volatility_rating"] = "高"
+            elif volatility < 0.15:
+                result["volatility_rating"] = "低"
+            else:
+                result["volatility_rating"] = "中"
+        
+        # 最大回撤
+        max_drawdown = metrics.get('max_drawdown')
+        if max_drawdown is not None:
+            result["max_drawdown"] = round(max_drawdown * 100, 2)  # 转为百分比
+            # 添加风险评级
+            if max_drawdown < -0.3:
+                result["drawdown_rating"] = "高"
+            elif max_drawdown > -0.1:
+                result["drawdown_rating"] = "低"
+            else:
+                result["drawdown_rating"] = "中"
+        
+        # 贝塔系数
+        beta = metrics.get('beta')
+        if beta is not None and not np.isnan(beta):
+            result["beta"] = round(beta, 2)
+            # 添加风险评级
+            if beta > 1.5:
+                result["beta_rating"] = "高"
+            elif beta < 0.5:
+                result["beta_rating"] = "低"
+            else:
+                result["beta_rating"] = "中"
+        
+        # R方值
+        r_squared = metrics.get('r_squared')
+        if r_squared is not None:
+            result["r_squared"] = round(r_squared, 2)
+        
+        # 系统性风险占比
+        systematic_risk_pct = metrics.get('systematic_risk_pct')
+        if systematic_risk_pct is not None:
+            result["systematic_risk_pct"] = round(systematic_risk_pct * 100, 2)
+        
+        # 残差风险
+        residual_risk = metrics.get('residual_risk')
+        if residual_risk is not None:
+            result["residual_risk"] = round(residual_risk * 100, 2)
+        
+        # 风险价值(VaR)
+        var_95 = metrics.get('var_95')
+        if var_95 is not None:
+            result["var_95"] = round(var_95 * 100, 2)
+            # 添加风险评级
+            if var_95 < -0.03:
+                result["var_rating"] = "高"
+            elif var_95 > -0.015:
+                result["var_rating"] = "低"
+            else:
+                result["var_rating"] = "中"
+        
+        # 夏普比率
+        sharpe = metrics.get('sharpe_ratio')
+        if sharpe is not None:
+            result["sharpe_ratio"] = round(sharpe, 2)
+            # 添加风险评级
+            if sharpe > 1:
+                result["sharpe_rating"] = "好"
+            elif sharpe < 0:
+                result["sharpe_rating"] = "差"
+            else:
+                result["sharpe_rating"] = "中"
+        
+        # 信息比率
+        info_ratio = metrics.get('information_ratio')
+        if info_ratio is not None:
+            result["information_ratio"] = round(info_ratio, 2)
+        
+        # 特雷诺比率
+        treynor = metrics.get('treynor_ratio')
+        if treynor is not None:
+            result["treynor_ratio"] = round(treynor, 2)
+        
+        # 索提诺比率
+        sortino = metrics.get('sortino_ratio')
+        if sortino is not None:
+            if sortino == float('inf'):
+                result["sortino_ratio"] = "∞"
+            else:
+                result["sortino_ratio"] = round(sortino, 2)
+                # 添加风险评级
+                if sortino > 1:
+                    result["sortino_rating"] = "好"
+                elif sortino < 0:
+                    result["sortino_rating"] = "差"
+                else:
+                    result["sortino_rating"] = "中"
+        
+        # 下行偏差
+        downside_dev = metrics.get('downside_deviation')
+        if downside_dev is not None:
+            result["downside_deviation"] = round(downside_dev * 100, 2)
+        
+        # 偏度和峰度
+        skew = metrics.get('skewness')
+        kurt = metrics.get('kurtosis')
+        if skew is not None:
+            result["skewness"] = round(skew, 2)
+        if kurt is not None:
+            result["kurtosis"] = round(kurt, 2)
+        
+        # 添加风险评估总结
+        result["risk_summary"] = []
+        
+        # 总体风险水平
+        if volatility is not None:
+            if volatility > 0.3:
+                result["risk_summary"].append("高波动性股票，总体风险较高")
+                result["overall_risk"] = "高"
+            elif volatility < 0.15:
+                result["risk_summary"].append("低波动性股票，总体风险较低")
+                result["overall_risk"] = "低"
+            else:
+                result["risk_summary"].append("中等波动性股票")
+                result["overall_risk"] = "中"
+        
+        # 市场相关性
+        if beta is not None and r_squared is not None:
+            if beta > 1.2 and r_squared > 0.6:
+                result["risk_summary"].append("与市场高度相关且放大市场波动")
+            elif beta < 0.8 and r_squared > 0.6:
+                result["risk_summary"].append("与市场高度相关但波动较小")
+            elif r_squared < 0.3:
+                result["risk_summary"].append("与市场相关性低，可能具有良好的分散化效果")
+        
+        # 风险调整回报
+        if sharpe is not None and sortino is not None:
+            if sharpe > 1 and sortino > 1:
+                result["risk_summary"].append("风险调整回报优秀")
+                result["risk_adjusted_return"] = "好"
+            elif sharpe < 0 and sortino < 0:
+                result["risk_summary"].append("风险调整回报不佳")
+                result["risk_adjusted_return"] = "差"
+            else:
+                result["risk_summary"].append("风险调整回报一般")
+                result["risk_adjusted_return"] = "中"
+        
+        # 极端风险
+        if var_95 is not None and max_drawdown is not None and kurt is not None:
+            if var_95 < -0.03 and max_drawdown < -0.2 and kurt > 3:
+                result["risk_summary"].append("存在显著的极端风险，需要谨慎")
+                result["extreme_risk"] = "高"
+            elif var_95 > -0.015 and max_drawdown > -0.1:
+                result["risk_summary"].append("极端风险相对较低")
+                result["extreme_risk"] = "低"
+            else:
+                result["extreme_risk"] = "中"
+        
+        return result
     
     except Exception as e:
         import traceback
-        print(f"分析过程中出错: {str(e)}")
-        print(traceback.format_exc())
-        return None
+        error_msg = str(e)
+        trace = traceback.format_exc()
+        print(f"分析过程中出错: {error_msg}")
+        print(trace)
+        return {
+            "error": f"分析过程中出错: {error_msg}",
+            "details": trace
+        }
 
 # 测试函数
 def test_risk_analysis():

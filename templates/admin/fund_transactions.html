@@ -1,6 +1,6 @@
 {% extends 'admin/layout.html' %}
 
-{% block title %}资金交易管理{% endblock %}
+{% block title %}{{ title|default('资金交易管理') }}{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_base.css') }}">
@@ -9,7 +9,10 @@
 
 {% block content %}
 <div class="admin-container">
-    <h1><i class="fas fa-money-bill-wave"></i> 资金交易管理</h1>
+    <h1>
+        <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% elif transaction_type == 'withdrawal' %}money-bill-wave{% else %}exchange-alt{% endif %}"></i> 
+        {{ title|default('资金交易管理') }}
+    </h1>
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -24,6 +27,15 @@
     
     <!-- 过滤器 -->
     <div class="filter-section">
+        <div class="filter-buttons">
+            {% if not transaction_type %}
+            <a href="{{ url_for('admin.manage_fund_transactions') }}" class="btn {% if request.path == url_for('admin.manage_fund_transactions') %}btn-primary{% else %}btn-outline{% endif %}">所有交易</a>
+            {% endif %}
+            <a href="{{ url_for('admin.manage_deposits') }}" class="btn {% if transaction_type == 'deposit' %}btn-primary{% else %}btn-outline{% endif %}">充值管理</a>
+            <a href="{{ url_for('admin.manage_withdrawals') }}" class="btn {% if transaction_type == 'withdrawal' %}btn-primary{% else %}btn-outline{% endif %}">提现管理</a>
+        </div>
+        
+        {% if not transaction_type %}
         <form action="{{ url_for('admin.manage_fund_transactions') }}" method="get" class="filters-form">
             <div class="filter-group">
                 <label for="type">交易类型</label>
@@ -44,94 +56,168 @@
                 </select>
             </div>
         </form>
+        {% endif %}
     </div>
     
-    {% if transactions %}
-        <table class="admin-table transactions-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>用户</th>
-                    <th>类型</th>
-                    <th>金额</th>
-                    <th>申请时间</th>
-                    <th>状态</th>
-                    <th>备注</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in transactions %}
-                <tr>
-                    <td><small>{{ transaction.transaction_id }}</small></td>
-                    <td>{{ transaction.user.user_name }}</td>
-                    <td>
-                        <span class="transaction-tag tag-{{ transaction.transaction_type }}">
-                            {% if transaction.transaction_type == 'deposit' %}
-                                充值
-                            {% elif transaction.transaction_type == 'withdrawal' %}
-                                提现
-                            {% else %}
-                                {{ transaction.transaction_type }}
-                            {% endif %}
-                        </span>
-                    </td>
-                    <td>¥{{ "%.2f"|format(transaction.amount) }}</td>
-                    <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                        <span class="status-badge status-{{ transaction.status }}">
-                            {% if transaction.status == 'pending' %}
-                                待审核
-                            {% elif transaction.status == 'completed' %}
-                                已完成
-                            {% elif transaction.status == 'rejected' %}
-                                已拒绝
-                            {% else %}
-                                {{ transaction.status }}
-                            {% endif %}
-                        </span>
-                    </td>
-                    <td>{{ transaction.remark or '-' }}</td>
-                    <td>
-                        {% if transaction.status == 'pending' %}
-                        <div class="action-buttons">
-                            <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
-                                <button type="submit" class="btn btn-success btn-small">
-                                    <i class="fas fa-check"></i> 批准
-                                </button>
-                            </form>
-                            <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
-                                <i class="fas fa-times"></i> 拒绝
-                            </button>
-                        </div>
-                        {% else %}
-                        <span class="no-action">-</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="empty-state">
-            <i class="fas fa-money-bill-wave empty-state-icon"></i>
-            <p>当前没有交易记录</p>
+    <div class="tabs-container">
+        <div class="tab-header">
+            <div class="tab-button active" onclick="showTab('pending')">待处理</div>
+            <div class="tab-button" onclick="showTab('completed')">已完成</div>
         </div>
-    {% endif %}
+    </div>
+    
+    <div id="pending-tab" class="tab-content active">
+        {% if pending_transactions %}
+            <table class="admin-table transactions-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户</th>
+                        {% if not transaction_type %}<th>类型</th>{% endif %}
+                        <th>金额</th>
+                        <th>申请时间</th>
+                        <th>状态</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in pending_transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td>{{ transaction.user.user_name }}</td>
+                        {% if not transaction_type %}
+                        <td>
+                            <span class="transaction-tag tag-{{ transaction.transaction_type }}">
+                                {% if transaction.transaction_type == 'deposit' %}
+                                    充值
+                                {% elif transaction.transaction_type == 'withdrawal' %}
+                                    提现
+                                {% else %}
+                                    {{ transaction.transaction_type }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        {% endif %}
+                        <td>¥{{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.created_at|format_datetime }}</td>
+                        <td>
+                            <span class="status-badge status-{{ transaction.status }}">
+                                {% if transaction.status == 'pending' %}
+                                    待审核
+                                {% elif transaction.status == 'approved' %}
+                                    已批准
+                                {% elif transaction.status == 'rejected' %}
+                                    已拒绝
+                                {% else %}
+                                    {{ transaction.status }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ transaction.remark or '-' }}</td>
+                        <td>
+                            {% if transaction.status == 'pending' %}
+                            <div class="action-buttons">
+                                <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
+                                    <button type="submit" class="btn btn-success btn-small">
+                                        <i class="fas fa-check"></i> 批准
+                                    </button>
+                                </form>
+                                <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
+                                    <i class="fas fa-times"></i> 拒绝
+                                </button>
+                            </div>
+                            {% else %}
+                            <span class="no-action">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% elif transaction_type == 'withdrawal' %}money-bill-wave{% else %}exchange-alt{% endif %} empty-state-icon"></i>
+                <p>当前没有待处理的{% if transaction_type == 'deposit' %}充值{% elif transaction_type == 'withdrawal' %}提现{% else %}交易{% endif %}记录</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div id="completed-tab" class="tab-content">
+        {% if completed_transactions %}
+            <table class="admin-table transactions-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户</th>
+                        {% if not transaction_type %}<th>类型</th>{% endif %}
+                        <th>金额</th>
+                        <th>申请时间</th>
+                        <th>处理时间</th>
+                        <th>状态</th>
+                        <th>备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in completed_transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td>{{ transaction.user.user_name }}</td>
+                        {% if not transaction_type %}
+                        <td>
+                            <span class="transaction-tag tag-{{ transaction.transaction_type }}">
+                                {% if transaction.transaction_type == 'deposit' %}
+                                    充值
+                                {% elif transaction.transaction_type == 'withdrawal' %}
+                                    提现
+                                {% else %}
+                                    {{ transaction.transaction_type }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        {% endif %}
+                        <td>¥{{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.created_at|format_datetime }}</td>
+                        <td>{{ transaction.updated_at|format_datetime }}</td>
+                        <td>
+                            <span class="status-badge status-{{ transaction.status }}">
+                                {% if transaction.status == 'pending' %}
+                                    待审核
+                                {% elif transaction.status == 'approved' %}
+                                    已批准
+                                {% elif transaction.status == 'rejected' %}
+                                    已拒绝
+                                {% else %}
+                                    {{ transaction.status }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ transaction.remark or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% elif transaction_type == 'withdrawal' %}money-bill-wave{% else %}exchange-alt{% endif %} empty-state-icon"></i>
+                <p>当前没有已完成的{% if transaction_type == 'deposit' %}充值{% elif transaction_type == 'withdrawal' %}提现{% else %}交易{% endif %}记录</p>
+            </div>
+        {% endif %}
+    </div>
 </div>
 
 <!-- 拒绝交易的模态框 -->
 <div id="rejectModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">拒绝交易请求</h3>
+            <h3 class="modal-title">拒绝{% if transaction_type == 'deposit' %}充值{% elif transaction_type == 'withdrawal' %}提现{% else %}交易{% endif %}请求</h3>
             <button type="button" class="close-button" onclick="closeRejectModal()">&times;</button>
         </div>
         <div class="modal-body">
             <p>请输入拒绝理由：</p>
             <form id="rejectForm" method="post" action="" data-base-url="{{ url_for('admin.reject_fund_transaction', transaction_id=0) }}">
                 <div class="form-group">
-                    <textarea name="rejection_reason" rows="4" class="form-control" required></textarea>
+                    <textarea name="reject_reason" rows="4" class="form-control" required></textarea>
                 </div>
             </form>
         </div>
@@ -145,6 +231,24 @@
 
 {% block scripts %}
 <script>
+    // 切换选项卡
+    function showTab(tabId) {
+        // 隐藏所有选项卡内容
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        
+        // 取消选中所有选项卡按钮
+        const buttons = document.querySelectorAll('.tab-button');
+        buttons.forEach(button => button.classList.remove('active'));
+        
+        // 显示选中的选项卡
+        document.getElementById(tabId + '-tab').classList.add('active');
+        
+        // 选中点击的按钮
+        const clickedButton = document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`);
+        clickedButton.classList.add('active');
+    }
+
     // 打开拒绝交易模态框
     function openRejectModal(transactionId) {
         const modal = document.getElementById('rejectModal');
@@ -170,7 +274,7 @@
     // 提交拒绝表单
     function submitRejectForm() {
         const form = document.getElementById('rejectForm');
-        const reason = form.querySelector('textarea[name="rejection_reason"]').value.trim();
+        const reason = form.querySelector('textarea[name="reject_reason"]').value.trim();
         
         if (reason) {
             form.submit();

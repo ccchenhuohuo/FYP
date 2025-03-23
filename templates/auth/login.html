@@ -29,7 +29,7 @@
             {% endif %}
         {% endwith %}
         
-        <form id="loginForm" method="post">
+        <form id="loginForm" method="post" action="{{ url_for('auth.login') }}">
             <div class="form-group">
                 <label for="user_name">用户名</label>
                 <input type="text" id="user_name" name="user_name" placeholder="请输入用户名" required>

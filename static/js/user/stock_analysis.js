@@ -6,10 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化日期选择器
     initDatePickers();
     
-    // 初始化风险阈值设置面板
-    initThresholdSettings();
-    
-    // 初始化股票代码输入
+    // 初始化股票输入
     initTickerInputs();
     
     // 初始化表单提交
@@ -30,37 +27,6 @@ function initDatePickers() {
 }
 
 /**
- * 初始化风险阈值设置面板（可折叠）
- */
-function initThresholdSettings() {
-    const thresholdToggle = document.getElementById('threshold-toggle');
-    const thresholdBody = document.getElementById('threshold-body');
-    
-    // 默认展开状态
-    let isExpanded = true;
-    
-    thresholdToggle.addEventListener('click', function() {
-        isExpanded = !isExpanded;
-        
-        if (isExpanded) {
-            thresholdBody.style.maxHeight = thresholdBody.scrollHeight + 'px';
-            thresholdBody.style.opacity = '1';
-            thresholdToggle.querySelector('i').className = 'fas fa-chevron-down';
-        } else {
-            thresholdBody.style.maxHeight = '0';
-            thresholdBody.style.opacity = '0';
-            thresholdToggle.querySelector('i').className = 'fas fa-chevron-right';
-        }
-        
-        document.querySelector('.threshold-settings').classList.toggle('collapsed', !isExpanded);
-    });
-    
-    // 初始状态设置
-    thresholdBody.style.maxHeight = thresholdBody.scrollHeight + 'px';
-    thresholdBody.style.opacity = '1';
-}
-
-/**
  * 初始化股票代码输入
  */
 function initTickerInputs() {
@@ -70,7 +36,7 @@ function initTickerInputs() {
         const tickerCount = tickersContainer.querySelectorAll('.ticker-input').length;
         
         const newTickerGroup = document.createElement('div');
-        newTickerGroup.className = 'ticker-input input-group';
+        newTickerGroup.className = 'ticker-input input-group mb-2';
         newTickerGroup.innerHTML = `
             <input type="text" name="tickers" class="form-control" placeholder="输入股票代码 ${tickerCount + 1}" required>
             <button type="button" class="btn btn-outline-danger remove-ticker">
@@ -103,18 +69,49 @@ function initFormSubmission() {
         // 隐藏结果容器
         document.getElementById('results-container').classList.add('d-none');
         
-        // 获取表单数据
-        const formData = new FormData(this);
+        // 获取所有股票代码
+        const tickerInputs = document.querySelectorAll('input[name="tickers"]');
+        const tickers = Array.from(tickerInputs).map(input => input.value.trim()).filter(val => val !== '');
+        
+        if (tickers.length === 0) {
+            showError('请至少输入一个股票代码');
+            showLoading(false);
+            return;
+        }
+        
+        // 获取日期范围
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+        
+        // 构建请求数据
+        const requestData = {
+            tickers: tickers,
+            start_date: startDate,
+            end_date: endDate
+        };
+        
+        console.log('发送分析请求数据:', requestData);
         
         // 发送请求
         fetch('/user/api/stock_analysis', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
         })
         .then(response => {
             if (!response.ok) {
+                if (response.status === 415) {
+                    throw new Error('媒体类型不支持，请检查请求格式');
+                }
                 return response.json().then(err => {
                     throw new Error(err.error || '请求失败');
+                }).catch(e => {
+                    if (e instanceof SyntaxError) {
+                        throw new Error(`服务器返回错误: ${response.status} ${response.statusText}`);
+                    }
+                    throw e;
                 });
             }
             return response.json();
@@ -144,8 +141,8 @@ function initFormSubmission() {
  */
 function processAndDisplayResults(data) {
     // 检查数据有效性
-    if (!data || !data.data || Object.keys(data.data).length === 0) {
-        showError('没有可用的分析结果');
+    if (!data || !data.results || data.results.length === 0) {
+        showError('没有可用的风险分析结果');
         return;
     }
     
@@ -157,26 +154,140 @@ function processAndDisplayResults(data) {
     document.getElementById('analysis-date-range').textContent = 
         `${data.start_date || '未知'} 至 ${data.end_date || '未知'}`;
     
-    // 获取股票代码列表
-    const tickers = Object.keys(data.data);
-    
     // 清空仪表盘
     const dashboard = document.getElementById('risk-dashboard');
     dashboard.innerHTML = '';
     
-    // 为每个股票创建风险卡片
-    tickers.forEach(ticker => {
-        const tickerData = data.data[ticker];
+    // 获取用户设置的阈值
+    const thresholds = {
+        volatility: parseFloat(document.getElementById('volatility_threshold').value) / 100,
+        drawdown: -parseFloat(document.getElementById('drawdown_threshold').value) / 100,
+        sharpe: parseFloat(document.getElementById('sharpe_threshold').value),
+        beta: parseFloat(document.getElementById('beta_threshold').value),
+        var: -parseFloat(document.getElementById('var_threshold').value) / 100,
+        sortino: parseFloat(document.getElementById('sortino_threshold').value)
+    };
+    
+    // 处理每只股票的结果
+    data.results.forEach(stockResult => {
+        const ticker = stockResult.ticker;
         
-        // 检查数据是否可用
-        if (!tickerData.data_available) {
-            createErrorCard(dashboard, ticker, tickerData.error_message || '数据不可用');
-            return;
+        // 检查是否有错误信息
+        if (stockResult.error) {
+            createErrorCard(dashboard, ticker, stockResult.error);
+            return; // 继续下一只股票
         }
         
-        // 创建风险卡片
-        createRiskCard(dashboard, ticker, tickerData);
+        // 检查是否有风险评估数据
+        if (stockResult.risk_assessment) {
+            // 根据用户阈值评估风险
+            const evaluatedRisk = evaluateRiskWithUserThresholds(stockResult.risk_assessment, thresholds);
+            
+            // 添加风险评估卡片
+            createRiskCard(dashboard, ticker, evaluatedRisk);
+        } else {
+            createErrorCard(dashboard, ticker, '没有风险评估数据');
+        }
     });
+}
+
+/**
+ * 根据用户设置的阈值评估风险
+ */
+function evaluateRiskWithUserThresholds(riskData, userThresholds) {
+    // 创建一个新的风险数据对象，以保留原始数据
+    const evaluatedRisk = {...riskData};
+    
+    // 添加用户自定义阈值评级
+    
+    // 1. 波动率
+    if (evaluatedRisk.volatility !== undefined) {
+        evaluatedRisk.user_volatility_rating = 
+            evaluatedRisk.volatility / 100 > userThresholds.volatility ? "高" : "低";
+    }
+    
+    // 2. 最大回撤
+    if (evaluatedRisk.max_drawdown !== undefined) {
+        evaluatedRisk.user_drawdown_rating = 
+            evaluatedRisk.max_drawdown / 100 < userThresholds.drawdown ? "高" : "低";
+    }
+    
+    // 3. 夏普比率
+    if (evaluatedRisk.sharpe_ratio !== undefined) {
+        evaluatedRisk.user_sharpe_rating = 
+            evaluatedRisk.sharpe_ratio < userThresholds.sharpe ? "差" : "好";
+    }
+    
+    // 4. 贝塔系数
+    if (evaluatedRisk.beta !== undefined) {
+        evaluatedRisk.user_beta_rating = 
+            evaluatedRisk.beta > userThresholds.beta ? "高" : "低";
+    }
+    
+    // 5. 风险价值(VaR)
+    if (evaluatedRisk.var_95 !== undefined) {
+        evaluatedRisk.user_var_rating = 
+            evaluatedRisk.var_95 / 100 < userThresholds.var ? "高" : "低";
+    }
+    
+    // 6. 索提诺比率
+    if (evaluatedRisk.sortino_ratio !== undefined && evaluatedRisk.sortino_ratio !== "∞") {
+        const sortinoValue = typeof evaluatedRisk.sortino_ratio === 'string' 
+            ? parseFloat(evaluatedRisk.sortino_ratio) 
+            : evaluatedRisk.sortino_ratio;
+        
+        evaluatedRisk.user_sortino_rating = 
+            sortinoValue < userThresholds.sortino ? "差" : "好";
+    }
+    
+    // 计算整体风险评级（基于用户阈值）
+    let highRiskCount = 0;
+    let totalIndicators = 0;
+    
+    if (evaluatedRisk.user_volatility_rating) {
+        highRiskCount += (evaluatedRisk.user_volatility_rating === "高") ? 1 : 0;
+        totalIndicators++;
+    }
+    
+    if (evaluatedRisk.user_drawdown_rating) {
+        highRiskCount += (evaluatedRisk.user_drawdown_rating === "高") ? 1 : 0;
+        totalIndicators++;
+    }
+    
+    if (evaluatedRisk.user_sharpe_rating) {
+        highRiskCount += (evaluatedRisk.user_sharpe_rating === "差") ? 1 : 0;
+        totalIndicators++;
+    }
+    
+    if (evaluatedRisk.user_beta_rating) {
+        highRiskCount += (evaluatedRisk.user_beta_rating === "高") ? 1 : 0;
+        totalIndicators++;
+    }
+    
+    if (evaluatedRisk.user_var_rating) {
+        highRiskCount += (evaluatedRisk.user_var_rating === "高") ? 1 : 0;
+        totalIndicators++;
+    }
+    
+    if (evaluatedRisk.user_sortino_rating) {
+        highRiskCount += (evaluatedRisk.user_sortino_rating === "差") ? 1 : 0;
+        totalIndicators++;
+    }
+    
+    // 计算用户自定义的整体风险等级
+    if (totalIndicators > 0) {
+        const riskRatio = highRiskCount / totalIndicators;
+        
+        if (riskRatio >= 0.7) {
+            evaluatedRisk.user_overall_risk = "高";
+        } else if (riskRatio <= 0.3) {
+            evaluatedRisk.user_overall_risk = "低";
+        } else {
+            evaluatedRisk.user_overall_risk = "中";
+        }
+    }
+    
+    return evaluatedRisk;
 }
 
 /**
@@ -185,14 +296,17 @@ function processAndDisplayResults(data) {
 function createRiskCard(container, ticker, data) {
     // 创建卡片容器
     const card = document.createElement('div');
-    card.className = 'risk-card';
+    card.className = 'risk-card mb-4';
     
     // 创建卡片头部
     const cardHeader = document.createElement('div');
     cardHeader.className = 'risk-header';
     
-    // 确定整体风险等级
-    const riskLevel = determineRiskLevel(data);
+    // 优先使用基于用户阈值的风险评级，如果不可用则使用默认风险评级
+    const useUserRiskLevel = data.user_overall_risk !== undefined;
+    const riskLevel = useUserRiskLevel ? 
+        (data.user_overall_risk === "高" ? 3 : data.user_overall_risk === "中" ? 2 : 1) : 
+        determineRiskLevel(data);
     const riskClass = getRiskClass(riskLevel);
     
     // 设置卡片标题
@@ -200,6 +314,7 @@ function createRiskCard(container, ticker, data) {
         <h3 class="risk-title">
             ${ticker}
             <span class="${riskClass}">${getRiskLevelText(riskLevel)}</span>
+            ${useUserRiskLevel ? '<small>(基于您的阈值设置)</small>' : ''}
         </h3>
     `;
     
@@ -219,59 +334,136 @@ function createRiskCard(container, ticker, data) {
     metricsGroup.className = 'metrics-group';
     metricsGroup.innerHTML = `<h4 class="metrics-group-title">风险指标</h4>`;
     
-    // 添加关键风险指标
-    const keyMetrics = [
-        { name: '年化波动率', key: 'volatility', format: 'percent' },
-        { name: '最大回撤', key: 'max_drawdown', format: 'percent' },
-        { name: '夏普比率', key: 'sharpe_ratio', format: 'decimal' },
-        { name: '贝塔系数', key: 'beta', format: 'decimal' },
-        { name: '索提诺比率', key: 'sortino_ratio', format: 'decimal' },
-        { name: 'VaR (95%)', key: 'var_95', format: 'percent' }
-    ];
+    // 添加波动率
+    if (data.volatility !== undefined) {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        
+        const ratingClass = (data.user_volatility_rating === "高") ? 'risk-high' : 'risk-low';
+        const ratingText = data.user_volatility_rating || data.volatility_rating || '';
+        
+        metricItem.innerHTML = `
+            <span class="metric-name">年化波动率</span>
+            <span class="metric-value">
+                ${data.volatility}% 
+                <small class="${ratingClass}">${ratingText}</small>
+            </span>
+        `;
+        metricsGroup.appendChild(metricItem);
+    }
     
-    keyMetrics.forEach(metric => {
-        if (data[metric.key] !== undefined && data[metric.key] !== null) {
-            const metricItem = document.createElement('div');
-            metricItem.className = 'metric-item';
-            
-            // 格式化指标值
-            let formattedValue = formatMetricValue(data[metric.key], metric.format);
-            
-            // 确定指标风险等级
-            const metricRiskLevel = determineMetricRiskLevel(metric.key, data[metric.key]);
-            const metricRiskClass = getRiskClass(metricRiskLevel);
-            
-            metricItem.innerHTML = `
-                <span class="metric-name">${metric.name}</span>
-                <span class="metric-value ${metricRiskClass}">${formattedValue}</span>
-            `;
-            
-            metricsGroup.appendChild(metricItem);
-        }
-    });
+    // 添加最大回撤
+    if (data.max_drawdown !== undefined) {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        
+        const ratingClass = (data.user_drawdown_rating === "高") ? 'risk-high' : 'risk-low';
+        const ratingText = data.user_drawdown_rating || data.drawdown_rating || '';
+        
+        metricItem.innerHTML = `
+            <span class="metric-name">最大回撤</span>
+            <span class="metric-value">
+                ${data.max_drawdown}% 
+                <small class="${ratingClass}">${ratingText}</small>
+            </span>
+        `;
+        metricsGroup.appendChild(metricItem);
+    }
     
-    // 添加警报容器
-    const alertsContainer = document.createElement('div');
-    alertsContainer.className = 'alerts-container';
+    // 添加夏普比率
+    if (data.sharpe_ratio !== undefined) {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        
+        const ratingClass = (data.user_sharpe_rating === "差") ? 'risk-high' : 'risk-low';
+        const ratingText = data.user_sharpe_rating || data.sharpe_rating || '';
+        
+        metricItem.innerHTML = `
+            <span class="metric-name">夏普比率</span>
+            <span class="metric-value">
+                ${data.sharpe_ratio} 
+                <small class="${ratingClass}">${ratingText}</small>
+            </span>
+        `;
+        metricsGroup.appendChild(metricItem);
+    }
     
-    // 添加警报
-    if (data.alerts && data.alerts.length > 0) {
-        data.alerts.forEach(alert => {
-            const alertElement = document.createElement('div');
-            alertElement.className = `alert alert-${alert.type}`;
-            alertElement.textContent = alert.message;
-            alertsContainer.appendChild(alertElement);
+    // 添加贝塔系数
+    if (data.beta !== undefined) {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        
+        const ratingClass = (data.user_beta_rating === "高") ? 'risk-high' : 'risk-low';
+        const ratingText = data.user_beta_rating || data.beta_rating || '';
+        
+        metricItem.innerHTML = `
+            <span class="metric-name">贝塔系数</span>
+            <span class="metric-value">
+                ${data.beta} 
+                <small class="${ratingClass}">${ratingText}</small>
+            </span>
+        `;
+        metricsGroup.appendChild(metricItem);
+    }
+    
+    // 添加VaR
+    if (data.var_95 !== undefined) {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        
+        const ratingClass = (data.user_var_rating === "高") ? 'risk-high' : 'risk-low';
+        const ratingText = data.user_var_rating || data.var_rating || '';
+        
+        metricItem.innerHTML = `
+            <span class="metric-name">95% VaR</span>
+            <span class="metric-value">
+                ${data.var_95}% 
+                <small class="${ratingClass}">${ratingText}</small>
+            </span>
+        `;
+        metricsGroup.appendChild(metricItem);
+    }
+    
+    // 添加索提诺比率
+    if (data.sortino_ratio !== undefined) {
+        const metricItem = document.createElement('div');
+        metricItem.className = 'metric-item';
+        
+        const ratingClass = (data.user_sortino_rating === "差") ? 'risk-high' : 'risk-low';
+        const ratingText = data.user_sortino_rating || data.sortino_rating || '';
+        
+        metricItem.innerHTML = `
+            <span class="metric-name">索提诺比率</span>
+            <span class="metric-value">
+                ${data.sortino_ratio} 
+                <small class="${ratingClass}">${ratingText}</small>
+            </span>
+        `;
+        metricsGroup.appendChild(metricItem);
+    }
+    
+    // 添加风险评估总结
+    if (data.risk_summary && data.risk_summary.length > 0) {
+        const summaryGroup = document.createElement('div');
+        summaryGroup.className = 'metrics-group';
+        summaryGroup.innerHTML = `<h4 class="metrics-group-title">风险评估总结</h4>`;
+        
+        const summaryList = document.createElement('ul');
+        summaryList.className = 'summary-list';
+        
+        data.risk_summary.forEach(item => {
+            const listItem = document.createElement('li');
+            listItem.textContent = item;
+            summaryList.appendChild(listItem);
         });
+        
+        summaryGroup.appendChild(summaryList);
+        cardBody.appendChild(summaryGroup);
     }
     
     // 组装卡片
     cardBody.appendChild(gaugeContainer);
     cardBody.appendChild(metricsGroup);
-    
-    if (data.alerts && data.alerts.length > 0) {
-        cardBody.appendChild(alertsContainer);
-    }
-    
     card.appendChild(cardHeader);
     card.appendChild(cardBody);
     container.appendChild(card);
@@ -282,22 +474,24 @@ function createRiskCard(container, ticker, data) {
  */
 function createErrorCard(container, ticker, errorMessage) {
     const card = document.createElement('div');
-    card.className = 'risk-card';
+    card.className = 'risk-card mb-4';
     
-    card.innerHTML = `
-        <div class="risk-header">
-            <h3 class="risk-title">
-                ${ticker}
-                <span class="risk-high">数据错误</span>
-            </h3>
-        </div>
-        <div class="risk-body">
-            <div class="alert alert-danger">
-                ${errorMessage || '无法获取数据'}
-            </div>
-        </div>
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'risk-header';
+    cardHeader.innerHTML = `
+        <h3 class="risk-title">${ticker}</h3>
     `;
     
+    const cardBody = document.createElement('div');
+    cardBody.className = 'risk-body';
+    
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'alert alert-danger';
+    errorContainer.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${errorMessage}`;
+    
+    cardBody.appendChild(errorContainer);
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
     container.appendChild(card);
 }
 
@@ -305,158 +499,121 @@ function createErrorCard(container, ticker, errorMessage) {
  * 创建风险仪表盘
  */
 function createGauge(container, riskLevel) {
-    // 计算仪表盘角度 (0-1 映射到 -180 到 0 度)
-    const angle = -180 + (riskLevel * 180);
-    
-    // 设置仪表盘颜色
     const gaugeColor = getGaugeColor(riskLevel);
+    const gaugeDegree = (riskLevel - 1) * 90; // 1=0度(低), 2=90度(中), 3=180度(高)
     
-    // 创建仪表盘元素
     container.innerHTML = `
         <div class="gauge-background"></div>
-        <div class="gauge-fill" style="transform: rotate(${angle}deg); background-color: ${gaugeColor};"></div>
+        <div class="gauge-fill" style="--gauge-color: ${gaugeColor}; transform: rotate(${gaugeDegree - 180}deg);"></div>
         <div class="gauge-center"></div>
-        <div class="gauge-value">${(riskLevel * 100).toFixed(0)}%</div>
+        <div class="gauge-value">${getRiskLevelText(riskLevel)}</div>
     `;
 }
 
 /**
- * 确定整体风险等级 (0-1)
+ * 确定风险等级 (1-3)
+ * 1 = 低风险, 2 = 中等风险, 3 = 高风险
  */
 function determineRiskLevel(data) {
-    // 基于多个指标计算综合风险等级
+    // 初始化风险指标评分
     let riskScore = 0;
-    let factorsCount = 0;
+    let totalMetrics = 0;
     
-    // 波动率 (高 = 高风险)
-    if (data.volatility !== undefined && data.volatility !== null) {
-        const volatilityScore = Math.min(data.volatility / 0.5, 1); // 50%波动率为最高风险
-        riskScore += volatilityScore;
-        factorsCount++;
+    // 检查波动率
+    if (data.volatility !== undefined) {
+        if (data.volatility > 30) riskScore += 3;
+        else if (data.volatility > 20) riskScore += 2;
+        else riskScore += 1;
+        totalMetrics++;
     }
     
-    // 最大回撤 (负值，越低 = 高风险)
-    if (data.max_drawdown !== undefined && data.max_drawdown !== null) {
-        const drawdownScore = Math.min(Math.abs(data.max_drawdown) / 0.5, 1); // 50%回撤为最高风险
-        riskScore += drawdownScore;
-        factorsCount++;
+    // 检查最大回撤
+    if (data.max_drawdown !== undefined) {
+        if (data.max_drawdown < -30) riskScore += 3;
+        else if (data.max_drawdown < -20) riskScore += 2;
+        else riskScore += 1;
+        totalMetrics++;
     }
     
-    // 夏普比率 (低 = 高风险)
-    if (data.sharpe_ratio !== undefined && data.sharpe_ratio !== null) {
-        // 夏普比率从-2到2映射到1到0
-        const sharpeScore = Math.max(0, Math.min(1, (2 - data.sharpe_ratio) / 4));
-        riskScore += sharpeScore;
-        factorsCount++;
+    // 检查夏普比率
+    if (data.sharpe_ratio !== undefined) {
+        if (data.sharpe_ratio < 0) riskScore += 3;
+        else if (data.sharpe_ratio < 1) riskScore += 2;
+        else riskScore += 1;
+        totalMetrics++;
     }
     
-    // 贝塔系数 (高 = 高风险)
-    if (data.beta !== undefined && data.beta !== null && !isNaN(data.beta)) {
-        const betaScore = Math.min(data.beta / 2, 1); // 贝塔2为最高风险
-        riskScore += betaScore;
-        factorsCount++;
+    // 检查贝塔系数
+    if (data.beta !== undefined) {
+        if (data.beta > 1.5) riskScore += 3;
+        else if (data.beta > 1.0) riskScore += 2;
+        else riskScore += 1;
+        totalMetrics++;
     }
     
-    // 计算平均风险分数
-    return factorsCount > 0 ? riskScore / factorsCount : 0.5;
+    // 检查VaR
+    if (data.var_95 !== undefined) {
+        if (data.var_95 < -3) riskScore += 3;
+        else if (data.var_95 < -2) riskScore += 2;
+        else riskScore += 1;
+        totalMetrics++;
+    }
+    
+    // 如果有整体风险评级，直接使用
+    if (data.overall_risk !== undefined) {
+        if (data.overall_risk === "高") return 3;
+        if (data.overall_risk === "中") return 2;
+        if (data.overall_risk === "低") return 1;
+    }
+    
+    // 计算平均分并确定等级
+    if (totalMetrics > 0) {
+        const avgScore = riskScore / totalMetrics;
+        if (avgScore > 2.3) return 3; // 高风险
+        if (avgScore > 1.7) return 2; // 中等风险
+        return 1; // 低风险
+    }
+    
+    return 2; // 默认为中等风险
 }
 
 /**
- * 确定单个指标的风险等级
- */
-function determineMetricRiskLevel(metricKey, value) {
-    if (value === null || value === undefined) return 0;
-    
-    switch (metricKey) {
-        case 'volatility':
-            // 波动率: <20% 低, 20-30% 中, >30% 高
-            if (value < 0.2) return 0;
-            if (value < 0.3) return 0.5;
-            return 1;
-            
-        case 'max_drawdown':
-            // 最大回撤: >-15% 低, -15%到-25% 中, <-25% 高
-            if (value > -0.15) return 0;
-            if (value > -0.25) return 0.5;
-            return 1;
-            
-        case 'sharpe_ratio':
-            // 夏普比率: >1 低, 0-1 中, <0 高
-            if (value > 1) return 0;
-            if (value >= 0) return 0.5;
-            return 1;
-            
-        case 'beta':
-            // 贝塔: <0.8 低, 0.8-1.2 中, >1.2 高
-            if (value < 0.8) return 0;
-            if (value <= 1.2) return 0.5;
-            return 1;
-            
-        case 'sortino_ratio':
-            // 索提诺比率: >1.5 低, 0-1.5 中, <0 高
-            if (value > 1.5) return 0;
-            if (value >= 0) return 0.5;
-            return 1;
-            
-        case 'var_95':
-            // VaR: >-0.01 低, -0.01到-0.02 中, <-0.02 高
-            if (value > -0.01) return 0;
-            if (value > -0.02) return 0.5;
-            return 1;
-            
-        default:
-            return 0.5;
-    }
-}
-
-/**
- * 获取风险等级对应的CSS类
+ * 获取风险等级CSS类
  */
 function getRiskClass(riskLevel) {
-    if (riskLevel >= 0.7) return 'risk-high';
-    if (riskLevel >= 0.3) return 'risk-medium';
-    return 'risk-low';
+    if (riskLevel === 3) return 'risk-high';
+    if (riskLevel === 1) return 'risk-low';
+    return 'risk-medium';
 }
 
 /**
- * 获取风险等级对应的文本
+ * 获取风险等级文本描述
  */
 function getRiskLevelText(riskLevel) {
-    if (riskLevel >= 0.7) return '高风险';
-    if (riskLevel >= 0.3) return '中等风险';
-    return '低风险';
+    if (riskLevel === 3) return '高风险';
+    if (riskLevel === 1) return '低风险';
+    return '中等风险';
 }
 
 /**
  * 获取仪表盘颜色
  */
 function getGaugeColor(riskLevel) {
-    if (riskLevel >= 0.7) return '#dc3545'; // 红色
-    if (riskLevel >= 0.3) return '#fd7e14'; // 橙色
-    return '#28a745'; // 绿色
+    if (riskLevel === 3) return '#dc3545'; // 红色 - 高风险
+    if (riskLevel === 1) return '#28a745'; // 绿色 - 低风险
+    return '#fd7e14'; // 橙色 - 中等风险
 }
 
 /**
- * 格式化指标值
- */
-function formatMetricValue(value, format) {
-    if (value === null || value === undefined) return '无数据';
-    
-    switch (format) {
-        case 'percent':
-            return (value * 100).toFixed(2) + '%';
-        case 'decimal':
-            return value.toFixed(2);
-        default:
-            return value.toString();
-    }
-}
-
-/**
- * 显示/隐藏加载状态
+ * 显示或隐藏加载状态
  */
 function showLoading(show) {
-    document.getElementById('loading-container').classList.toggle('d-none', !show);
+    const loadingContainer = document.getElementById('loading-container');
+    if (show) {
+        loadingContainer.classList.remove('d-none');
+    } else {
+        loadingContainer.classList.add('d-none');
+    }
 }
 
 /**
@@ -472,11 +629,12 @@ function showError(message) {
  * 隐藏错误信息
  */
 function hideError() {
-    document.getElementById('error-container').classList.add('d-none');
+    const errorContainer = document.getElementById('error-container');
+    errorContainer.classList.add('d-none');
 }
 
 /**
- * 格式化日期为YYYY-MM-DD格式
+ * 格式化日期
  */
 function formatDate(date) {
     const year = date.getFullYear();

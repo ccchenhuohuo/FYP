@@ -14,46 +14,75 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 充值表单验证
+    // 充值表单验证和提交
     const depositForm = document.getElementById('depositForm');
     if (depositForm) {
-        depositForm.addEventListener('submit', function(e) {
-            const amount = parseFloat(document.getElementById('amount').value);
+        depositForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            if (isNaN(amount) || amount <= 0) {
-                e.preventDefault();
-                alert('请输入有效的充值金额');
-                return;
+            const amount = document.getElementById('amount').value;
+            
+            try {
+                const response = await fetch('/user/api/deposit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount: parseFloat(amount) })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('充值申请已提交，等待管理员审核');
+                    location.reload();  // 刷新页面以显示最新状态
+                } else {
+                    alert(data.error || '充值申请提交失败');
+                }
+            } catch (error) {
+                alert('提交充值申请时发生错误');
+                console.error('Error:', error);
             }
             
-            if (!confirm(`您确定要充值 ¥${amount.toFixed(2)} 吗？`)) {
-                e.preventDefault();
-            }
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('depositModal'));
+            modal.hide();
         });
     }
     
     // 提现表单验证
     const withdrawalForm = document.getElementById('withdrawalForm');
     if (withdrawalForm) {
-        withdrawalForm.addEventListener('submit', function(e) {
-            const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const balance = parseFloat(document.querySelector('.current-balance').textContent.replace('¥', '').trim());
+        withdrawalForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            if (isNaN(amount) || amount <= 0) {
-                e.preventDefault();
-                alert('请输入有效的提现金额');
-                return;
+            const amount = document.getElementById('withdrawAmount').value;
+            
+            try {
+                const response = await fetch('/user/api/withdraw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount: parseFloat(amount) })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert('提现申请已提交，等待管理员审核');
+                    location.reload();  // 刷新页面以显示最新状态
+                } else {
+                    alert(data.error || '提现申请提交失败');
+                }
+            } catch (error) {
+                alert('提交提现申请时发生错误');
+                console.error('Error:', error);
             }
             
-            if (amount > balance) {
-                e.preventDefault();
-                alert('提现金额不能超过可用余额');
-                return;
-            }
-            
-            if (!confirm(`您确定要提现 ¥${amount.toFixed(2)} 吗？`)) {
-                e.preventDefault();
-            }
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawalModal'));
+            modal.hide();
         });
     }
     

@@ -115,30 +115,50 @@
     {% endif %}
 </div>
 
-<!-- 添加充值记录部分 -->
+<!-- 充值、提现记录部分 -->
 <div class="deposits-section">
-    <h2><i class="fas fa-money-check-alt"></i> 充值记录</h2>
+    <h2><i class="fas fa-money-check-alt"></i> 充值、提现记录</h2>
     
-    {% if deposits %}
+    {% if fund_transactions %}
     <div class="deposits-table">
         <table>
             <thead>
                 <tr>
-                    <th>充值ID</th>
+                    <th>交易ID</th>
                     <th>类型</th>
                     <th>状态</th>
                     <th>金额</th>
-                    <th>充值时间</th>
+                    <th>时间</th>
                 </tr>
             </thead>
             <tbody>
-                {% for deposit in deposits %}
+                {% for tx in fund_transactions %}
                 <tr>
-                    <td>{{ deposit.transaction_id }}</td>
-                    <td>{{ deposit.transaction_type }}</td>
-                    <td>{{ deposit.status }}</td>
-                    <td>¥ {{ deposit.amount|safe_round(2) }}</td>
-                    <td>{{ deposit.created_at }}</td>
+                    <td>{{ tx.id }}</td>
+                    <td>
+                        {% if tx.transaction_type == 'deposit' %}
+                            <span class="tag-deposit">充值</span>
+                        {% else %}
+                            <span class="tag-withdraw">提现</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if tx.status == 'pending' %}
+                            <span class="status-pending">待审核</span>
+                        {% elif tx.status == 'approved' or tx.status == 'completed' %}
+                            <span class="status-completed">已完成</span>
+                        {% elif tx.status == 'rejected' %}
+                            <span class="status-failed">已拒绝</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if tx.transaction_type == 'deposit' %}
+                            <span class="positive-amount">+{{ tx.amount|safe_round(2) }}</span>
+                        {% else %}
+                            <span class="negative-amount">-{{ tx.amount|safe_round(2) }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ tx.created_at }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -146,43 +166,7 @@
     </div>
     {% else %}
     <div class="empty-deposits">
-        <p><i class="fas fa-info-circle"></i> 您还没有充值记录。</p>
-    </div>
-    {% endif %}
-</div>
-
-<!-- 添加提现记录部分 -->
-<div class="withdrawals-section">
-    <h2><i class="fas fa-money-bill"></i> 提现记录</h2>
-    
-    {% if withdrawals %}
-    <div class="withdrawals-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>提现ID</th>
-                    <th>类型</th>
-                    <th>状态</th>
-                    <th>金额</th>
-                    <th>提现时间</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for withdrawal in withdrawals %}
-                <tr>
-                    <td>{{ withdrawal.id }}</td>
-                    <td>{{ withdrawal.transaction_type }}</td>
-                    <td>{{ withdrawal.status }}</td>
-                    <td>¥ {{ withdrawal.amount|safe_round(2) }}</td>
-                    <td>{{ withdrawal.created_at }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty-withdrawals">
-        <p><i class="fas fa-info-circle"></i> 您还没有提现记录。</p>
+        <p><i class="fas fa-info-circle"></i> 您还没有充值、提现记录。</p>
     </div>
     {% endif %}
 </div>
@@ -209,7 +193,7 @@
                 <tbody>
                     {% for order in orders %}
                         <tr>
-                            <td><small>{{ order.order_id }}</small></td>
+                            <td><small>{{ order.id }}</small></td>
                             <td><strong>{{ order.ticker }}</strong></td>
                             <td>
                                 {% if order.order_type == 'buy' %}
@@ -226,22 +210,22 @@
                                 {% endif %}
                             </td>
                             <td>{{ order.order_price }}</td>
-                            <td>{{ order.order_quantity }}</td>
+                            <td>{{ order.quantity }}</td>
                             <td>
-                                {% if order.order_status == 'pending' %}
+                                {% if order.status == 'pending' %}
                                     <span class="status-pending">待执行</span>
-                                {% elif order.order_status == 'executed' %}
+                                {% elif order.status == 'executed' %}
                                     <span class="status-executed">已执行</span>
-                                {% elif order.order_status == 'cancelled' %}
+                                {% elif order.status == 'cancelled' %}
                                     <span class="status-cancelled">已取消</span>
                                 {% else %}
-                                    {{ order.order_status }}
+                                    {{ order.status }}
                                 {% endif %}
                             </td>
-                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ order.created_at }}</td>
                             <td>
-                                {% if order.order_status == 'pending' %}
-                                    <form action="{{ url_for('user.cancel_order', order_id=order.order_id) }}" method="post">
+                                {% if order.status == 'pending' %}
+                                    <form action="{{ url_for('user.cancel_order', order_id=order.id) }}" method="post">
                                         <button type="submit" class="btn-small danger"><i class="fas fa-times"></i> 取消</button>
                                     </form>
                                 {% endif %}
@@ -252,7 +236,10 @@
             </table>
         </div>
     {% else %}
-        <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无订单记录</p>
+        <div class="empty-orders">
+            <p><i class="fas fa-info-circle"></i> 您还没有订单记录。</p>
+            <a href="{{ url_for('user.stock_chart') }}" class="cta-button">去交易</a>
+        </div>
     {% endif %}
 </div>
 
@@ -276,7 +263,7 @@
                 <tbody>
                     {% for transaction in transactions %}
                         <tr>
-                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td><small>{{ transaction.id }}</small></td>
                             <td><small>{{ transaction.order_id }}</small></td>
                             <td>
                                 {% if transaction.transaction_type == 'buy' %}
@@ -293,26 +280,26 @@
                                 {% if transaction.transaction_type == 'deposit' %}
                                     账户充值
                                 {% else %}
-                                    <strong>{{ transaction.ticker }}</strong> × {{ transaction.transaction_quantity }}
+                                    <strong>{{ transaction.ticker }}</strong> × {{ transaction.quantity }}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if transaction.transaction_type == 'buy' %}
-                                    <span class="negative-amount">-{{ transaction.transaction_amount }}</span>
+                                    <span class="negative-amount">-{{ transaction.total_amount|safe_round(2) }}</span>
                                 {% else %}
-                                    <span class="positive-amount">+{{ transaction.transaction_amount }}</span>
+                                    <span class="positive-amount">+{{ transaction.total_amount|safe_round(2) }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ transaction.transaction_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ transaction.created_at }}</td>
                             <td>
-                                {% if transaction.transaction_status == 'completed' %}
+                                {% if transaction.status == 'completed' %}
                                     <span class="status-completed">已完成</span>
-                                {% elif transaction.transaction_status == 'failed' %}
+                                {% elif transaction.status == 'failed' %}
                                     <span class="status-failed">失败</span>
-                                {% elif transaction.transaction_status == 'reversed' %}
+                                {% elif transaction.status == 'reversed' %}
                                     <span class="status-reversed">已撤销</span>
                                 {% else %}
-                                    {{ transaction.transaction_status }}
+                                    {{ transaction.status }}
                                 {% endif %}
                             </td>
                         </tr>
@@ -327,54 +314,50 @@
 
 <!-- 充值模态框 -->
 <div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="depositModalLabel">账户充值</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form action="{{ url_for('user.deposit') }}" method="post" id="depositForm">
-          <div class="mb-3">
-            <label for="amount" class="form-label">充值金额</label>
-            <div class="input-group">
-              <span class="input-group-text">¥</span>
-              <input type="number" class="form-control" id="amount" name="amount" min="0.01" step="0.01" required>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="depositModalLabel">账户充值</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="form-text">请输入您要充值的金额，充值将在管理员审核后到账。</div>
-          </div>
-          <button type="submit" class="btn btn-primary">提交充值申请</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-        </form>
-      </div>
+            <div class="modal-body">
+                <form id="depositForm">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">充值金额</label>
+                        <input type="number" class="form-control" id="amount" name="amount" required min="0.01" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="depositForm" class="btn btn-primary">确认充值</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- 提现模态框 -->
 <div class="modal fade" id="withdrawalModal" tabindex="-1" aria-labelledby="withdrawalModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="withdrawalModalLabel">账户提现</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form action="{{ url_for('user.withdraw') }}" method="post" id="withdrawalForm">
-          <div class="mb-3">
-            <label for="withdrawAmount" class="form-label">提现金额</label>
-            <div class="input-group">
-              <span class="input-group-text">¥</span>
-              <input type="number" class="form-control" id="withdrawAmount" name="amount" min="0.01" step="0.01" max="{{ balance.available_balance }}" required>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="withdrawalModalLabel">账户提现</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="form-text">可提现金额: ¥{{ balance.available_balance|safe_round(2) }}</div>
-          </div>
-          <button type="submit" class="btn btn-primary">提交提现申请</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-        </form>
-      </div>
+            <div class="modal-body">
+                <form id="withdrawalForm">
+                    <div class="mb-3">
+                        <label for="withdrawAmount" class="form-label">提现金额</label>
+                        <input type="number" class="form-control" id="withdrawAmount" name="amount" required min="0.01" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="withdrawalForm" class="btn btn-primary">确认提现</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 

@@ -40,10 +40,6 @@ def chat_with_gemini_api(message):
     try:
         print(f"开始处理AI请求，消息: {message[:50]}...")
         
-        # 检查API密钥
-        if not GEMINI_API_KEY or GEMINI_API_KEY == "AIzaSyDYcL5BBKz812t_66bbBq0h3xm9v6DOG-M":
-            print("警告: 使用的是示例API密钥，可能无效")
-        
         # 创建聊天会话并发送消息
         chat = model.start_chat(history=[])
         print("已创建聊天会话")
