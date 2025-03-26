@@ -2,8 +2,8 @@
 订单处理任务
 定期检查和执行待处理的限价单
 """
-from models import db, Order, MarketData
-from routes.user.order import execute_market_order, get_market_price_with_message
+from models import db, Order
+from utils.order_utils import get_market_price, can_execute_immediately, execute_order
 import time
 import threading
 import logging
@@ -18,6 +18,7 @@ class OrderProcessor:
         self.app = app
         self.thread = None
         self.running = False
+        self.check_interval = app.config.get('ORDER_CHECK_INTERVAL', 3600)  # 默认每小时检查一次
 
     def process_limit_orders(self):
         """
@@ -38,29 +39,23 @@ class OrderProcessor:
                     for order in pending_orders:
                         try:
                             # 获取当前市场价格
-                            market_price_result = get_market_price_with_message(order.ticker)
+                            price_success, price_result = get_market_price(order.ticker)
                             
-                            if isinstance(market_price_result, tuple):
-                                logger.warning(f"无法获取 {order.ticker} 的市场价格: {market_price_result[0]}")
+                            if not price_success:
+                                logger.warning(f"无法获取 {order.ticker} 的市场价格: {price_result}")
                                 continue
                                 
-                            market_price = market_price_result
+                            market_price = price_result
                             
                             # 检查是否满足执行条件
-                            can_execute = False
-                            if order.order_type == 'buy' and market_price <= order.order_price:
-                                can_execute = True
-                                logger.info(f"买入限价单 #{order.order_id} 可以执行：市场价格({market_price}) <= 限价({order.order_price})")
-                            elif order.order_type == 'sell' and market_price >= order.order_price:
-                                can_execute = True
-                                logger.info(f"卖出限价单 #{order.order_id} 可以执行：市场价格({market_price}) >= 限价({order.order_price})")
-                            
-                            # 如果满足条件，执行订单
-                            if can_execute:
-                                if execute_market_order(order):
+                            if can_execute_immediately(order, market_price):
+                                # 尝试执行订单
+                                exec_success, exec_message = execute_order(order, market_price)
+                                
+                                if exec_success:
                                     logger.info(f"限价单 #{order.order_id} 执行成功")
                                 else:
-                                    logger.error(f"限价单 #{order.order_id} 执行失败")
+                                    logger.error(f"限价单 #{order.order_id} 执行失败: {exec_message}")
                         
                         except Exception as e:
                             logger.error(f"处理限价单 #{order.order_id} 时发生错误: {str(e)}")
@@ -69,8 +64,8 @@ class OrderProcessor:
             except Exception as e:
                 logger.error(f"处理限价单时发生错误: {str(e)}")
             
-            # 等待一段时间后再次检查
-            time.sleep(60)  # 每分钟检查一次
+            # 等待指定时间后再次检查
+            time.sleep(self.check_interval)
 
     def start(self):
         """
@@ -81,7 +76,7 @@ class OrderProcessor:
             self.running = True
             self.thread = threading.Thread(target=self.process_limit_orders, daemon=True)
             self.thread.start()
-            logger.info("订单处理器已启动")
+            logger.info(f"订单处理器已启动，检查间隔：{self.check_interval}秒")
 
     def stop(self):
         """

@@ -28,14 +28,14 @@ class Order(db.Model):
 
     user = db.relationship('User', backref=db.backref('orders', lazy=True))
     
-    def __init__(self, user_id, ticker, order_type, order_price, order_quantity, order_execution_type='limit'):
+    def __init__(self, user_id, ticker, order_type, order_execution_type, order_price, order_quantity, order_status='pending'):
         self.user_id = user_id
         self.ticker = ticker
         self.order_type = order_type
         self.order_execution_type = order_execution_type
         self.order_price = order_price
         self.order_quantity = order_quantity
-        self.order_status = 'pending'
+        self.order_status = order_status
 
     def __repr__(self):
         """

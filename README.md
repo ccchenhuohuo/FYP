@@ -93,6 +93,25 @@ export ALPHA_VANTAGE_API_KEY="您的Alpha Vantage API密钥"
 flask run --debug
 ```
 
+## 注意事项
+
+- 本系统仅用于模拟交易和学习，不涉及真实资金交易
+- 股票数据来源于公开API，可能存在延迟
+- AI助手基于Gemini AI，需要有效的API密钥才能正常使用
+- 默认管理员账户: 用户名 `admin`，密码 `admin`
+- 限价单处理系统在后台自动运行，每30秒检查一次市场价格
+
+## 实用技巧
+
+- 清理Python缓存文件：项目提供了清理`__pycache__`目录的脚本，可以通过以下命令运行：
+  ```bash
+  bash clean_pycache.sh
+  ```
+  或直接使用命令：
+  ```bash
+  find . -type d -name "__pycache__" -exec rm -r {} \;
+  ```
+
 ## 详细项目结构
 
 ```
@@ -172,6 +191,7 @@ flask run --debug
 │   ├── risk_monitor.py         # 风险监测
 │   ├── chat_ai.py              # AI聊天功能
 │   └── number_utils.py         # 数字处理工具
+├── test/                       # 测试目录
 ├── flask_env/                  # Python虚拟环境
 ├── requirements.txt            # 项目依赖
 ├── .gitignore                  # Git忽略文件
@@ -248,10 +268,169 @@ flask run --debug
 - `GET /user/api/monte_carlo`: 执行蒙特卡洛模拟
 - `GET /user/api/fundamental_data`: 获取股票基本面数据
 
-## 注意事项
+## 本地数据库结构
 
-- 本系统仅用于模拟交易和学习，不涉及真实资金交易
-- 股票数据来源于公开API，可能存在延迟
-- AI助手基于Gemini AI，需要有效的API密钥才能正常使用
-- 默认管理员账户: 用户名 `admin`，密码 `admin`
-- 限价单处理系统在后台自动运行，每30秒检查一次市场价格
+系统使用MySQL作为本地数据库，通过SQLAlchemy进行ORM映射。数据库名称为`stock_data_v1`，包含以下主要表结构：
+
+### 用户相关表
+
+#### 用户表 (user)
+- `user_id`: 整型，主键，用户唯一标识
+- `user_name`: 字符串，唯一，用户名
+- `user_email`: 字符串，唯一，用户邮箱
+- `user_password`: 字符串，用户密码（加密存储）
+
+#### 管理员表 (admin)
+- `admin_id`: 整型，主键，管理员唯一标识
+- `admin_name`: 字符串，唯一，管理员用户名
+- `admin_password`: 字符串，管理员密码（加密存储）
+
+### 财务相关表
+
+#### 账户余额表 (account_balance)
+- `balance_id`: 整型，主键，余额记录唯一标识
+- `user_id`: 整型，外键，关联用户表
+- `available_balance`: 浮点型，可用余额
+- `frozen_balance`: 浮点型，冻结余额（用于待执行订单）
+- `total_balance`: 浮点型，总余额 = 可用余额 + 冻结余额
+- `updated_at`: 日期时间，更新时间
+
+#### 资金交易表 (fund_transaction)
+- `transaction_id`: 整型，主键，交易唯一标识
+- `user_id`: 整型，外键，关联用户表
+- `transaction_type`: 字符串，交易类型（充值、提现）
+- `amount`: 浮点型，交易金额
+- `status`: 字符串，交易状态（待处理、已完成、已拒绝）
+- `created_at`: 日期时间，创建时间
+- `updated_at`: 日期时间，更新时间
+- `remark`: 字符串，备注信息
+- `operator_id`: 整型，操作员ID（管理员）
+- `original_id`: 整型，原始交易ID（数据迁移参考）
+
+### 交易相关表
+
+#### 订单表 (orders)
+- `order_id`: 整型，主键，订单唯一标识
+- `user_id`: 整型，外键，关联用户表
+- `ticker`: 字符串，股票代码
+- `order_type`: 字符串，订单类型（买入、卖出）
+- `order_execution_type`: 字符串，执行类型（市价单、限价单）
+- `order_price`: 浮点型，订单价格（限价单）
+- `order_quantity`: 整型，订单数量
+- `order_status`: 字符串，订单状态（待执行、已执行、已取消、已拒绝）
+- `created_at`: 日期时间，创建时间
+- `updated_at`: 日期时间，更新时间
+- `executed_at`: 日期时间，执行时间
+- `remark`: 文本，备注信息
+
+#### 交易记录表 (transaction)
+- `transaction_id`: 整型，主键，交易记录唯一标识
+- `order_id`: 整型，外键，关联订单表
+- `user_id`: 整型外键，关联用户表
+- `ticker`: 字符串，股票代码
+- `transaction_type`: 字符串，交易类型（买入、卖出）
+- `transaction_price`: 浮点型，交易价格
+- `transaction_quantity`: 整型，交易数量
+- `transaction_amount`: 浮点型，交易金额（价格×数量）
+- `transaction_time`: 日期时间，交易时间
+- `transaction_status`: 字符串，交易状态（已完成、失败、已撤销）
+
+#### 持仓表 (portfolio)
+- `id`: 整型，主键，持仓记录唯一标识
+- `user_id`: 整型，外键，关联用户表
+- `ticker`: 字符串，股票代码
+- `quantity`: 整型，持有数量
+- `average_price`: 浮点型，平均购入价格
+- `total_cost`: 浮点型，总成本
+- `last_updated`: 日期时间，最后更新时间
+
+### 市场数据相关表
+
+#### 股票行情数据表 (market_data)
+- `ticker`: 字符串，股票代码（联合主键）
+- `date`: 日期时间，数据日期（联合主键）
+- `open`: 浮点型，开盘价
+- `high`: 浮点型，最高价
+- `low`: 浮点型，最低价
+- `close`: 浮点型，收盘价
+- `volume`: 长整型，交易量
+- `data_collected_at`: 日期时间，数据采集时间
+
+#### 基本面数据表 (fundamental_data)
+- `ticker`: 字符串，股票代码（联合主键）
+- `date`: 日期时间，数据日期（联合主键）
+- `market_cap`: 长整型，市值
+- `pe_ratio`: 浮点型，市盈率
+- `pb_ratio`: 浮点型，市净率
+- `dividend_yield`: 浮点型，股息率
+- `revenue`: 长整型，营收
+- `net_income`: 长整型，净利润
+- `operating_cash_flow`: 长整型，经营现金流
+- `data_collected_at`: 日期时间，数据采集时间
+
+#### 资产负债表数据表 (balance_sheet)
+- `ticker`: 字符串，股票代码（联合主键）
+- `date`: 日期时间，数据日期（联合主键）
+- `current_assets`: 字符串，流动资产
+- `non_current_assets`: 浮点型，非流动资产
+- `current_liabilities`: 字符串，流动负债
+- `non_current_liabilities`: 字符串，非流动负债
+- `data_collected_at`: 日期时间，数据采集时间
+
+#### 利润表数据表 (income_statement)
+- `ticker`: 字符串，股票代码（联合主键）
+- `date`: 日期时间，数据日期（联合主键）
+- `revenue`: 浮点型，营收
+- `cost_of_revenue`: 浮点型，营收成本
+- `operating_income`: 浮点型，营业利润
+- `income_before_tax`: 字符串，税前利润
+- `net_income`: 浮点型，净利润
+- `data_collected_at`: 日期时间，数据采集时间
+
+## 数据库关系图
+
+```
+用户相关
+└── user (用户表)
+    ├── 1:1 account_balance (账户余额表)
+    ├── 1:N fund_transaction (资金交易表)
+    ├── 1:N orders (订单表)
+    ├── 1:N transaction (交易记录表)
+    └── 1:N portfolio (持仓表)
+
+管理员相关
+└── admin (管理员表)
+    └── 1:N fund_transaction (资金交易表，作为operator_id)
+
+交易相关
+├── orders (订单表)
+│   └── 1:1 transaction (交易记录表)
+└── portfolio (持仓表)
+    └── N:1 user (用户表)
+
+市场数据相关
+├── market_data (股票行情数据表)
+│   └── (ticker, date) 联合主键
+├── fundamental_data (基本面数据表)
+│   └── (ticker, date) 联合主键
+├── balance_sheet (资产负债表数据表)
+│   └── (ticker, date) 联合主键
+└── income_statement (利润表数据表)
+    └── (ticker, date) 联合主键
+
+关系说明：
+- 1:1 表示一对一关系
+- 1:N 表示一对多关系
+- N:1 表示多对一关系
+- 联合主键表示多个字段共同作为主键
+```
+
+## 数据库初始化过程
+
+系统启动时会自动执行以下数据库初始化操作：
+
+1. 创建所有必要的数据库表（如不存在）
+2. 创建默认管理员账户（admin/admin）
+3. 确保每个用户都有对应的账户余额记录
+
+可在`models/__init__.py`中的`init_db`函数查看详细初始化流程。

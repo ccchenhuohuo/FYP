@@ -86,6 +86,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // 处理取消订单按钮的点击事件
+    const cancelOrderForms = document.querySelectorAll('form[action*="/orders/"][action*="/cancel"]');
+    cancelOrderForms.forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('订单已成功取消');
+                    location.reload(); // 刷新页面以显示最新状态
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.error || '取消订单失败');
+                }
+            } catch (error) {
+                alert('取消订单时发生错误');
+                console.error('Error:', error);
+            }
+        });
+    });
+    
     // 高亮当前导航菜单项
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('nav a');

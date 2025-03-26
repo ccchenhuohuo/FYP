@@ -115,59 +115,130 @@
     {% endif %}
 </div>
 
-<!-- 充值、提现记录部分 -->
-<div class="deposits-section">
-    <h2><i class="fas fa-money-check-alt"></i> 充值、提现记录</h2>
-    
-    {% if fund_transactions %}
-    <div class="deposits-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>交易ID</th>
-                    <th>类型</th>
-                    <th>状态</th>
-                    <th>金额</th>
-                    <th>时间</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tx in fund_transactions %}
-                <tr>
-                    <td>{{ tx.id }}</td>
-                    <td>
-                        {% if tx.transaction_type == 'deposit' %}
-                            <span class="tag-deposit">充值</span>
-                        {% else %}
-                            <span class="tag-withdraw">提现</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if tx.status == 'pending' %}
-                            <span class="status-pending">待审核</span>
-                        {% elif tx.status == 'approved' or tx.status == 'completed' %}
-                            <span class="status-completed">已完成</span>
-                        {% elif tx.status == 'rejected' %}
-                            <span class="status-failed">已拒绝</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if tx.transaction_type == 'deposit' %}
-                            <span class="positive-amount">+{{ tx.amount|safe_round(2) }}</span>
-                        {% else %}
-                            <span class="negative-amount">-{{ tx.amount|safe_round(2) }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ tx.created_at }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<!-- 交易记录 -->
+<div class="section">
+    <h2><i class="fas fa-history"></i> 我的交易记录</h2>
+    {% if transactions %}
+        <div class="table-responsive">
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>交易ID</th>
+                        <th>订单ID</th>
+                        <th>类型</th>
+                        <th>详情</th>
+                        <th>金额</th>
+                        <th>交易时间</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                        <tr>
+                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td><small>{{ transaction.order_id }}</small></td>
+                            <td>
+                                {% if transaction.transaction_type == 'buy' %}
+                                    <span class="transaction-tag tag-buy">买入</span>
+                                {% elif transaction.transaction_type == 'sell' %}
+                                    <span class="transaction-tag tag-sell">卖出</span>
+                                {% elif transaction.transaction_type == 'deposit' %}
+                                    <span class="transaction-tag tag-deposit">充值</span>
+                                {% else %}
+                                    {{ transaction.transaction_type }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.transaction_type == 'deposit' %}
+                                    账户充值
+                                {% else %}
+                                    <strong>{{ transaction.ticker }}</strong> × {{ transaction.transaction_quantity }}<br>
+                                    <small>单价: ¥{{ transaction.transaction_price|safe_round(2) }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.transaction_type == 'buy' %}
+                                    <span class="negative-amount">-¥{{ transaction.transaction_amount|safe_round(2) }}</span>
+                                {% else %}
+                                    <span class="positive-amount">+¥{{ transaction.transaction_amount|safe_round(2) }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.transaction_time }}</td>
+                            <td>
+                                {% if transaction.transaction_status == 'completed' %}
+                                    <span class="status-completed">已完成</span>
+                                {% elif transaction.transaction_status == 'failed' %}
+                                    <span class="status-failed">失败</span>
+                                {% elif transaction.transaction_status == 'reversed' %}
+                                    <span class="status-reversed">已撤销</span>
+                                {% else %}
+                                    {{ transaction.transaction_status }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% else %}
-    <div class="empty-deposits">
-        <p><i class="fas fa-info-circle"></i> 您还没有充值、提现记录。</p>
-    </div>
+        <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无交易记录</p>
+    {% endif %}
+</div>
+
+<!-- 充值提现记录 -->
+<div class="section">
+    <h2><i class="fas fa-money-bill-wave"></i> 充值、提现记录</h2>
+    {% if fund_transactions %}
+        <div class="table-responsive">
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>交易ID</th>
+                        <th>类型</th>
+                        <th>状态</th>
+                        <th>金额</th>
+                        <th>时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fund_tx in fund_transactions %}
+                        <tr>
+                            <td>{{ fund_tx.transaction_id }}</td>
+                            <td>
+                                {% if fund_tx.transaction_type == 'deposit' %}
+                                    <span class="transaction-tag tag-deposit">充值</span>
+                                {% elif fund_tx.transaction_type == 'withdrawal' %}
+                                    <span class="transaction-tag tag-withdraw">提现</span>
+                                {% else %}
+                                    {{ fund_tx.transaction_type }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if fund_tx.status == 'pending' %}
+                                    <span class="status-pending">待审核</span>
+                                {% elif fund_tx.status == 'approved' or fund_tx.status == 'completed' %}
+                                    <span class="status-completed">已完成</span>
+                                {% elif fund_tx.status == 'rejected' %}
+                                    <span class="status-cancelled">已拒绝</span>
+                                {% else %}
+                                    {{ fund_tx.status }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if fund_tx.transaction_type == 'deposit' %}
+                                    <span class="positive-amount">+¥{{ fund_tx.amount|safe_round(2) }}</span>
+                                {% else %}
+                                    <span class="negative-amount">-¥{{ fund_tx.amount|safe_round(2) }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ fund_tx.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无充值提现记录</p>
     {% endif %}
 </div>
 
@@ -193,7 +264,7 @@
                 <tbody>
                     {% for order in orders %}
                         <tr>
-                            <td><small>{{ order.id }}</small></td>
+                            <td><small>{{ order.order_id }}</small></td>
                             <td><strong>{{ order.ticker }}</strong></td>
                             <td>
                                 {% if order.order_type == 'buy' %}
@@ -209,25 +280,35 @@
                                     <span class="transaction-tag tag-limit">限价单</span>
                                 {% endif %}
                             </td>
-                            <td>{{ order.order_price }}</td>
-                            <td>{{ order.quantity }}</td>
                             <td>
-                                {% if order.status == 'pending' %}
+                                {% if order.order_price %}
+                                    ¥{{ order.order_price|safe_round(2) }}
+                                {% elif order.order_execution_type == 'market' %}
+                                    市价
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ order.order_quantity }}</td>
+                            <td>
+                                {% if order.order_status == 'pending' %}
                                     <span class="status-pending">待执行</span>
-                                {% elif order.status == 'executed' %}
+                                {% elif order.order_status == 'executed' %}
                                     <span class="status-executed">已执行</span>
-                                {% elif order.status == 'cancelled' %}
+                                {% elif order.order_status == 'cancelled' %}
                                     <span class="status-cancelled">已取消</span>
                                 {% else %}
-                                    {{ order.status }}
+                                    {{ order.order_status }}
                                 {% endif %}
                             </td>
                             <td>{{ order.created_at }}</td>
                             <td>
-                                {% if order.status == 'pending' %}
-                                    <form action="{{ url_for('user.cancel_order', order_id=order.id) }}" method="post">
+                                {% if order.order_status == 'pending' %}
+                                    <form action="{{ url_for('user.cancel_order', order_id=order.order_id) }}" method="post">
                                         <button type="submit" class="btn-small danger"><i class="fas fa-times"></i> 取消</button>
                                     </form>
+                                {% else %}
+                                    <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -240,75 +321,6 @@
             <p><i class="fas fa-info-circle"></i> 您还没有订单记录。</p>
             <a href="{{ url_for('user.stock_chart') }}" class="cta-button">去交易</a>
         </div>
-    {% endif %}
-</div>
-
-<!-- 交易记录 -->
-<div class="section">
-    <h2><i class="fas fa-history"></i> 我的交易记录</h2>
-    {% if transactions %}
-        <div class="table-responsive">
-            <table class="order-table">
-                <thead>
-                    <tr>
-                        <th>交易ID</th>
-                        <th>订单ID</th>
-                        <th>类型</th>
-                        <th>详情</th>
-                        <th>金额</th>
-                        <th>交易时间</th>
-                        <th>状态</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for transaction in transactions %}
-                        <tr>
-                            <td><small>{{ transaction.id }}</small></td>
-                            <td><small>{{ transaction.order_id }}</small></td>
-                            <td>
-                                {% if transaction.transaction_type == 'buy' %}
-                                    <span class="transaction-tag tag-buy">买入</span>
-                                {% elif transaction.transaction_type == 'sell' %}
-                                    <span class="transaction-tag tag-sell">卖出</span>
-                                {% elif transaction.transaction_type == 'deposit' %}
-                                    <span class="transaction-tag tag-deposit">充值</span>
-                                {% else %}
-                                    {{ transaction.transaction_type }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if transaction.transaction_type == 'deposit' %}
-                                    账户充值
-                                {% else %}
-                                    <strong>{{ transaction.ticker }}</strong> × {{ transaction.quantity }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if transaction.transaction_type == 'buy' %}
-                                    <span class="negative-amount">-{{ transaction.total_amount|safe_round(2) }}</span>
-                                {% else %}
-                                    <span class="positive-amount">+{{ transaction.total_amount|safe_round(2) }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ transaction.created_at }}</td>
-                            <td>
-                                {% if transaction.status == 'completed' %}
-                                    <span class="status-completed">已完成</span>
-                                {% elif transaction.status == 'failed' %}
-                                    <span class="status-failed">失败</span>
-                                {% elif transaction.status == 'reversed' %}
-                                    <span class="status-reversed">已撤销</span>
-                                {% else %}
-                                    {{ transaction.status }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p class="no-data-message"><i class="fas fa-info-circle"></i> 暂无交易记录</p>
     {% endif %}
 </div>
 

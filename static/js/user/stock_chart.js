@@ -96,14 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
     startDateInput.value = formatDateForInput(defaultStartDate);
     endDateInput.value = formatDateForInput(defaultEndDate);
     
-    // 添加实时数据监听器
-    addRealTimeDataListeners();
-    
-    // 加载初始股票的实时数据
-    const initialSymbol = document.getElementById('stockSelector').value;
-    fetchRealTimeData(initialSymbol);
-    
-    // 初始化实时数据功能
+    // 只保留一次调用实时数据监听器初始化
     addRealTimeDataListeners();
     
     // 初始化时间范围选择
@@ -121,13 +114,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取订单表单
     const orderForm = document.getElementById('orderForm');
     if (orderForm) {
+        // 初始化ticker隐藏字段为当前选中的股票
+        const stockSelector = document.getElementById('stockSelector');
+        if (stockSelector && document.getElementById('ticker')) {
+            document.getElementById('ticker').value = stockSelector.value;
+            
+            // 当股票选择器变化时，同步更新隐藏的ticker字段
+            stockSelector.addEventListener('change', function() {
+                document.getElementById('ticker').value = this.value;
+            });
+        }
+        
         // 监听表单提交事件
         orderForm.addEventListener('submit', async function(e) {
             e.preventDefault(); // 阻止表单默认提交
             console.log('订单表单提交事件触发');
             
             // 获取表单数据
-            const ticker = document.getElementById('stockSelector').value;  // 使用stockSelector的值
+            const ticker = document.getElementById('ticker').value; // 使用隐藏字段中的ticker值
             const orderType = document.getElementById('order_type').value;
             const executionType = document.getElementById('order_execution_type').value;
             const price = executionType === 'market' ? null : parseFloat(document.getElementById('price').value);
@@ -184,18 +188,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('API响应数据:', data);
                 
                 if (response.ok) {
-                    alert('订单创建成功！');
+                    // 显示成功消息
+                    const statusText = data.status === 'executed' ? 
+                        `已成功执行，价格: ${data.executed_price}` : 
+                        `已创建，状态: ${data.status}`;
+                    
+                    // 创建通知
+                    showNotification('success', `订单${data.message}`, `订单ID: ${data.order_id}<br>${statusText}`);
+                    
                     // 重置表单
                     orderForm.reset();
-                    // 刷新页面以显示新订单
-                    location.reload();
+                    
+                    // 重新初始化ticker隐藏字段
+                    if (stockSelector && document.getElementById('ticker')) {
+                        document.getElementById('ticker').value = stockSelector.value;
+                    }
                 } else {
-                    alert(data.error || '创建订单失败');
+                    showNotification('error', '创建订单失败', data.error || '未知错误');
                 }
             } catch (error) {
                 console.error('请求错误详情:', error);
                 console.error('错误堆栈:', error.stack);
-                alert('创建订单时发生错误');
+                showNotification('error', '创建订单失败', `发送请求时出错: ${error.message}`);
             }
         });
         
@@ -959,19 +973,72 @@ function addRealTimeDataListeners() {
     }
 }
 
-// 文档加载完成后执行的函数
-function initializeAll() {
-    // 初始化实时数据功能
-    addRealTimeDataListeners();
+/**
+ * 初始化时间范围选择器
+ */
+function initTimeRangeSelector() {
+    const timeRange = document.getElementById('timeRange');
+    const customDateRange = document.getElementById('customDateRange');
     
-    // 初始化时间范围选择
-    initTimeRangeSelector();
-    
-    // 初始化图表
-    initStockChart();
-    
-    console.log('所有功能初始化完成');
+    if (timeRange && customDateRange) {
+        // 初始显示状态
+        if (timeRange.value === 'custom') {
+            customDateRange.style.display = 'flex';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+        
+        console.log('时间范围选择器初始化成功');
+    } else {
+        console.warn('未找到时间范围选择器元素');
+    }
 }
 
-// 当文档加载完成时执行初始化
-document.addEventListener('DOMContentLoaded', initializeAll); 
+/**
+ * 初始化股票图表
+ */
+function initStockChart() {
+    // 图表已经在其他函数中初始化，这里只是一个占位函数
+    console.log('图表初始化准备就绪');
+}
+
+/**
+ * 显示通知消息
+ * @param {string} type - 通知类型 ('success', 'error', 'info', 'warning')
+ * @param {string} title - 通知标题
+ * @param {string} message - 通知内容
+ */
+function showNotification(type, title, message) {
+    // 创建通知容器（如果不存在）
+    let notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notificationContainer';
+        notificationContainer.style.position = 'fixed';
+        notificationContainer.style.top = '20px';
+        notificationContainer.style.right = '20px';
+        notificationContainer.style.zIndex = '9999';
+        notificationContainer.style.maxWidth = '350px';
+        document.body.appendChild(notificationContainer);
+    }
+    
+    // 创建通知元素
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.innerHTML = `
+        <strong>${title}</strong>
+        <br>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // 添加到容器
+    notificationContainer.appendChild(notification);
+    
+    // 自动关闭（5秒后）
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 5000);
+} 

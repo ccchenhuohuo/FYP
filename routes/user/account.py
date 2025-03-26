@@ -41,74 +41,105 @@ def account():
     portfolio_value = 0
     portfolio_data = []
     
+    # 处理投资组合数据
     for item in portfolio_items:
-        # 获取当前市场价格
-        item_value = item.average_price * item.quantity  # 使用平均价格代替实时价格
-        portfolio_value += item_value
+        # 增加市场价格和当前价值
+        market_price = item.current_price if hasattr(item, 'current_price') else item.average_price
+        current_value = market_price * item.quantity
+        portfolio_value += current_value
         
-        # 使用RoundableDict代替普通字典
-        portfolio_data.append(RoundableDict({
+        # 计算盈亏和盈亏百分比
+        profit_loss = (market_price - item.average_price) * item.quantity
+        pnl_percentage = 0
+        if item.average_price > 0:
+            pnl_percentage = (market_price - item.average_price) / item.average_price * 100
+        
+        # 构建模板数据
+        portfolio_data.append({
             'ticker': item.ticker,
             'quantity': item.quantity,
-            'average_price': float(item.average_price),
-            'current_price': float(item.average_price),  # 使用平均价格代替当前价格
-            'market_value': float(item_value),
-            'pnl': 0.0,  # 这里需要计算盈亏
-            'pnl_percentage': 0.0  # 这里需要计算盈亏比例
-        }))
+            'average_price': item.average_price,
+            'current_price': market_price,
+            'current_value': current_value,
+            'market_value': current_value,  # 添加市值字段
+            'profit_loss': profit_loss,
+            'pnl': profit_loss,  # 添加pnl字段
+            'pnl_percentage': pnl_percentage  # 添加盈亏百分比
+        })
     
-    # 获取用户订单历史
-    orders = Order.query.filter_by(user_id=current_user.user_id).order_by(Order.created_at.desc()).limit(10).all()
-    order_history = []
-    
-    for order in orders:
-        order_history.append(RoundableDict({
-            'id': order.order_id,
-            'ticker': order.ticker,
-            'quantity': order.order_quantity,
-            'order_type': order.order_type,
-            'status': order.order_status,
-            'created_at': safe_date_format(order.created_at)
-        }))
-    
-    # 获取用户交易历史
+    # 获取用户的交易记录
     transactions = Transaction.query.filter_by(user_id=current_user.user_id).order_by(Transaction.transaction_time.desc()).limit(10).all()
-    transaction_history = []
     
-    for transaction in transactions:
-        transaction_history.append(RoundableDict({
-            'id': transaction.transaction_id,
-            'order_id': transaction.order_id,
-            'ticker': transaction.ticker,
-            'quantity': transaction.transaction_quantity,
-            'price': float(transaction.transaction_price),
-            'total_amount': float(transaction.transaction_amount),
-            'transaction_type': transaction.transaction_type,
-            'status': transaction.transaction_status,
-            'created_at': safe_date_format(transaction.transaction_time)
-        }))
+    # 获取用户的订单历史
+    orders = Order.query.filter_by(user_id=current_user.user_id).order_by(Order.created_at.desc()).limit(10).all()
     
-    # 获取用户资金交易历史
-    fund_transactions = FundTransaction.query.filter_by(user_id=current_user.user_id).order_by(FundTransaction.created_at.desc()).limit(10).all()
-    fund_history = []
+    # 转换订单数据格式以匹配模板期望的格式
+    order_data = []
+    for order in orders:
+        # 添加调试信息
+        print(f"订单ID: {order.order_id}, 状态: {order.order_status}, 价格: {order.order_price}")
+        order_data.append({
+            'order_id': order.order_id,  # 保持原字段名
+            'id': order.order_id,        # 为模板添加id字段
+            'ticker': order.ticker,
+            'order_type': order.order_type,
+            'type': order.order_type,    # 为模板添加type字段 
+            'order_execution_type': order.order_execution_type,
+            'execution_type': order.order_execution_type,  # 为模板添加execution_type字段
+            'order_price': order.order_price,
+            'price': order.order_price,  # 为模板添加price字段
+            'order_quantity': order.order_quantity,
+            'quantity': order.order_quantity,  # 为模板添加quantity字段
+            'order_status': order.order_status,
+            'status': order.order_status,  # 为模板添加status字段
+            'created_at': safe_date_format(order.created_at),
+            'updated_at': safe_date_format(order.updated_at),
+            'executed_at': safe_date_format(order.executed_at)
+        })
     
+    # 获取用户资金交易记录
+    fund_transactions = FundTransaction.query.filter_by(user_id=current_user.user_id).order_by(FundTransaction.created_at.desc()).limit(5).all()
+    
+    # 处理资金交易记录，确保字段名正确
+    fund_tx_data = []
     for fund_tx in fund_transactions:
-        fund_history.append(RoundableDict({
-            'id': fund_tx.transaction_id,
-            'amount': float(fund_tx.amount),
+        fund_tx_data.append({
+            'transaction_id': fund_tx.transaction_id,
+            'user_id': fund_tx.user_id,
             'transaction_type': fund_tx.transaction_type,
+            'amount': fund_tx.amount,
             'status': fund_tx.status,
-            'created_at': safe_date_format(fund_tx.created_at)
-        }))
+            'created_at': safe_date_format(fund_tx.created_at),
+            'updated_at': safe_date_format(fund_tx.updated_at),
+            'remark': fund_tx.remark
+        })
     
+    # 处理交易记录，确保字段名正确
+    transaction_data = []
+    for tx in transactions:
+        transaction_data.append({
+            'transaction_id': tx.transaction_id,
+            'order_id': tx.order_id,
+            'user_id': tx.user_id,
+            'ticker': tx.ticker,
+            'transaction_type': tx.transaction_type,
+            'transaction_price': tx.transaction_price,
+            'transaction_quantity': tx.transaction_quantity,
+            'transaction_amount': tx.transaction_amount,
+            'transaction_time': safe_date_format(tx.transaction_time),
+            'transaction_status': tx.transaction_status
+        })
+    
+    # 渲染账户页面
     return render_template(
         'user/account.html',
+        user=current_user,
         balance=account_balance,
-        portfolio_value=portfolio_value,
         portfolio=portfolio_data,
-        orders=order_history,
-        transactions=transaction_history,
-        fund_transactions=fund_history
+        portfolio_value=portfolio_value,
+        transactions=transaction_data,
+        orders=order_data,
+        fund_transactions=fund_tx_data
     )
 
 @user_bp.route('/api/deposit', methods=['POST'])
