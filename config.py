@@ -8,6 +8,7 @@ config.py
 
 将配置集中在一个文件中可以使应用程序更易于维护和配置。
 """
+import os
 
 # Flask应用配置
 SECRET_KEY = 'your-secret-key'  # 设置密钥，用于会话安全
@@ -30,6 +31,11 @@ DB_CONFIG = {
     'port': '3306',
     'database': 'stock_data_v1'
 }
+
+# 默认管理员配置
+# 优先从环境变量获取，如果环境变量不存在则使用默认值
+DEFAULT_ADMIN_USERNAME = os.environ.get('DEFAULT_ADMIN_USERNAME', 'admin')
+DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin123secure') 
 
 # 股票代码列表
 TECH_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "NFLX", "TSLA"]

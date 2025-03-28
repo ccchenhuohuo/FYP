@@ -7,6 +7,146 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/privacy.css') }}">
+    <style>
+        /* 隐私政策页面增强样式 */
+        .privacy-header {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .privacy-header h1 {
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .privacy-header .last-updated {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        
+        .privacy-summary {
+            background-color: #e7f5ff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3498db;
+        }
+        
+        .privacy-toc {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 20px;
+        }
+        
+        .privacy-toc h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .privacy-toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .privacy-toc li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .privacy-toc a {
+            text-decoration: none;
+            color: #3498db;
+            display: block;
+            padding: 0.3rem 0;
+            transition: all 0.2s;
+        }
+        
+        .privacy-toc a:hover {
+            color: #2980b9;
+            padding-left: 5px;
+        }
+        
+        .privacy-content {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 2rem;
+        }
+        
+        .privacy-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .privacy-section {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .privacy-section h2 {
+            display: flex;
+            align-items: center;
+            margin-top: 0;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+        
+        .privacy-section h2 i {
+            margin-right: 0.8rem;
+            color: #3498db;
+        }
+        
+        .privacy-section ul li {
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #3498db;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .privacy-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .privacy-toc {
+                position: relative;
+                top: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -27,7 +167,7 @@
                         <li><a href="{{ url_for('user.stock_chart') }}"><i class="fas fa-chart-area"></i> 股票历史走势</a></li>
                         <li><a href="{{ url_for('user.account') }}"><i class="fas fa-user-circle"></i> 我的账户</a></li>
                         <li><a href="{{ url_for('user.ai_assistant_page') }}"><i class="fas fa-robot"></i> AI智能助手</a></li>
-                        <li><a href="{{ url_for('user.stock_analysis') }}"><i class="fas fa-info-circle"></i> 用户页面3</a></li>
+                        <li><a href="{{ url_for('user.stock_analysis') }}"><i class="fas fa-info-circle"></i> 股票风险分析</a></li>
                         <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> 登出</a></li>
                     </ul>
                 </div>
@@ -38,84 +178,114 @@
     <main class="container">
         <div class="privacy-header">
             <h1>隐私政策</h1>
-            <p>最后更新日期: 2024年3月</p>
+            <p class="last-updated">最后更新日期: 2024年3月15日</p>
+        </div>
+        
+        <div class="privacy-summary">
+            <p><strong>简要说明：</strong>我们重视您的隐私并致力于保护您的个人信息。本政策详细说明了我们如何收集、使用、存储和保护您的数据，以及您作为用户所拥有的权利。请花几分钟时间阅读本政策，了解我们如何处理您的信息。</p>
         </div>
         
         <div class="privacy-content">
-            <section>
-                <h2>1. 引言</h2>
-                <p>欢迎访问股票交易系统。我们十分重视您的隐私，并致力于保护您的个人信息。本隐私政策旨在向您说明我们如何收集、使用、存储和保护您的个人信息。</p>
-            </section>
-            
-            <section>
-                <h2>2. 信息收集</h2>
-                <p>我们可能收集以下类型的信息：</p>
+            <div class="privacy-toc">
+                <h3><i class="fas fa-list"></i> 目录</h3>
                 <ul>
-                    <li>个人身份信息：如姓名、电子邮件地址、手机号码等。</li>
-                    <li>账户信息：如用户名、密码等。</li>
-                    <li>交易信息：如股票交易记录、模拟投资数据等。</li>
-                    <li>设备信息：如IP地址、浏览器类型、操作系统等。</li>
-                    <li>使用数据：如页面访问记录、功能使用情况等。</li>
+                    <li><a href="#section-1"><i class="fas fa-angle-right"></i> 1. 引言</a></li>
+                    <li><a href="#section-2"><i class="fas fa-angle-right"></i> 2. 信息收集</a></li>
+                    <li><a href="#section-3"><i class="fas fa-angle-right"></i> 3. 信息使用</a></li>
+                    <li><a href="#section-4"><i class="fas fa-angle-right"></i> 4. 信息共享</a></li>
+                    <li><a href="#section-5"><i class="fas fa-angle-right"></i> 5. 数据安全</a></li>
+                    <li><a href="#section-6"><i class="fas fa-angle-right"></i> 6. 您的权利</a></li>
+                    <li><a href="#section-7"><i class="fas fa-angle-right"></i> 7. Cookie政策</a></li>
+                    <li><a href="#section-8"><i class="fas fa-angle-right"></i> 8. 隐私政策变更</a></li>
+                    <li><a href="#section-9"><i class="fas fa-angle-right"></i> 9. 联系我们</a></li>
                 </ul>
-            </section>
+            </div>
             
-            <section>
-                <h2>3. 信息使用</h2>
-                <p>我们使用收集的信息用于：</p>
-                <ul>
-                    <li>提供、维护和改进我们的服务。</li>
-                    <li>创建和维护您的账户。</li>
-                    <li>处理您的交易请求。</li>
-                    <li>向您发送服务相关通知。</li>
-                    <li>防止欺诈和提高系统安全性。</li>
-                    <li>分析用户行为，改进用户体验。</li>
-                </ul>
-            </section>
-            
-            <section>
-                <h2>4. 信息共享</h2>
-                <p>我们不会出售、出租或交易您的个人信息。在以下情况下，我们可能会共享您的信息：</p>
-                <ul>
-                    <li>征得您的同意后。</li>
-                    <li>与提供服务所必需的第三方服务提供商共享。</li>
-                    <li>遵守法律要求、法院命令或政府机构的要求。</li>
-                    <li>保护我们的权利、财产或安全，以及我们的用户或公众的权利、财产或安全。</li>
-                </ul>
-            </section>
-            
-            <section>
-                <h2>5. 数据安全</h2>
-                <p>我们采取合理的技术和组织措施来保护您的个人信息不被未经授权的访问、使用或披露。然而，没有任何互联网传输或电子存储方法是100%安全的，我们无法保证信息的绝对安全。</p>
-            </section>
-            
-            <section>
-                <h2>6. 您的权利</h2>
-                <p>根据适用的数据保护法，您可能拥有以下权利：</p>
-                <ul>
-                    <li>访问、更正或删除您的个人信息。</li>
-                    <li>限制或反对我们处理您的个人信息。</li>
-                    <li>数据可携带性。</li>
-                    <li>撤回同意。</li>
-                    <li>投诉权。</li>
-                </ul>
-            </section>
-            
-            <section>
-                <h2>7. Cookie政策</h2>
-                <p>我们使用Cookie和类似技术来收集和存储有关您使用我们服务的信息。您可以通过浏览器设置拒绝或删除Cookie，但这可能会影响某些功能的可用性。</p>
-            </section>
-            
-            <section>
-                <h2>8. 隐私政策变更</h2>
-                <p>我们可能会不时更新本隐私政策。如有重大变更，我们将通过网站通知或发送电子邮件通知您。</p>
-            </section>
-            
-            <section>
-                <h2>9. 联系我们</h2>
-                <p>如果您对本隐私政策有任何疑问或建议，请联系我们的数据保护团队。</p>
-            </section>
+            <div class="privacy-sections">
+                <section id="section-1" class="privacy-section">
+                    <h2><i class="fas fa-info-circle"></i> 1. 引言</h2>
+                    <p>欢迎访问股票交易系统。我们十分重视您的隐私，并致力于保护您的个人信息。本隐私政策旨在向您说明我们如何收集、使用、存储和保护您的个人信息。</p>
+                </section>
+                
+                <section id="section-2" class="privacy-section">
+                    <h2><i class="fas fa-database"></i> 2. 信息收集</h2>
+                    <p>我们可能收集以下类型的信息：</p>
+                    <ul>
+                        <li><strong>个人身份信息：</strong>如姓名、电子邮件地址、手机号码等。</li>
+                        <li><strong>账户信息：</strong>如用户名、密码等。</li>
+                        <li><strong>交易信息：</strong>如股票交易记录、模拟投资数据等。</li>
+                        <li><strong>设备信息：</strong>如IP地址、浏览器类型、操作系统等。</li>
+                        <li><strong>使用数据：</strong>如页面访问记录、功能使用情况等。</li>
+                    </ul>
+                </section>
+                
+                <section id="section-3" class="privacy-section">
+                    <h2><i class="fas fa-cogs"></i> 3. 信息使用</h2>
+                    <p>我们使用收集的信息用于：</p>
+                    <ul>
+                        <li>提供、维护和改进我们的服务。</li>
+                        <li>创建和维护您的账户。</li>
+                        <li>处理您的交易请求。</li>
+                        <li>向您发送服务相关通知。</li>
+                        <li>防止欺诈和提高系统安全性。</li>
+                        <li>分析用户行为，改进用户体验。</li>
+                    </ul>
+                </section>
+                
+                <section id="section-4" class="privacy-section">
+                    <h2><i class="fas fa-share-alt"></i> 4. 信息共享</h2>
+                    <p>我们不会出售、出租或交易您的个人信息。在以下情况下，我们可能会共享您的信息：</p>
+                    <ul>
+                        <li>征得您的同意后。</li>
+                        <li>与提供服务所必需的第三方服务提供商共享。</li>
+                        <li>遵守法律要求、法院命令或政府机构的要求。</li>
+                        <li>保护我们的权利、财产或安全，以及我们的用户或公众的权利、财产或安全。</li>
+                    </ul>
+                </section>
+                
+                <section id="section-5" class="privacy-section">
+                    <h2><i class="fas fa-shield-alt"></i> 5. 数据安全</h2>
+                    <p>我们采取合理的技术和组织措施来保护您的个人信息不被未经授权的访问、使用或披露。然而，没有任何互联网传输或电子存储方法是100%安全的，我们无法保证信息的绝对安全。</p>
+                </section>
+                
+                <section id="section-6" class="privacy-section">
+                    <h2><i class="fas fa-user-shield"></i> 6. 您的权利</h2>
+                    <p>根据适用的数据保护法，您可能拥有以下权利：</p>
+                    <ul>
+                        <li><strong>访问权：</strong>您有权访问、更正或删除您的个人信息。</li>
+                        <li><strong>限制处理权：</strong>您有权限制或反对我们处理您的个人信息。</li>
+                        <li><strong>数据可携带权：</strong>您有权以结构化、常用和机器可读的格式接收您的数据。</li>
+                        <li><strong>撤回同意权：</strong>您有权随时撤回您的同意。</li>
+                        <li><strong>投诉权：</strong>您有权向相关数据保护机构投诉。</li>
+                    </ul>
+                </section>
+                
+                <section id="section-7" class="privacy-section">
+                    <h2><i class="fas fa-cookie"></i> 7. Cookie政策</h2>
+                    <p>我们使用Cookie和类似技术来收集和存储有关您使用我们服务的信息。您可以通过浏览器设置拒绝或删除Cookie，但这可能会影响某些功能的可用性。</p>
+                </section>
+                
+                <section id="section-8" class="privacy-section">
+                    <h2><i class="fas fa-sync-alt"></i> 8. 隐私政策变更</h2>
+                    <p>我们可能会不时更新本隐私政策。如有重大变更，我们将通过网站通知或发送电子邮件通知您。</p>
+                </section>
+                
+                <section id="section-9" class="privacy-section">
+                    <h2><i class="fas fa-envelope"></i> 9. 联系我们</h2>
+                    <p>如果您对本隐私政策有任何疑问或建议，请通过以下方式联系我们的数据保护团队：</p>
+                    <ul>
+                        <li>电子邮件：bc10441@um.edu.mo</li>
+                        <li>电话：+853 68555390</li>
+                        <li>地址：澳门大学</li>
+                    </ul>
+                </section>
+            </div>
         </div>
     </main>
+    
+    <div id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </div>
     
     <footer>
         <div class="container">
@@ -124,5 +294,39 @@
     </footer>
     
     <script src="{{ url_for('static', filename='js/user/navigation.js') }}"></script>
+    <script>
+        // 返回顶部按钮功能
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // 平滑滚动到锚点
+        document.querySelectorAll('.privacy-toc a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                window.scrollTo({
+                    top: targetElement.offsetTop - 20,
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
 </body>
-</html> 
+</html>

@@ -118,7 +118,6 @@ flask run --debug
 /
 ├── app.py                      # 应用入口点，Flask应用配置和初始化
 ├── config.py                   # 配置文件，包含数据库和API密钥等配置
-├── auth.py                     # 认证相关功能，用户登录验证
 ├── models/                     # 数据库模型
 │   ├── __init__.py             # 模型初始化和公共函数
 │   ├── admin.py                # 管理员模型
@@ -150,21 +149,45 @@ flask run --debug
 │       └── about.py            # 关于页面
 ├── static/                     # 静态资源
 │   ├── css/                    # 样式表
-│   │   ├── main.css            # 主样式表
-│   │   ├── auth.css            # 认证页面样式
-│   │   ├── admin.css           # 管理员界面样式
-│   │   └── stock_chart.css     # 股票图表样式
+│   │   ├── main.css            # 主样式表 (core/welcome.html)
+│   │   ├── auth.css            # 认证页面样式 (auth/*)
+│   │   ├── account.css         # 用户账户页面样式 (user/account.html)
+│   │   ├── stock_chart.css     # 股票图表页面样式 (user/stock_chart.html)
+│   │   ├── stock_analysis.css  # 股票分析页面样式 (user/stock_analysis.html)
+│   │   ├── ai_assistant.css    # AI助手页面样式 (user/ai_assistant.html)
+│   │   ├── admin_base.css      # 管理员基础样式
+│   │   ├── admin_layout.css    # 管理员布局样式
+│   │   ├── admin_common.css    # 管理员通用样式
+│   │   ├── admin_dashboard.css # 管理员仪表盘样式
+│   │   ├── admin_deposits.css  # 管理员充值管理样式
+│   │   ├── admin_withdrawals.css # 管理员提现管理样式
+│   │   ├── admin_fund_transactions.css # 管理员资金交易通用样式
+│   │   ├── admin_orders.css    # 管理员订单管理样式
+│   │   ├── about.css           # 关于页面样式
+│   │   └── privacy.css         # 隐私政策页面样式
 │   ├── js/                     # JavaScript文件
 │   │   ├── user/               # 用户相关JS
-│   │   │   ├── navigation.js   # 导航栏交互
+│   │   │   ├── navigation.js   # 用户导航栏交互
 │   │   │   ├── account.js      # 账户操作（充值提现）
 │   │   │   ├── stock_chart.js  # 股票图表和订单创建
 │   │   │   ├── stock_chart_extra.js # 图表附加功能
-│   │   │   ├── stock_analysis.js # 股票分析
+│   │   │   ├── stock_analysis.js # 股票分析交互
 │   │   │   └── ai_assistant.js # AI助手交互
 │   │   ├── admin/              # 管理员相关JS
+│   │   │   ├── navigation.js   # 管理员导航栏交互
+│   │   │   ├── deposits.js     # 充值管理交互
+│   │   │   └── withdrawals.js  # 提现管理交互
 │   │   └── auth/               # 认证相关JS
-│   └── picture.png             # 图片资源
+│   │       ├── login.js        # 用户登录交互
+│   │       ├── register.js     # 用户注册交互
+│   │       └── adminLogin.js   # 管理员登录交互
+│   ├── picture.png             # 示例图片
+│   ├── chenyu.png              # 团队成员图片
+│   ├── zhenghaowen.png         # 团队成员图片
+│   ├── xumingyang.png          # 团队成员图片
+│   ├── liaoqiyue.png           # 团队成员图片
+│   ├── chenguanqi.png          # 团队成员图片
+│   └── frankie.png             # 团队成员图片
 ├── templates/                  # HTML模板
 │   ├── auth/                   # 认证相关模板
 │   │   ├── login.html          # 登录页面
@@ -194,7 +217,6 @@ flask run --debug
 ├── test/                       # 测试目录
 ├── flask_env/                  # Python虚拟环境
 ├── requirements.txt            # 项目依赖
-├── .gitignore                  # Git忽略文件
 └── README.md                   # 项目说明文档
 ```
 

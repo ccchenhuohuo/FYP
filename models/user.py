@@ -31,6 +31,10 @@ class User(db.Model, UserMixin):
     def is_admin(self):
         """
         判断是否为管理员
+        用于Flask-Login和权限检查
+        
+        返回:
+            bool: 始终返回False，因为这是普通用户
         """
         return False
     
