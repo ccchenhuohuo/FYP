@@ -40,6 +40,10 @@ DEFAULT_ADMIN_PASSWORD = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin123secur
 # 股票代码列表
 TECH_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "NFLX", "TSLA"]
 
+# 管理员账户安全配置
+ADMIN_MAX_LOGIN_ATTEMPTS = 5  # 管理员最大登录尝试次数
+ADMIN_LOCKOUT_DURATION = 2    # 管理员账户锁定时间（分钟）
+
 # 应用运行配置
 DEBUG = True
 PORT = 5003

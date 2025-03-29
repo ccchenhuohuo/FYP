@@ -4,6 +4,9 @@
 """
 from . import db
 from datetime import datetime
+from sqlalchemy.orm import validates
+from sqlalchemy import CheckConstraint, event
+from sqlalchemy.exc import ValidationError
 
 class AccountBalance(db.Model):
     """
@@ -19,6 +22,28 @@ class AccountBalance(db.Model):
     frozen_balance = db.Column(db.Float, nullable=False, default=0.0)     # 冻结余额
     total_balance = db.Column(db.Float, nullable=False, default=0.0)      # 总余额 = 可用 + 冻结
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # 添加校验约束：总余额必须等于可用余额加冻结余额
+    __table_args__ = (
+        CheckConstraint('total_balance = available_balance + frozen_balance', name='check_balance_sum'),
+    )
+    
+    @validates('available_balance', 'frozen_balance')
+    def validate_balances(self, key, value):
+        """验证余额值并自动更新总余额"""
+        if value < 0:
+            raise ValidationError(f"{key}不能为负值")
+            
+        return value
+    
+    @validates('total_balance')
+    def validate_total_balance(self, key, value):
+        """验证总余额"""
+        if hasattr(self, 'available_balance') and hasattr(self, 'frozen_balance'):
+            expected = self.available_balance + self.frozen_balance
+            if abs(value - expected) > 0.001:  # 使用小误差范围处理浮点数精度问题
+                raise ValidationError(f"总余额({value})必须等于可用余额({self.available_balance})加冻结余额({self.frozen_balance})")
+        return value
     
     def __repr__(self):
         """
@@ -59,8 +84,28 @@ class FundTransaction(db.Model):
     operator_id = db.Column(db.Integer, nullable=True)
     original_id = db.Column(db.Integer, nullable=True)  # 用于记录原始充值/提现ID，方便数据迁移后的参考
     
+    # 添加校验约束：金额必须大于0
+    __table_args__ = (
+        CheckConstraint('amount > 0', name='check_positive_amount'),
+    )
+    
+    @validates('amount')
+    def validate_amount(self, key, value):
+        """验证交易金额必须大于0"""
+        if value <= 0:
+            raise ValidationError(f"交易金额必须大于0，当前值: {value}")
+        return value
+    
+    @validates('transaction_type')
+    def validate_transaction_type(self, key, value):
+        """验证交易类型必须是有效值"""
+        valid_types = ['deposit', 'withdrawal']
+        if value not in valid_types:
+            raise ValidationError(f"无效的交易类型: {value}，有效类型: {', '.join(valid_types)}")
+        return value
+    
     def __repr__(self):
         """
         模型的字符串表示
         """
-        return f'<FundTransaction {self.transaction_id}: {self.transaction_type} {self.amount} ({self.status})>' 
+        return f'<FundTransaction {self.transaction_id}: {self.transaction_type} {self.amount} ({self.status})>'

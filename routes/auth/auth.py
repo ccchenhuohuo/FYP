@@ -126,47 +126,68 @@ def register():
 
 @auth_bp.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
-    """
-    管理员登录路由
-    处理管理员登录表单提交和页面渲染
-    """
+    # 导入日志记录器
+    from models.admin import logger, AdminAccountLockedError
+    
+    # 如果用户已登录，重定向到管理员仪表板
     if current_user.is_authenticated:
-        return redirect(url_for('admin.admin_dashboard'))
-        
+        # 检查是否为管理员
+        if hasattr(current_user, 'is_admin') and current_user.is_admin:
+            logger.info(f"管理员 {current_user.admin_name} 已登录，重定向到管理员仪表板")
+            return redirect(url_for('admin.admin_dashboard'))
+    
     if request.method == 'POST':
         admin_name = request.form.get('username')
         admin_password = request.form.get('password')
         
-        print(f"接收到的管理员登录信息 - 用户名: {admin_name}")  # 调试信息
-
+        logger.info(f"接收到管理员登录请求 - 用户名: {admin_name}")
+        
         if not admin_name or not admin_password:
-            flash('请填写所有必填字段')
+            flash('请输入用户名和密码')
+            logger.warning("管理员登录失败：用户名或密码为空")
             return render_template('auth/admin_login.html')
         
         try:
-            # 验证管理员
+            # 查询管理员
             admin = Admin.query.filter_by(admin_name=admin_name).first()
             
             if not admin:
-                print("管理员不存在")  # 调试信息
-                flash('用户名或密码错误', 'danger')
+                flash('用户名或密码错误')
+                logger.warning(f"管理员登录失败：用户名 {admin_name} 不存在")
                 return render_template('auth/admin_login.html')
             
-            # 验证密码
-            if check_password_hash(admin.admin_password, admin_password):
-                print("管理员密码验证成功")  # 调试信息
-                login_user(admin)
-                return redirect(url_for('admin.admin_dashboard'))
-            else:
-                print("管理员密码验证失败")  # 调试信息
-                flash('用户名或密码错误', 'danger')
+            try:
+                # 检查账户是否被锁定
+                admin.is_account_locked()
+                
+                if check_password_hash(admin.admin_password, admin_password):
+                    # 登录成功，重置登录尝试次数
+                    admin.reset_login_attempts()
+                    db.session.commit()
+                    login_user(admin)
+                    logger.info(f"管理员 {admin_name} 登录成功")
+                    return redirect(url_for('admin.admin_dashboard'))
+                else:
+                    # 登录失败，增加登录尝试次数
+                    is_locked = admin.increment_login_attempts()
+                    db.session.commit()
+                    if is_locked:
+                        flash('登录尝试次数过多，账户已被锁定')
+                        logger.warning(f"管理员 {admin_name} 登录尝试次数过多，账户已被锁定")
+                    else:
+                        flash('用户名或密码错误')
+                        logger.warning(f"管理员 {admin_name} 登录失败：密码错误")
+                    return render_template('auth/admin_login.html')
+            
+            except AdminAccountLockedError as e:
+                flash(f'账户已被锁定，请稍后再试')
                 return render_template('auth/admin_login.html')
                 
         except Exception as e:
-            print(f"管理员登录过程发生错误: {str(e)}")  # 调试信息
-            flash('登录失败，请稍后重试', 'danger')
+            flash('登录过程中发生错误')
+            logger.error(f"管理员登录过程中发生错误: {str(e)}")
             return render_template('auth/admin_login.html')
-        
+    
     return render_template('auth/admin_login.html')
 
 @auth_bp.route('/logout')

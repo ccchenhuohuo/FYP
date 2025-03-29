@@ -27,6 +27,13 @@
             {% endif %}
         {% endwith %}
         
+        {% if locked_until %}
+        <div class="account-locked-info" data-locked-until="{{ locked_until.isoformat() }}">
+            <p>您的账户已被锁定，将在 {{ locked_until.strftime('%Y-%m-%d %H:%M:%S') }} 解锁</p>
+            <p>剩余时间: <span id="lockCountdown"></span></p>
+        </div>
+        {% endif %}
+        
         <form id="adminLoginForm" method="post" action="{{ url_for('auth.admin_login') }}">
             <div class="form-group">
                 <label for="username">管理员用户名</label>
@@ -44,4 +51,4 @@
     
     <script src="{{ url_for('static', filename='js/auth/adminLogin.js') }}"></script>
 </body>
-</html> 
+</html>

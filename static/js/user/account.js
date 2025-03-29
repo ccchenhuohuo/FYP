@@ -20,7 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
         depositForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const amount = document.getElementById('amount').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            // 客户端验证：金额必须大于0
+            if (isNaN(amount) || amount <= 0) {
+                alert('充值金额必须大于0');
+                return;
+            }
             
             try {
                 const response = await fetch('/user/api/deposit', {
@@ -28,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ amount: parseFloat(amount) })
+                    body: JSON.stringify({ amount: amount })
                 });
                 
                 const data = await response.json();
@@ -56,7 +62,20 @@ document.addEventListener('DOMContentLoaded', function() {
         withdrawalForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const amount = document.getElementById('withdrawAmount').value;
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const availableBalance = parseFloat(document.getElementById('availableBalance')?.dataset?.balance || 0);
+            
+            // 客户端验证：金额必须大于0
+            if (isNaN(amount) || amount <= 0) {
+                alert('提现金额必须大于0');
+                return;
+            }
+            
+            // 客户端验证：提现金额不能超过可用余额
+            if (amount > availableBalance) {
+                alert(`提现金额不能超过可用余额 ${availableBalance}`);
+                return;
+            }
             
             try {
                 const response = await fetch('/user/api/withdraw', {
@@ -64,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ amount: parseFloat(amount) })
+                    body: JSON.stringify({ amount: amount })
                 });
                 
                 const data = await response.json();
@@ -122,4 +141,4 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
-}); 
+});
