@@ -241,7 +241,6 @@ def get_fundamental_data():
             'pe_ratio': safe_float(fundamental.pe_ratio),
             'pb_ratio': safe_float(fundamental.pb_ratio),
             'dividend_yield': safe_float(fundamental.dividend_yield),
-            'revenue': safe_float(fundamental.revenue),
             'net_income': safe_float(fundamental.net_income),
             'operating_cash_flow': safe_float(fundamental.operating_cash_flow)
         }
@@ -447,4 +446,4 @@ def get_real_time_stock_data():
         # 处理其他错误
         print(f"获取实时数据失败: {str(e)}")
         print(f"详细错误: {traceback.format_exc()}")
-        return jsonify({'error': f'获取实时数据失败: {str(e)}'}), 500 
+        return jsonify({'error': f'获取实时数据失败: {str(e)}'}), 500
