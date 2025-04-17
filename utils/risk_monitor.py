@@ -1,6 +1,6 @@
 """
-风险监测模块
-用于监测和分析股票的风险和估值
+Risk monitoring module
+Used to monitor and analyze the risk and valuation of stocks
 """
 import yfinance as yf
 import pandas as pd
@@ -11,18 +11,18 @@ import datetime as dt
 
 class ValuationRiskMonitor:
     """
-    估值和风险监测系统
+    Valuation and risk monitoring system
     """
     def __init__(self, tickers, start_date=None, end_date=None, benchmark_ticker="^GSPC", min_data_points=60):
         """
-        初始化估值和风险监测系统
+        Initialize the valuation and risk monitoring system
         
-        参数:
-        tickers (list): 股票代码列表
-        start_date (str): 起始日期，格式 'YYYY-MM-DD'
-        end_date (str): 结束日期，格式 'YYYY-MM-DD'
-        benchmark_ticker (str): 基准指数，默认为S&P 500
-        min_data_points (int): 计算贝塔系数所需的最小数据点数量
+        Parameters:
+        tickers (list): list of stock codes
+        start_date (str): start date, format 'YYYY-MM-DD'
+        end_date (str): end date, format 'YYYY-MM-DD'
+        benchmark_ticker (str): benchmark index, default is S&P 500
+        min_data_points (int): minimum number of data points required to calculate beta
         """
         self.tickers = tickers if isinstance(tickers, list) else [tickers]
         self.start_date = start_date if start_date else (dt.datetime.now() - dt.timedelta(days=365*3)).strftime('%Y-%m-%d')
@@ -36,55 +36,55 @@ class ValuationRiskMonitor:
         self.benchmark_data = None
         
     def download_data(self):
-        """下载股票数据和基准数据"""
-        print("正在下载市场数据...")
+        """Download stock data and benchmark data"""
+        print("Downloading market data...")
         
-        # 检查是否有有效的股票代码
+        # Check if there are valid stock codes
         if not self.tickers:
-            print("没有提供有效的股票代码")
+            print("No valid stock codes provided")
             return {}
         
-        # 下载股票价格数据
+        # Download stock price data
         for ticker in self.tickers:
             try:
                 data = yf.download(ticker, start=self.start_date, end=self.end_date)
                 
-                # 检查是否获取到数据
+                # Check if data is obtained
                 if data.empty:
-                    print(f"警告: 无法获取 {ticker} 的数据")
+                    print(f"Warning: cannot get data for {ticker}")
                     self.stock_data[ticker] = pd.DataFrame()  # 空数据框
                 else:
                     self.stock_data[ticker] = data
-                    print(f"已下载 {ticker} 的历史价格数据")
+                    print(f"Downloaded historical price data for {ticker}")
             except Exception as e:
-                print(f"下载 {ticker} 数据时出错: {str(e)}")
+                print(f"Error downloading data for {ticker}: {str(e)}")
                 self.stock_data[ticker] = pd.DataFrame()  # 空数据框
         
-        # 下载基准数据
+        # Download benchmark data
         try:
             self.benchmark_data = yf.download(self.benchmark_ticker, start=self.start_date, end=self.end_date)
             if self.benchmark_data.empty:
-                print(f"警告: 无法获取基准 {self.benchmark_ticker} 的数据")
+                print(f"Warning: cannot get data for {self.benchmark_ticker}")
             else:
-                print(f"已下载 {self.benchmark_ticker} 的基准数据")
+                print(f"Downloaded benchmark data for {self.benchmark_ticker}")
         except Exception as e:
-            print(f"下载基准数据时出错: {str(e)}")
+            print(f"Error downloading benchmark data: {str(e)}")
             self.benchmark_data = pd.DataFrame()  # 空数据框
         
-        # 获取基本面数据
+        # Get fundamental data
         self._get_fundamentals()
         
         return self.stock_data
     
     def _get_fundamentals(self):
-        """获取股票的基本面数据"""
-        print("正在获取基本面数据...")
+        """Get fundamental data of stocks"""
+        print("Getting fundamental data...")
         for ticker in self.tickers:
             try:
                 stock = yf.Ticker(ticker)
-                # 获取财务报表
+                # Get financial statements
                 try:
-                    # 获取收入表中的净收入，替代已弃用的earnings
+                    # Get net income from income statement, replacing the deprecated earnings
                     income_stmt = stock.income_stmt if hasattr(stock, 'income_stmt') else pd.DataFrame()
                     net_income = None
                     if not income_stmt.empty and 'Net Income' in income_stmt.index:
@@ -95,12 +95,12 @@ class ValuationRiskMonitor:
                         'balance_sheet': stock.balance_sheet if hasattr(stock, 'balance_sheet') else pd.DataFrame(),
                         'income_stmt': income_stmt,
                         'cash_flow': stock.cashflow if hasattr(stock, 'cashflow') else pd.DataFrame(),
-                        'net_income': net_income  # 使用从income_stmt中提取的净收入替代earnings
+                        'net_income': net_income  # Use net income extracted from income_stmt instead of earnings
                     }
-                    print(f"已获取 {ticker} 的基本面数据")
+                    print(f"Got fundamental data for {ticker}")
                 except Exception as e:
-                    print(f"获取 {ticker} 的基本面数据时出错: {e}")
-                    # 提供空的基本面数据结构
+                    print(f"Error getting fundamental data for {ticker}: {e}")
+                    # Provide empty fundamental data structure
                     self.fundamentals[ticker] = {
                         'info': {},
                         'balance_sheet': pd.DataFrame(),
@@ -109,8 +109,8 @@ class ValuationRiskMonitor:
                         'net_income': None
                     }
             except Exception as e:
-                print(f"创建 {ticker} 的Ticker对象时出错: {e}")
-                # 提供空的基本面数据结构
+                print(f"Error creating Ticker object for {ticker}: {e}")
+                # Provide empty fundamental data structure
                 self.fundamentals[ticker] = {
                     'info': {},
                     'balance_sheet': pd.DataFrame(),
@@ -120,132 +120,132 @@ class ValuationRiskMonitor:
                 }
     
     def calculate_risk_metrics(self):
-        """计算风险指标"""
-        print("正在计算风险指标...")
+        """Calculate risk metrics"""
+        print("Calculating risk metrics...")
         for ticker in self.tickers:
             try:
-                # 检查是否有足够的数据
+                # Check if there is enough data
                 if ticker not in self.stock_data or self.stock_data[ticker].empty or len(self.stock_data[ticker]) < 2:
-                    print(f"警告: {ticker} 没有足够的价格数据，无法计算风险指标")
+                    print(f"Warning: {ticker} has insufficient price data, cannot calculate risk metrics")
                     self.risk_metrics[ticker] = {
                         'data_available': False,
-                        'error_message': '没有足够的价格数据'
+                        'error_message': 'Insufficient price data'
                     }
                     continue
                 
-                # 计算收益率
+                # Calculate returns
                 returns = self.stock_data[ticker]['Close'].pct_change().dropna()
                 
-                # 检查基准数据
+                # Check benchmark data
                 if self.benchmark_data is None or self.benchmark_data.empty or len(self.benchmark_data) < 2:
-                    print(f"警告: 没有足够的基准数据，无法计算 {ticker} 的贝塔系数")
+                    print(f"Warning: insufficient benchmark data, cannot calculate beta for {ticker}")
                     benchmark_returns = None
                 else:
                     benchmark_returns = self.benchmark_data['Close'].pct_change().dropna()
                 
-                # 初始化风险指标字典
+                # Initialize risk metrics dictionary
                 self.risk_metrics[ticker] = {
                     'data_available': True
                 }
                 
-                # 计算波动率
+                # Calculate volatility
                 volatility = returns.std() * np.sqrt(252)
-                # 修复单元素Series的float转换
+                # Fix float conversion for single element Series
                 self.risk_metrics[ticker]['volatility'] = float(volatility.item()) if hasattr(volatility, 'item') else float(volatility)
                 
-                # 计算夏普比率 - 处理除以零的情况
-                # 使用.item()方法获取标量值
+                # Calculate Sharpe ratio - handle division by zero case
+                # Use .item() method to get scalar value
                 returns_std = returns.std().item() if hasattr(returns.std(), 'item') else returns.std()
                 returns_mean = returns.mean().item() if hasattr(returns.mean(), 'item') else returns.mean()
                 
                 if returns_std > 0:
                     sharpe_ratio = (returns_mean / returns_std) * np.sqrt(252)
-                    # 修复单元素Series的float转换
+                    # Fix float conversion for single element Series
                     self.risk_metrics[ticker]['sharpe_ratio'] = float(sharpe_ratio) if isinstance(sharpe_ratio, (np.float64, np.float32)) else sharpe_ratio
                 else:
-                    print(f"警告: {ticker} 的收益率标准差为0，无法计算夏普比率")
+                    print(f"Warning: {ticker} has a standard deviation of 0, cannot calculate Sharpe ratio")
                     self.risk_metrics[ticker]['sharpe_ratio'] = 0.0
                 
-                # 计算最大回撤
+                # Calculate maximum drawdown
                 try:
                     max_drawdown = self._calculate_max_drawdown(self.stock_data[ticker]['Close'])
                     self.risk_metrics[ticker]['max_drawdown'] = float(max_drawdown) if max_drawdown is not None else None
                 except Exception as e:
-                    print(f"计算 {ticker} 最大回撤时出错: {str(e)}")
+                    print(f"Error calculating max drawdown for {ticker}: {str(e)}")
                     self.risk_metrics[ticker]['max_drawdown'] = None
                 
-                # 计算VaR
+                # Calculate VaR
                 if len(returns) >= 5:
                     var_95 = np.percentile(returns, 5)
                     var_99 = np.percentile(returns, 1)
-                    # 修复单元素Series的float转换
+                    # Fix float conversion for single element Series
                     self.risk_metrics[ticker]['var_95'] = float(var_95.item()) if hasattr(var_95, 'item') else float(var_95)
                     self.risk_metrics[ticker]['var_99'] = float(var_99.item()) if hasattr(var_99, 'item') else float(var_99)
                 else:
-                    print(f"警告: {ticker} 的数据不足，无法计算可靠的VaR")
+                    print(f"Warning: {ticker} has insufficient data, cannot calculate reliable VaR")
                     self.risk_metrics[ticker]['var_95'] = None
                     self.risk_metrics[ticker]['var_99'] = None
                 
-                # 计算偏度和峰度
-                if len(returns) > 3:  # 需要至少4个数据点
+                # Calculate skewness and kurtosis
+                if len(returns) > 3:  # Need at least 4 data points
                     skewness = stats.skew(returns)
                     kurtosis = stats.kurtosis(returns)
-                    # 修复单元素Series的float转换
+                    # Fix float conversion for single element Series
                     self.risk_metrics[ticker]['skewness'] = float(skewness.item()) if hasattr(skewness, 'item') else float(skewness)
                     self.risk_metrics[ticker]['kurtosis'] = float(kurtosis.item()) if hasattr(kurtosis, 'item') else float(kurtosis)
                 else:
-                    print(f"警告: {ticker} 的数据不足，无法计算偏度和峰度")
+                    print(f"Warning: {ticker} has insufficient data, cannot calculate skewness and kurtosis")
                     self.risk_metrics[ticker]['skewness'] = None
                     self.risk_metrics[ticker]['kurtosis'] = None
                 
-                # 计算贝塔系数 - 改进版
+                # Calculate beta coefficient - improved version
                 self._calculate_beta(ticker, returns, benchmark_returns)
                 
-                # 计算信息比率
+                # Calculate information ratio
                 self._calculate_information_ratio(ticker, returns, benchmark_returns)
                 
-                # 计算特雷诺比率
+                # Calculate Treynor ratio
                 self._calculate_treynor_ratio(ticker, returns, benchmark_returns)
                 
-                # 计算索提诺比率
+                # Calculate Sortino ratio
                 self._calculate_sortino_ratio(ticker, returns)
                 
             except Exception as e:
-                print(f"计算 {ticker} 风险指标时出错: {str(e)}")
+                print(f"Error calculating risk metrics for {ticker}: {str(e)}")
                 self.risk_metrics[ticker] = {
                     'data_available': False,
-                    'error_message': f'计算风险指标时出错: {str(e)}'
+                    'error_message': f'Error calculating risk metrics: {str(e)}'
                 }
                 
         return self.risk_metrics
     
     def _calculate_max_drawdown(self, price_series):
-        """计算最大回撤"""
+        """Calculate maximum drawdown"""
         try:
             if price_series.empty or len(price_series) < 2:
-                print("价格序列为空或数据不足，无法计算最大回撤")
+                print("Price series is empty or insufficient data, cannot calculate max drawdown")
                 return None
             
             roll_max = price_series.cummax()
             drawdown = (price_series / roll_max - 1)
             min_drawdown = drawdown.min()
-            # 修复单元素Series的float转换
+            # Fix float conversion for single element Series
             return float(min_drawdown.item()) if hasattr(min_drawdown, 'item') else float(min_drawdown)
         except Exception as e:
-            print(f"计算最大回撤时出错: {str(e)}")
+            print(f"Error calculating max drawdown: {str(e)}")
             return None
     
     def _calculate_beta(self, ticker, returns, benchmark_returns):
         """
-        计算贝塔系数 - 改进版
+        Calculate beta coefficient - improved version
         
-        参数:
-        ticker (str): 股票代码
-        returns (Series): 股票收益率序列
-        benchmark_returns (Series): 基准指数收益率序列
+        Parameters:
+        ticker (str): stock code
+        returns (Series): stock return series
+        benchmark_returns (Series): benchmark index return series
         """
         if benchmark_returns is None or len(returns) < self.min_data_points or len(benchmark_returns) < self.min_data_points:
-            print(f"警告: 数据点数量不足 {self.min_data_points}，无法计算 {ticker} 的贝塔系数")
+            print(f"Warning: insufficient data points, {self.min_data_points}, cannot calculate beta for {ticker}")
             self.risk_metrics[ticker]['beta'] = None
             self.risk_metrics[ticker]['r_squared'] = None
             self.risk_metrics[ticker]['residual_risk'] = None
@@ -253,65 +253,65 @@ class ValuationRiskMonitor:
             return
         
         try:
-            # 确保两个序列有相同的索引
+            # Ensure two sequences have the same index
             common_index = returns.index.intersection(benchmark_returns.index)
             if len(common_index) < self.min_data_points:
-                print(f"警告: 共同数据点数量不足 {self.min_data_points}，无法计算 {ticker} 的贝塔系数")
+                print(f"Warning: insufficient common data points, {self.min_data_points}, cannot calculate beta for {ticker}")
                 self.risk_metrics[ticker]['beta'] = None
                 self.risk_metrics[ticker]['r_squared'] = None
                 self.risk_metrics[ticker]['residual_risk'] = None
                 self.risk_metrics[ticker]['systematic_risk_pct'] = None
                 return
             
-            # 对齐数据
+            # Align data
             stock_returns_aligned = returns.loc[common_index]
             benchmark_returns_aligned = benchmark_returns.loc[common_index]
             
-            # 使用numpy计算协方差和方差，避免DataFrame和Series的比较问题
+            # Use numpy to calculate covariance and variance, avoid DataFrame and Series comparison issues
             stock_returns_np = stock_returns_aligned.values
             benchmark_returns_np = benchmark_returns_aligned.values
             
-            # 计算协方差和方差
+            # Calculate covariance and variance
             cov_matrix = np.cov(stock_returns_np, benchmark_returns_np, ddof=1)
             if cov_matrix.shape == (2, 2):
                 covariance = cov_matrix[0, 1]
                 benchmark_variance = np.var(benchmark_returns_np, ddof=1)
                 
-                # 检查方差是否为零
+                # Check if variance is zero
                 if benchmark_variance > 0:
                     beta = covariance / benchmark_variance
                     self.risk_metrics[ticker]['beta'] = float(beta)
                     
-                    # 计算R方值（决定系数）
+                    # Calculate R-squared value (coefficient of determination)
                     correlation = np.corrcoef(stock_returns_np, benchmark_returns_np)[0, 1]
                     r_squared = correlation ** 2
                     self.risk_metrics[ticker]['r_squared'] = float(r_squared)
                     
-                    # 计算残差风险（特异风险）
+                    # Calculate residual risk (specific risk)
                     predicted_returns = benchmark_returns_np * beta
                     residual_returns = stock_returns_np - predicted_returns
                     residual_risk = np.std(residual_returns, ddof=1) * np.sqrt(252)
                     self.risk_metrics[ticker]['residual_risk'] = float(residual_risk)
                     
-                    # 计算系统性风险占比
+                    # Calculate systematic risk percentage
                     total_risk = np.std(stock_returns_np, ddof=1) * np.sqrt(252)
                     systematic_risk = beta * np.std(benchmark_returns_np, ddof=1) * np.sqrt(252)
                     systematic_risk_pct = (systematic_risk / total_risk) ** 2
                     self.risk_metrics[ticker]['systematic_risk_pct'] = float(systematic_risk_pct)
                 else:
-                    print(f"警告: 基准收益率方差为0，无法计算 {ticker} 的贝塔系数")
+                    print(f"Warning: benchmark return variance is 0, cannot calculate beta for {ticker}")
                     self.risk_metrics[ticker]['beta'] = None
                     self.risk_metrics[ticker]['r_squared'] = None
                     self.risk_metrics[ticker]['residual_risk'] = None
                     self.risk_metrics[ticker]['systematic_risk_pct'] = None
             else:
-                print(f"警告: 协方差矩阵形状不正确，无法计算 {ticker} 的贝塔系数")
+                print(f"Warning: covariance matrix shape is incorrect, cannot calculate beta for {ticker}")
                 self.risk_metrics[ticker]['beta'] = None
                 self.risk_metrics[ticker]['r_squared'] = None
                 self.risk_metrics[ticker]['residual_risk'] = None
                 self.risk_metrics[ticker]['systematic_risk_pct'] = None
         except Exception as e:
-            print(f"计算 {ticker} 贝塔系数时出错: {str(e)}")
+            print(f"Error calculating beta for {ticker}: {str(e)}")
             self.risk_metrics[ticker]['beta'] = None
             self.risk_metrics[ticker]['r_squared'] = None
             self.risk_metrics[ticker]['residual_risk'] = None
@@ -319,38 +319,38 @@ class ValuationRiskMonitor:
     
     def _calculate_information_ratio(self, ticker, returns, benchmark_returns):
         """
-        计算信息比率
+        Calculate information ratio
         
-        参数:
-        ticker (str): 股票代码
-        returns (Series): 股票收益率序列
-        benchmark_returns (Series): 基准指数收益率序列
+        Parameters:
+        ticker (str): stock code
+        returns (Series): stock return series
+        benchmark_returns (Series): benchmark index return series
         """
         if benchmark_returns is None or len(returns) < 30 or len(benchmark_returns) < 30:
-            print(f"警告: 数据不足，无法计算 {ticker} 的信息比率")
+            print(f"Warning: insufficient data, cannot calculate information ratio for {ticker}")
             self.risk_metrics[ticker]['information_ratio'] = None
             return
         
         try:
-            # 确保两个序列有相同的索引
+            # Ensure two sequences have the same index
             common_index = returns.index.intersection(benchmark_returns.index)
             if len(common_index) < 30:
-                print(f"警告: 共同数据点数量不足30，无法计算 {ticker} 的信息比率")
+                print(f"Warning: insufficient common data points, cannot calculate information ratio for {ticker}")
                 self.risk_metrics[ticker]['information_ratio'] = None
                 return
             
-            # 对齐数据
+            # Align data
             stock_returns_aligned = returns.loc[common_index]
             benchmark_returns_aligned = benchmark_returns.loc[common_index]
             
-            # 转换为numpy数组，避免Series比较问题
+            # Convert to numpy array, avoid Series comparison issues
             stock_returns_np = stock_returns_aligned.values
             benchmark_returns_np = benchmark_returns_aligned.values
             
-            # 计算超额收益
+            # Calculate excess returns
             excess_returns = stock_returns_np - benchmark_returns_np
             
-            # 计算信息比率
+            # Calculate information ratio
             excess_returns_mean = np.mean(excess_returns)
             excess_returns_std = np.std(excess_returns, ddof=1)
             
@@ -358,133 +358,133 @@ class ValuationRiskMonitor:
                 information_ratio = excess_returns_mean / excess_returns_std * np.sqrt(252)
                 self.risk_metrics[ticker]['information_ratio'] = float(information_ratio)
             else:
-                print(f"警告: 超额收益标准差为0，无法计算 {ticker} 的信息比率")
+                print(f"Warning: excess return standard deviation is 0, cannot calculate information ratio for {ticker}")
                 self.risk_metrics[ticker]['information_ratio'] = None
         except Exception as e:
-            print(f"计算 {ticker} 信息比率时出错: {str(e)}")
+            print(f"Error calculating information ratio for {ticker}: {str(e)}")
             self.risk_metrics[ticker]['information_ratio'] = None
     
     def _calculate_treynor_ratio(self, ticker, returns, benchmark_returns):
         """
-        计算特雷诺比率
+        Calculate Treynor ratio
         
-        参数:
-        ticker (str): 股票代码
-        returns (Series): 股票收益率序列
-        benchmark_returns (Series): 基准指数收益率序列
+        Parameters:
+        ticker (str): stock code
+        returns (Series): stock return series
+        benchmark_returns (Series): benchmark index return series
         """
         if 'beta' not in self.risk_metrics[ticker] or self.risk_metrics[ticker]['beta'] is None:
-            print(f"警告: 贝塔系数不可用，无法计算 {ticker} 的特雷诺比率")
+            print(f"Warning: beta coefficient is not available, cannot calculate Treynor ratio for {ticker}")
             self.risk_metrics[ticker]['treynor_ratio'] = None
             return
         
         try:
-            # 计算无风险收益率（假设为0，可以根据实际情况调整）
+            # Calculate risk-free rate (assumed to be 0, can be adjusted according to actual situation)
             risk_free_rate = 0.0
             
-            # 计算年化平均收益率
+            # Calculate annualized average return
             returns_mean = returns.mean() * 252
             
-            # 计算特雷诺比率
+            # Calculate Treynor ratio
             beta = self.risk_metrics[ticker]['beta']
             if beta != 0:
                 treynor_ratio = (returns_mean - risk_free_rate) / beta
                 self.risk_metrics[ticker]['treynor_ratio'] = float(treynor_ratio)
             else:
-                print(f"警告: 贝塔系数为0，无法计算 {ticker} 的特雷诺比率")
+                print(f"Warning: beta coefficient is 0, cannot calculate Treynor ratio for {ticker}")
                 self.risk_metrics[ticker]['treynor_ratio'] = None
         except Exception as e:
-            print(f"计算 {ticker} 特雷诺比率时出错: {str(e)}")
+            print(f"Error calculating Treynor ratio for {ticker}: {str(e)}")
             self.risk_metrics[ticker]['treynor_ratio'] = None
     
     def _calculate_sortino_ratio(self, ticker, returns):
         """
-        计算索提诺比率
+        Calculate Sortino ratio
         
-        参数:
-        ticker (str): 股票代码
-        returns (Series): 股票收益率序列
+        Parameters:
+        ticker (str): stock code
+        returns (Series): stock return series
         """
         if len(returns) < 30:
-            print(f"警告: 数据不足，无法计算 {ticker} 的索提诺比率")
+            print(f"Warning: insufficient data, cannot calculate Sortino ratio for {ticker}")
             self.risk_metrics[ticker]['sortino_ratio'] = None
             self.risk_metrics[ticker]['downside_deviation'] = None
             return
         
         try:
-            # 转换为numpy数组，避免Series比较问题
+            # Convert to numpy array, avoid Series comparison issues
             returns_np = returns.values
             
-            # 计算无风险收益率（假设为0，可以根据实际情况调整）
+            # Calculate risk-free rate (assumed to be 0, can be adjusted according to actual situation)
             risk_free_rate = 0.0
             
-            # 计算年化平均收益率
+            # Calculate annualized average return
             returns_mean = np.mean(returns_np) * 252
             
-            # 计算下行风险（只考虑负收益）
+            # Calculate downside risk (only consider negative returns)
             negative_returns = returns_np[returns_np < 0]
             if len(negative_returns) > 0:
                 downside_risk = np.std(negative_returns, ddof=1) * np.sqrt(252)
                 
-                # 计算索提诺比率
+                # Calculate Sortino ratio
                 if downside_risk > 0:
                     sortino_ratio = (returns_mean - risk_free_rate) / downside_risk
                     self.risk_metrics[ticker]['sortino_ratio'] = float(sortino_ratio)
                     
-                    # 计算下行偏差
-                    target_return = 0  # 目标收益率，可以根据实际情况调整
+                    # Calculate downside deviation
+                    target_return = 0  # Target return, can be adjusted according to actual situation
                     downside_returns = returns_np[returns_np < target_return]
                     downside_deviation = np.sqrt(np.sum((downside_returns - target_return) ** 2) / len(returns_np)) * np.sqrt(252)
                     self.risk_metrics[ticker]['downside_deviation'] = float(downside_deviation)
                 else:
-                    print(f"警告: 下行风险为0，无法计算 {ticker} 的索提诺比率")
+                    print(f"Warning: downside risk is 0, cannot calculate Sortino ratio for {ticker}")
                     self.risk_metrics[ticker]['sortino_ratio'] = None
                     self.risk_metrics[ticker]['downside_deviation'] = 0.0
             else:
-                print(f"警告: 没有负收益，{ticker} 的索提诺比率设为无穷大")
+                print(f"Warning: no negative returns, set Sortino ratio for {ticker} to infinity")
                 self.risk_metrics[ticker]['sortino_ratio'] = float('inf')
                 self.risk_metrics[ticker]['downside_deviation'] = 0.0
         except Exception as e:
-            print(f"计算 {ticker} 索提诺比率时出错: {str(e)}")
+            print(f"Error calculating Sortino ratio for {ticker}: {str(e)}")
             self.risk_metrics[ticker]['sortino_ratio'] = None
             self.risk_metrics[ticker]['downside_deviation'] = None
     
-    # 其他方法...
+    # Other methods...
 
 def run_analysis(tickers, start_date=None, end_date=None):
     """
-    运行综合分析
+    Run comprehensive analysis
     
-    参数:
-    tickers (list): 股票代码列表
-    start_date (str): 起始日期，格式 'YYYY-MM-DD'
-    end_date (str): 结束日期，格式 'YYYY-MM-DD'
+    Parameters:
+    tickers (list): stock code list
+    start_date (str): start date, format 'YYYY-MM-DD'
+    end_date (str): end date, format 'YYYY-MM-DD'
     
-    返回:
-    ValuationRiskMonitor: 分析器实例
+    Returns:
+    ValuationRiskMonitor: analyzer instance
     """
-    # 创建监测器实例
+    # Create monitor instance
     monitor = ValuationRiskMonitor(tickers, start_date, end_date)
     
-    # 下载数据
+    # Download data
     monitor.download_data()
     
-    # 计算风险指标
+    # Calculate risk metrics
     monitor.calculate_risk_metrics()
     
-    # 计算估值指标
+    # Calculate valuation metrics
     if hasattr(monitor, 'calculate_valuation_metrics'):
         monitor.calculate_valuation_metrics()
     
-    # 打印结果
-    print("\n分析结果:")
+    # Print results
+    print("\nAnalysis results:")
     for ticker in monitor.tickers:
-        print(f"\n{ticker} 风险指标:")
+        print(f"\n{ticker} risk metrics:")
         for metric, value in monitor.risk_metrics[ticker].items():
             print(f"  {metric}: {value:.4f}")
         
         if hasattr(monitor, 'valuation_metrics') and ticker in monitor.valuation_metrics:
-            print(f"\n{ticker} 估值指标:")
+            print(f"\n{ticker} valuation metrics:")
             for metric, value in monitor.valuation_metrics[ticker].items():
                 if isinstance(value, (int, float)) and not isinstance(value, bool):
                     print(f"  {metric}: {value:.4f}")
@@ -495,74 +495,74 @@ def run_analysis(tickers, start_date=None, end_date=None):
 
 def run_analysis_text_only_simple(tickers, start_date=None, end_date=None):
     """
-    运行简化版的文本分析，返回JSON格式的风险分析结果
+    Run simplified text analysis, return JSON format risk analysis results
     
-    参数:
-    tickers (list or str): 股票代码列表或单个股票代码字符串
-    start_date (str): 起始日期，格式 'YYYY-MM-DD'
-    end_date (str): 结束日期，格式 'YYYY-MM-DD'
+    Parameters:
+    tickers (list or str): stock code list or single stock code string
+    start_date (str): start date, format 'YYYY-MM-DD'
+    end_date (str): end date, format 'YYYY-MM-DD'
     
-    返回:
-    dict: 包含风险分析结果的JSON对象
+    Returns:
+    dict: JSON object containing risk analysis results
     """
-    # 如果tickers是字符串，将其转换为列表
+    # If tickers is a string, convert it to a list
     if isinstance(tickers, str):
         tickers = [ticker.strip() for ticker in tickers.split(',') if ticker.strip()]
     
-    # 创建监测器实例
+    # Create monitor instance
     monitor = ValuationRiskMonitor(tickers, start_date, end_date)
     
     try:
-        # 下载数据
+        # Download data
         monitor.download_data()
         
-        # 计算风险指标
+        # Calculate risk metrics
         risk_metrics = monitor.calculate_risk_metrics()
         
-        # 收集第一个股票代码的结果（或唯一的一个）
+        # Collect the result of the first stock code (or the only one)
         ticker = tickers[0] if tickers else None
         
         if not ticker or ticker not in risk_metrics:
-            return {"error": "未能获取股票风险数据"}
+            return {"error": "Failed to get stock risk data"}
         
         metrics = risk_metrics[ticker]
         
-        # 创建结果字典
+        # Create result dictionary
         result = {}
         
-        # 波动率
+        # Volatility
         volatility = metrics.get('volatility')
         if volatility is not None:
-            result["volatility"] = round(volatility * 100, 2)  # 转为百分比
-            # 添加风险评级
+            result["volatility"] = round(volatility * 100, 2)  # Convert to percentage
+            # Add risk rating
             if volatility > 0.3:
-                result["volatility_rating"] = "高"
+                result["volatility_rating"] = "High"
             elif volatility < 0.15:
-                result["volatility_rating"] = "低"
+                result["volatility_rating"] = "Low"
             else:
-                result["volatility_rating"] = "中"
+                result["volatility_rating"] = "Medium"
         
-        # 最大回撤
+        # Maximum drawdown
         max_drawdown = metrics.get('max_drawdown')
         if max_drawdown is not None:
-            result["max_drawdown"] = round(max_drawdown * 100, 2)  # 转为百分比
-            # 添加风险评级
+            result["max_drawdown"] = round(max_drawdown * 100, 2)  # Convert to percentage
+            # Add risk rating
             if max_drawdown < -0.3:
-                result["drawdown_rating"] = "高"
+                result["drawdown_rating"] = "High"
             elif max_drawdown > -0.1:
-                result["drawdown_rating"] = "低"
+                result["drawdown_rating"] = "Low"
             else:
-                result["drawdown_rating"] = "中"
+                result["drawdown_rating"] = "Medium"
         
-        # 贝塔系数
+        # Beta coefficient
         beta = metrics.get('beta')
         if beta is not None and not np.isnan(beta):
             result["beta"] = round(beta, 2)
-            # 添加风险评级
+            # Add risk rating
             if beta > 1.5:
-                result["beta_rating"] = "高"
+                result["beta_rating"] = "High"
             elif beta < 0.5:
-                result["beta_rating"] = "低"
+                result["beta_rating"] = "Low"
             else:
                 result["beta_rating"] = "中"
         
@@ -571,71 +571,71 @@ def run_analysis_text_only_simple(tickers, start_date=None, end_date=None):
         if r_squared is not None:
             result["r_squared"] = round(r_squared, 2)
         
-        # 系统性风险占比
+        # Systematic risk percentage
         systematic_risk_pct = metrics.get('systematic_risk_pct')
         if systematic_risk_pct is not None:
             result["systematic_risk_pct"] = round(systematic_risk_pct * 100, 2)
         
-        # 残差风险
+        # Residual risk
         residual_risk = metrics.get('residual_risk')
         if residual_risk is not None:
             result["residual_risk"] = round(residual_risk * 100, 2)
         
-        # 风险价值(VaR)
+        # Risk value (VaR)
         var_95 = metrics.get('var_95')
         if var_95 is not None:
             result["var_95"] = round(var_95 * 100, 2)
-            # 添加风险评级
+            # Add risk rating
             if var_95 < -0.03:
-                result["var_rating"] = "高"
+                result["var_rating"] = "High"
             elif var_95 > -0.015:
-                result["var_rating"] = "低"
+                result["var_rating"] = "Low"
             else:
-                result["var_rating"] = "中"
+                result["var_rating"] = "Medium"
         
-        # 夏普比率
+        # Sharpe ratio
         sharpe = metrics.get('sharpe_ratio')
         if sharpe is not None:
             result["sharpe_ratio"] = round(sharpe, 2)
-            # 添加风险评级
+            # Add risk rating
             if sharpe > 1:
-                result["sharpe_rating"] = "好"
+                result["sharpe_rating"] = "Good"
             elif sharpe < 0:
-                result["sharpe_rating"] = "差"
+                result["sharpe_rating"] = "Bad"
             else:
-                result["sharpe_rating"] = "中"
+                result["sharpe_rating"] = "Medium"
         
-        # 信息比率
+        # Information ratio
         info_ratio = metrics.get('information_ratio')
         if info_ratio is not None:
             result["information_ratio"] = round(info_ratio, 2)
         
-        # 特雷诺比率
+        # Treynor ratio
         treynor = metrics.get('treynor_ratio')
         if treynor is not None:
             result["treynor_ratio"] = round(treynor, 2)
         
-        # 索提诺比率
+        # Sortino ratio
         sortino = metrics.get('sortino_ratio')
         if sortino is not None:
             if sortino == float('inf'):
                 result["sortino_ratio"] = "∞"
             else:
                 result["sortino_ratio"] = round(sortino, 2)
-                # 添加风险评级
+                # Add risk rating
                 if sortino > 1:
-                    result["sortino_rating"] = "好"
+                    result["sortino_rating"] = "Good"
                 elif sortino < 0:
-                    result["sortino_rating"] = "差"
+                    result["sortino_rating"] = "Bad"
                 else:
-                    result["sortino_rating"] = "中"
+                    result["sortino_rating"] = "Medium"
         
-        # 下行偏差
+        # Downside deviation
         downside_dev = metrics.get('downside_deviation')
         if downside_dev is not None:
             result["downside_deviation"] = round(downside_dev * 100, 2)
         
-        # 偏度和峰度
+        # Skewness and kurtosis
         skew = metrics.get('skewness')
         kurt = metrics.get('kurtosis')
         if skew is not None:
@@ -643,52 +643,52 @@ def run_analysis_text_only_simple(tickers, start_date=None, end_date=None):
         if kurt is not None:
             result["kurtosis"] = round(kurt, 2)
         
-        # 添加风险评估总结
+        # Add risk assessment summary
         result["risk_summary"] = []
         
-        # 总体风险水平
+        # Overall risk level
         if volatility is not None:
             if volatility > 0.3:
-                result["risk_summary"].append("高波动性股票，总体风险较高")
-                result["overall_risk"] = "高"
+                result["risk_summary"].append("High volatility stock, overall risk is high")
+                result["overall_risk"] = "High"
             elif volatility < 0.15:
-                result["risk_summary"].append("低波动性股票，总体风险较低")
-                result["overall_risk"] = "低"
+                result["risk_summary"].append("Low volatility stock, overall risk is low")
+                result["overall_risk"] = "Low"
             else:
-                result["risk_summary"].append("中等波动性股票")
-                result["overall_risk"] = "中"
+                result["risk_summary"].append("Medium volatility stock, overall risk is medium")
+                result["overall_risk"] = "Medium"
         
-        # 市场相关性
+        # Market correlation
         if beta is not None and r_squared is not None:
             if beta > 1.2 and r_squared > 0.6:
-                result["risk_summary"].append("与市场高度相关且放大市场波动")
+                result["risk_summary"].append("High market correlation and amplified market volatility")
             elif beta < 0.8 and r_squared > 0.6:
-                result["risk_summary"].append("与市场高度相关但波动较小")
+                result["risk_summary"].append("High market correlation but low volatility")
             elif r_squared < 0.3:
-                result["risk_summary"].append("与市场相关性低，可能具有良好的分散化效果")
+                result["risk_summary"].append("Low market correlation, good diversification effect")
         
-        # 风险调整回报
+        # Risk-adjusted return
         if sharpe is not None and sortino is not None:
             if sharpe > 1 and sortino > 1:
-                result["risk_summary"].append("风险调整回报优秀")
-                result["risk_adjusted_return"] = "好"
+                result["risk_summary"].append("Risk-adjusted return is excellent")
+                result["risk_adjusted_return"] = "Good"
             elif sharpe < 0 and sortino < 0:
-                result["risk_summary"].append("风险调整回报不佳")
-                result["risk_adjusted_return"] = "差"
+                result["risk_summary"].append("Risk-adjusted return is poor")
+                result["risk_adjusted_return"] = "Bad"
             else:
-                result["risk_summary"].append("风险调整回报一般")
-                result["risk_adjusted_return"] = "中"
+                result["risk_summary"].append("Risk-adjusted return is medium")
+                result["risk_adjusted_return"] = "Medium"
         
-        # 极端风险
+        # Extreme risk
         if var_95 is not None and max_drawdown is not None and kurt is not None:
             if var_95 < -0.03 and max_drawdown < -0.2 and kurt > 3:
-                result["risk_summary"].append("存在显著的极端风险，需要谨慎")
-                result["extreme_risk"] = "高"
+                result["risk_summary"].append("存在显著的极端风险，需要谨慎存在显著的极端风险，需要谨慎 ")
+                result["extreme_risk"] = "High"
             elif var_95 > -0.015 and max_drawdown > -0.1:
-                result["risk_summary"].append("极端风险相对较低")
-                result["extreme_risk"] = "低"
+                result["risk_summary"].append("Extreme risk is relatively low")
+                result["extreme_risk"] = "Low"
             else:
-                result["extreme_risk"] = "中"
+                result["extreme_risk"] = "Medium"
         
         return result
     
@@ -696,27 +696,27 @@ def run_analysis_text_only_simple(tickers, start_date=None, end_date=None):
         import traceback
         error_msg = str(e)
         trace = traceback.format_exc()
-        print(f"分析过程中出错: {error_msg}")
+        print(f"Error occurred during analysis: {error_msg}")
         print(trace)
         return {
-            "error": f"分析过程中出错: {error_msg}",
+            "error": f"Error occurred during analysis: {error_msg}",
             "details": trace
         }
 
-# 测试函数
+# Test function
 def test_risk_analysis():
-    """测试风险分析功能"""
+    """Test risk analysis functionality"""
     tickers = ["AAPL", "MSFT"]
     start_date = (dt.datetime.now() - dt.timedelta(days=365)).strftime('%Y-%m-%d')
     
     try:
         monitor = run_analysis_text_only_simple(tickers, start_date)
         if monitor:
-            print("\n风险分析测试成功!")
+            print("\nRisk analysis test successful!")
             return True
         else:
-            print("\n风险分析测试失败!")
+            print("\nRisk analysis test failed!")
             return False
     except Exception as e:
-        print(f"\n风险分析测试失败: {str(e)}")
+        print(f"\nRisk analysis test failed: {str(e)}")
         return False 

@@ -1,8 +1,8 @@
 /**
- * 管理员充值管理页面脚本
+ * Admin Deposit Management Page Script
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // 为所有拒绝按钮添加点击事件
+    // Add click event listeners to all reject buttons
     document.querySelectorAll('.reject-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             const depositId = this.getAttribute('data-id');
@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * 打开拒绝充值模态框
- * @param {string} depositId - 充值记录ID
+ * Open the reject deposit modal
+ * @param {string} depositId - The deposit record ID
  */
 function openRejectModal(depositId) {
     const modal = document.getElementById('rejectModal');
@@ -23,14 +23,14 @@ function openRejectModal(depositId) {
 }
 
 /**
- * 关闭拒绝充值模态框
+ * Close the reject deposit modal
  */
 function closeRejectModal() {
     const modal = document.getElementById('rejectModal');
     modal.style.display = 'none';
 }
 
-// 点击模态框外部关闭
+// Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('rejectModal');
     if (event.target == modal) {

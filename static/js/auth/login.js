@@ -3,17 +3,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
-            // 表单提交前的验证
+            // Validation before form submission
             const username = document.getElementById('user_name').value.trim();
             const password = document.getElementById('user_password').value.trim();
             
             if (!username || !password) {
-                e.preventDefault(); // 阻止表单提交
-                alert('请填写用户名和密码');
+                e.preventDefault(); // Prevent form submission
+                alert('Please enter username and password');
                 return false;
             }
             
-            // 如果验证通过，表单正常提交
+            // If validation passes, the form submits normally
             return true;
         });
     }

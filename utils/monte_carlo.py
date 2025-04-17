@@ -1,6 +1,5 @@
 """
-蒙特卡洛模拟模块
-用于预测股票价格的未来走势
+Monte Carlo simulation module
 """
 import numpy as np
 import pandas as pd
@@ -10,53 +9,53 @@ import traceback
 
 def monte_carlo_simulation(ticker, days=60, simulations=200):
     """
-    执行完整的蒙特卡洛模拟流程
+    Execute the complete Monte Carlo simulation process
     
-    参数:
-        ticker (str): 股票代码
-        days (int): 模拟天数，默认60天
-        simulations (int): 模拟次数，默认200次
+    Parameters:
+        ticker (str): stock code
+        days (int): simulation days, default 60 days
+        simulations (int): simulation times, default 200 times
         
-    返回:
-        dict: 包含模拟结果的字典
+    Returns:
+        dict: dictionary containing simulation results
     """
     try:
-        # 获取历史数据
+        # Get historical data
         stock = yf.Ticker(ticker)
         hist_data = stock.history(period="1y")
         
         if hist_data.empty:
-            raise ValueError(f"无法获取{ticker}的历史数据")
+            raise ValueError(f"Cannot get historical data for {ticker}")
         
-        # 获取当前价格
+        # Get current price
         current_price = float(hist_data['Close'].iloc[-1])
         
-        # 计算日收益率和波动率
+        # Calculate daily returns and volatility
         returns = np.log(1 + hist_data['Close'].pct_change())
-        mu = float(returns.mean())  # 日均收益率
-        sigma = float(returns.std())  # 日波动率
+        mu = float(returns.mean())  # daily return
+        sigma = float(returns.std())  # daily volatility
         
-        # 生成模拟日期
+        # Generate simulation dates
         date_strings = []
         current_date = datetime.now()
         for i in range(days):
             future_date = current_date + timedelta(days=i)
             date_strings.append(future_date.strftime('%Y-%m-%d'))
             
-        # 创建存储所有路径的数组
+        # Create array to store all paths
         paths = np.zeros((simulations, days))
         paths[:, 0] = current_price
         
-        # 使用几何布朗运动模型进行模拟
-        dt = 1  # 时间步长为1天
+        # Use geometric Brownian motion model for simulation
+        dt = 1  # time step is 1 day
         for t in range(1, days):
             brownian = np.random.standard_normal(simulations)
             paths[:, t] = paths[:, t-1] * np.exp((mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * brownian)
         
-        # 将Numpy数组转换为Python列表
+        # Convert Numpy array to Python list
         paths_list = paths.tolist()
         
-        # 计算最终价格和统计数据
+        # Calculate final prices and statistics
         final_prices = paths[:, -1]
         mean_price = float(np.mean(final_prices))
         median_price = float(np.median(final_prices))
@@ -65,11 +64,11 @@ def monte_carlo_simulation(ticker, days=60, simulations=200):
         percentile_75 = float(np.percentile(final_prices, 75))
         percentile_95 = float(np.percentile(final_prices, 95))
         
-        # 计算年化收益率和波动率
+        # Calculate annual return and volatility
         annual_return = float((mean_price / current_price) ** (365 / days) - 1) * 100
         annual_volatility = float(sigma * np.sqrt(252) * 100)  # 252个交易日/年
         
-        # 返回结果
+        # Return results
         result = {
             "mean_price": mean_price,
             "median_price": median_price,
@@ -88,25 +87,25 @@ def monte_carlo_simulation(ticker, days=60, simulations=200):
         return result
     
     except Exception as e:
-        print(f"蒙特卡洛模拟失败: {str(e)}")
+        print(f"Monte Carlo simulation failed: {str(e)}")
         print(traceback.format_exc())
-        raise Exception(f"模拟过程中出现错误: {str(e)}")
+        raise Exception(f"Error occurred during simulation: {str(e)}")
 
-# 向后兼容的函数，简单包装新函数
+# Compatibility wrapper for old API
 def get_simulation_data(ticker, days=60, simulations=200):
-    """兼容旧API的包装函数"""
+    """Compatibility wrapper for old API"""
     return monte_carlo_simulation(ticker, days, simulations)
 
-# 测试函数
+# Test function
 def test_monte_carlo():
-    """测试蒙特卡洛模拟功能"""
+    """Test Monte Carlo simulation function"""
     test_ticker = "AAPL"
     try:
         simulation_results = get_simulation_data(test_ticker)
-        print(f"模拟成功完成！")
-        print(f"预测{test_ticker}在30天后的平均价格: ${simulation_results['mean_price']:.2f}")
-        print(f"90%置信区间: ${simulation_results['percentile_5']:.2f} - ${simulation_results['percentile_95']:.2f}")
+        print(f"Simulation completed successfully!")
+        print(f"Predict the average price of {test_ticker} in 30 days: ${simulation_results['mean_price']:.2f}")
+        print(f"90% confidence interval: ${simulation_results['percentile_5']:.2f} - ${simulation_results['percentile_95']:.2f}")
         return True
     except Exception as e:
-        print(f"模拟失败: {str(e)}")
+        print(f"Simulation failed: {str(e)}")
         return False 

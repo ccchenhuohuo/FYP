@@ -5,15 +5,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearButton = document.getElementById('clear-button');
     let isProcessing = false;
 
-    // 添加消息到聊天界面
+    // Add message to the chat interface
     function addMessage(message, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
         
-        // 如果是AI消息，支持markdown格式
+        // If it's an AI message, support markdown format (simple pre-wrap for now)
         if (!isUser) {
-            // 这里可以添加markdown解析库，暂时直接显示文本
-            messageDiv.style.whiteSpace = 'pre-wrap';
+            // A markdown parsing library could be added here
+            messageDiv.style.whiteSpace = 'pre-wrap'; 
         }
         
         messageDiv.textContent = message;
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 添加加载动画
+    // Add loading indicator
     function addLoadingIndicator() {
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'loading message';
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 移除加载动画
+    // Remove loading indicator
     function removeLoadingIndicator() {
         const loadingDiv = document.getElementById('loading-indicator');
         if (loadingDiv) {
@@ -38,41 +38,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 清空聊天记录
+    // Clear chat history
     function clearChat() {
         if (isProcessing) {
-            alert('请等待当前消息处理完成');
+            alert('Please wait for the current message to finish processing.');
             return;
         }
         
-        if (confirm('确定要清空所有聊天记录吗？')) {
+        if (confirm('Are you sure you want to clear all chat history?')) {
             chatMessages.innerHTML = '';
         }
     }
 
-    // 处理表单提交
+    // Handle form submission
     chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         if (isProcessing) {
-            alert('请等待上一条消息处理完成');
+            alert('Please wait for the previous message to finish processing.');
             return;
         }
         
         const message = messageInput.value.trim();
         if (!message) return;
 
-        // 显示用户消息
+        // Display user message
         addMessage(message, true);
         messageInput.value = '';
         messageInput.disabled = true;
         isProcessing = true;
 
         try {
-            // 添加加载动画
+            // Add loading indicator
             addLoadingIndicator();
 
-            // 发送消息到服务器
+            // Send message to the server
             const response = await fetch('/user/api/chat', {
                 method: 'POST',
                 headers: {
@@ -83,19 +83,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
             
-            // 移除加载动画
+            // Remove loading indicator
             removeLoadingIndicator();
             
             if (response.ok) {
-                // 显示AI回复
+                // Display AI response
                 addMessage(data.response);
             } else {
-                // 显示错误消息
-                addMessage('抱歉，发生了错误：' + (data.error || '未知错误'));
+                // Display error message
+                addMessage('Sorry, an error occurred: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
             removeLoadingIndicator();
-            addMessage('抱歉，发生了网络错误，请稍后重试。');
+            addMessage('Sorry, a network error occurred. Please try again later.');
         } finally {
             messageInput.disabled = false;
             messageInput.focus();
@@ -103,10 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 清空聊天记录按钮事件
+    // Clear chat history button event
     clearButton.addEventListener('click', clearChat);
 
-    // 按Enter发送消息，按Shift+Enter换行
+    // Send message on Enter, new line on Shift+Enter
     messageInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();

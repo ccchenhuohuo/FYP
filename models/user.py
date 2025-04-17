@@ -1,5 +1,5 @@
 """
-用户模型定义
+User model definition
 """
 from flask_login import UserMixin
 from . import db
@@ -8,8 +8,8 @@ from .enums import AccountStatus
 
 class User(db.Model, UserMixin):
     """
-    用户模型
-    对应数据库中的user表
+    User model
+    Corresponds to the user table in the database
     """
     __tablename__ = 'user'
     
@@ -21,29 +21,29 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login_at = db.Column(db.DateTime)
     
-    # 关联关系
+    # Relationship
     balance = db.relationship('AccountBalance', backref='user', uselist=False, lazy=True)
     fund_transactions = db.relationship('FundTransaction', backref='user', lazy=True)
     
     def get_id(self):
         """
-        返回用户ID（Flask-Login要求）
+        Return user ID (Flask-Login requirement)
         """
         return str(self.user_id)
     
     @property
     def is_admin(self):
         """
-        判断是否为管理员
-        用于Flask-Login和权限检查
+        Determine if the user is an administrator
+        Used for Flask-Login and permission checks
         
-        返回:
-            bool: 始终返回False，因为这是普通用户
+        Returns:
+            bool: Always return False, because this is a normal user
         """
         return False
     
     def __repr__(self):
         """
-        模型的字符串表示
+        Model string representation
         """
         return f'<User {self.user_name}>'

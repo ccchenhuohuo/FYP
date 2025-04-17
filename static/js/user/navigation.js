@@ -2,16 +2,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const navToggle = document.getElementById('navToggle');
     const navMenu = document.getElementById('navMenu');
     
-    // 移动端菜单切换
+    // Mobile menu toggle
     if (navToggle && navMenu) {
         navToggle.addEventListener('click', function() {
             navMenu.classList.toggle('active');
             
-            // 更新无障碍属性
+            // Update accessibility attribute
             const expanded = navMenu.classList.contains('active');
             navToggle.setAttribute('aria-expanded', expanded);
             
-            // 动画图标变换
+            // Animate icon transformation
             if (expanded) {
                 navToggle.innerHTML = '<i class="fas fa-times"></i>';
             } else {
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 点击页面其他地方关闭菜单
+        // Close menu when clicking elsewhere on the page
         document.addEventListener('click', function(event) {
             if (!navToggle.contains(event.target) && !navMenu.contains(event.target) && navMenu.classList.contains('active')) {
                 navMenu.classList.remove('active');
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 高亮当前页面菜单项
+    // Highlight current page menu item
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('nav a');
     navLinks.forEach(link => {

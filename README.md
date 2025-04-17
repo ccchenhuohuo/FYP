@@ -276,19 +276,102 @@ flask run --debug
 - 支持股票信息查询、市场情况分析、基本投资建议
 - 实时响应用户问题并提供相关信息
 
-## API文档
+## API 文档
 
-### 用户API
-- `POST /user/api/chat`: AI助手聊天接口
-- `POST /user/api/deposit`: 资金充值接口
-- `POST /user/api/withdraw`: 资金提现接口
-- `POST /user/api/create_order`: 创建订单接口
-- `POST /user/orders/{order_id}/cancel`: 取消订单接口
+### 核心 (Core)
 
-### 股票数据API
-- `GET /user/api/market_data`: 获取股票市场数据
-- `GET /user/api/monte_carlo`: 执行蒙特卡洛模拟
-- `GET /user/api/fundamental_data`: 获取股票基本面数据
+-   **GET /**: 首页 (渲染 `auth/login.html` 或重定向到用户仪表盘)
+-   **GET /about**: 团队介绍页面 (渲染 `about.html`)
+-   **GET /privacy**: 隐私政策页面 (渲染 `privacy.html`)
+-   **GET /logout**: 重定向到 `auth.logout`
+
+### 认证 (Auth)
+
+-   **GET /**: 认证蓝图首页 (重定向到 `/login` 或 `/user/stock_chart`)
+-   **GET, POST /login**: 用户登录
+    -   **POST**: 接收 `user_name`, `user_password`
+-   **GET, POST /register**: 用户注册
+    -   **POST**: 接收 `user_name`, `user_email`, `user_password`, `confirm_password`
+-   **GET, POST /admin-login**: 管理员登录
+    -   **POST**: 接收 `username`, `password`
+-   **GET /logout**: 用户/管理员登出
+
+### 用户 (User)
+
+**账户管理 (Account)**
+
+-   **GET /account**: 用户账户页面 (渲染 `user/account.html`)
+-   **POST /api/deposit**: 用户充值
+    -   **Body**: `{ "amount": float }`
+    -   **响应**: 成功时返回 `{"message": "...", "transaction_id": ...}`, 失败时返回 `{"error": "..."}`
+-   **POST /api/withdraw**: 用户提现
+    -   **Body**: `{ "amount": float }`
+    -   **响应**: 成功时返回 `{"message": "...", "transaction_id": ...}`, 失败时返回 `{"error": "..."}`
+
+**订单管理 (Order)**
+
+-   **POST /api/create_order**: 创建订单
+    -   **Body**: `{ "ticker": str, "order_quantity": int, "order_type": "buy" | "sell", "order_execution_type": "market" | "limit", "order_price": float (optional for market) }`
+    -   **响应**: 返回订单处理结果 `{"status": "valid" | "invalid", "order_id": ..., "order_status": ..., "message": ...}`，HTTP状态码根据执行情况为 200, 201 或 500
+-   **POST /orders/<order_id>/cancel**: 取消订单
+    -   **响应**: 成功时返回 `{"message": "...", "order": {...}}`, 失败时返回 `{"error": "..."}`
+-   **GET /api/orders**: 获取用户订单列表
+    -   **查询参数**: `status` (optional), `order_type` (optional), `page` (optional, default 1), `per_page` (optional, default 10)
+    -   **响应**: 返回分页的订单数据 `{"orders": [...], "total": ..., "pages": ..., "current_page": ...}`
+
+**股票数据与分析 (Stock)**
+
+-   **GET /stock_chart**: 股票历史走势图页面 (渲染 `user/stock_chart.html`)
+-   **GET /stock_detail**: 重定向到 `/stock_chart`
+-   **GET /stock_analysis**: 股票分析页面 (渲染 `user/stock_analysis.html`)
+-   **POST /api/stock_analysis**: 股票风险分析
+    -   **Body**: `{ "tickers": [str], "start_date": "YYYY-MM-DD" (optional), "end_date": "YYYY-MM-DD" (optional) }`
+    -   **响应**: 返回分析结果 `{"results": [{"ticker": ..., "risk_assessment": ...}], "start_date": ..., "end_date": ...}`
+-   **GET /api/market_data**: 获取市场历史数据
+    -   **查询参数**: `ticker` (required), `range` (optional, days or 'all', default '365')
+    -   **响应**: 返回历史价格数据列表 `[{"date": ..., "open": ..., ...}]`
+-   **GET /api/fundamental_data**: 获取基本面数据
+    -   **查询参数**: `ticker` (required)
+    -   **响应**: 返回基本面数据 `{"ticker": ..., "date": ..., "market_cap": ..., ...}`
+-   **GET /api/balance_sheet**: 获取资产负债表数据
+    -   **查询参数**: `ticker` (required)
+    -   **响应**: 返回资产负债表数据 `{"ticker": ..., "date": ..., "current_assets": ..., ...}`
+-   **GET /api/income_statement**: 获取利润表数据
+    -   **查询参数**: `ticker` (required)
+    -   **响应**: 返回利润表数据 `{"ticker": ..., "date": ..., "revenue": ..., ...}`
+-   **GET /api/real_time_stock_data**: 获取实时/近实时股票数据
+    -   **查询参数**: `symbol` (required)
+    -   **响应**: 返回实时报价数据 `{"ticker": ..., "price": ..., "change": ..., "data_source": "alpha_vantage" | "database", ...}`
+
+**蒙特卡洛模拟 (Monte Carlo)**
+
+-   **GET /api/monte-carlo/<ticker>**: 获取蒙特卡洛模拟数据
+    -   **路径参数**: `ticker` (required)
+    -   **查询参数**: `days` (optional, default 60), `simulations` (optional, default 200)
+    -   **响应**: 返回模拟结果 `{"ticker": ..., "simulations": ..., "days": ..., "last_price": ..., "results": [...], "confidence_interval": ..., "value_at_risk": ..., "expected_price": ...}`
+
+**AI 助手 (AI Assistant)**
+
+-   **GET /ai_assistant**: AI 智能助手页面 (渲染 `user/ai_assistant.html`)
+-   **POST /api/chat**: 与 AI 助手对话
+    -   **Body**: `{ "message": str }`
+    -   **响应**: 返回 AI 回复 `{"response": str}`
+
+### 管理员 (Admin)
+
+-   **GET /, /admin_dashboard**: 管理员仪表盘 (渲染 `admin/dashboard.html`)
+-   **GET /fund-transactions**: 管理资金交易列表 (渲染 `admin/fund_transactions.html`)
+    -   **查询参数**: `type` ('all', 'deposit', 'withdrawal', optional), `status` ('all', 'pending', 'approved', 'rejected', optional)
+-   **GET /deposits**: 管理充值请求 (渲染 `admin/fund_transactions.html`, type='deposit')
+-   **GET /withdrawals**: 管理提现请求 (渲染 `admin/fund_transactions.html`, type='withdrawal')
+-   **POST /fund-transactions/<transaction_id>/approve**: 批准资金交易
+-   **POST /fund-transactions/<transaction_id>/reject**: 拒绝资金交易
+    -   **Body**: `reject_reason` (optional)
+-   **GET /orders**: 管理订单列表 (渲染 `admin/orders.html`)
+-   **POST /orders/<int:order_id>/execute**: 执行订单
+    -   **Body**: `execution_price` (required)
+-   **POST /orders/<int:order_id>/reject**: 拒绝订单
+    -   **Body**: `reject_reason` (optional)
 
 ## 本地数据库结构
 

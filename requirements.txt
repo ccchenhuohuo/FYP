@@ -4,6 +4,7 @@ Flask-Login==0.6.2
 Flask-SQLAlchemy==3.0.3
 SQLAlchemy==2.0.7
 Werkzeug==2.2.3
+Flask-Migrate==4.0.4
 
 # 数据库连接
 PyMySQL==1.0.3

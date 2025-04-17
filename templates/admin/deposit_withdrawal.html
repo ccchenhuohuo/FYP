@@ -1,0 +1,200 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}{{ title|default('Deposit & Withdrawal Management') }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_fund_transactions.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% else %}money-bill-wave{% endif %}"></i> 
+            {{ title|default('Deposit & Withdrawal Management') }}
+        </h1>
+        {# No filters needed on specific Deposit/Withdrawal page #}
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="alert-icon fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="tabs-container">
+        <div class="tab-header">
+            <div class="tab-button active" onclick="showTab('pending')">Pending</div>
+            <div class="tab-button" onclick="showTab('completed')">Completed</div>
+        </div>
+    </div>
+    
+    <div id="pending-tab" class="tab-content active">
+        <h3>Pending {{ transaction_type|capitalize }}s</h3>
+        {% if pending_transactions %}
+            <table class="transactions-table content-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        {# No Type column needed for specific page #}
+                        <th>Amount</th>
+                        <th>Requested Time</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in pending_transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td>{{ transaction.user.user_name }}</td>
+                        <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.created_at|format_datetime }}</td>
+                        <td>
+                            <span class="status-badge status-{{ transaction.status|lower }}">
+                                {{ transaction.status|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.remark or '-' }}</td>
+                        <td>
+                            {% if transaction.status == 'pending' %}
+                            <div class="action-buttons">
+                                <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
+                                    <button type="submit" class="btn btn-success btn-small">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                </form>
+                                <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                            {% else %}
+                            <span class="no-action">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-message">
+                 <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% else %}money-bill-wave{% endif %} empty-state-icon"></i>
+                <p>Currently no pending {{ transaction_type }} records</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div id="completed-tab" class="tab-content">
+        <h3>Completed {{ transaction_type|capitalize }}s</h3>
+        {% if completed_transactions %}
+            <table class="transactions-table content-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        {# No Type column #}
+                        <th>Amount</th>
+                        <th>Requested Time</th>
+                        <th>Processed Time</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in completed_transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td>{{ transaction.user.user_name }}</td>
+                        <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.created_at|format_datetime }}</td>
+                        <td>{{ transaction.updated_at|format_datetime }}</td>
+                        <td>
+                             <span class="status-badge status-{{ transaction.status|lower }}">
+                                {{ transaction.status|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.remark or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-message">
+                <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% else %}money-bill-wave{% endif %} empty-state-icon"></i>
+                <p>Currently no completed {{ transaction_type }} records</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Reject Transaction Modal -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Reject {{ transaction_type|capitalize }} Request</h3>
+            <button type="button" class="close-button" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Please enter the reason for rejection:</p>
+            <form id="rejectForm" method="post" action="" data-base-url="{{ url_for('admin.reject_fund_transaction', transaction_id=0) }}">
+                <div class="form-group">
+                    <textarea name="reject_reason" rows="4" class="form-control" required></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="submitRejectForm()">Confirm Rejection</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# Tab switching and Modal JS - Assumes they are present or moved to common JS #}
+<script>
+    // Switch tabs
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+        document.getElementById(tabId + '-tab').classList.add('active');
+        document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`).classList.add('active');
+    }
+
+    // Modal logic
+    const rejectModal = document.getElementById('rejectModal');
+    const rejectForm = document.getElementById('rejectForm');
+    const baseUrl = rejectForm.dataset.baseUrl.replace('/0', ''); 
+
+    function openRejectModal(transactionId) {
+        rejectForm.action = `${baseUrl}/${transactionId}`;
+        rejectModal.style.display = 'block';
+        rejectForm.elements['reject_reason'].focus(); 
+    }
+
+    function closeRejectModal() {
+        rejectModal.style.display = 'none';
+        rejectForm.reset(); 
+    }
+
+    function submitRejectForm() {
+        rejectForm.submit();
+    }
+
+    window.onclick = function(event) {
+        if (event.target == rejectModal) {
+            closeRejectModal();
+        }
+    }
+    
+    // Ensure the first tab is shown on load
+    document.addEventListener('DOMContentLoaded', () => showTab('pending')); 
+</script>
+{% endblock %} 

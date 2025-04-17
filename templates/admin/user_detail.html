@@ -1,0 +1,118 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}User Details{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_user_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="user-detail-container">
+    <div class="page-header">
+        <h1>User Details</h1>
+        <div>
+            <a href="{{ url_for('admin.users') }}" class="action-btn btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Users
+            </a>
+            <a href="{{ url_for('admin.edit_user', user_id=user.user_id) }}" class="action-btn btn-edit">
+                <i class="fas fa-edit"></i> Edit User
+            </a>
+        </div>
+    </div>
+    
+    <div class="user-card">
+        <div class="user-header">
+            <div class="user-avatar">{{ user.user_name|upper|first }}</div>
+            <div class="user-info">
+                <div class="user-name">{{ user.user_name }}</div>
+                <div class="user-email">{{ user.user_email }}</div>
+                <div class="user-status status-{{ user.account_status.name|lower }}">
+                    {{ user.account_status.name|capitalize }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="user-stats">
+            <div class="stat-box">
+                <div class="stat-value">${{ "%.2f"|format(user.balance.available_balance if user.balance else 0) }}</div>
+                <div class="stat-label">Available Balance</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">${{ "%.2f"|format(user.balance.frozen_balance if user.balance else 0) }}</div>
+                <div class="stat-label">Frozen Balance</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ user.created_at.strftime('%Y-%m-%d') }}</div>
+                <div class="stat-label">Registration Date</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else 'Never' }}</div>
+                <div class="stat-label">Last Login</div>
+            </div>
+        </div>
+    </div>
+    
+    <h2 class="section-title">Fund Transactions</h2>
+    {% if user.fund_transactions %}
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in user.fund_transactions %}
+            <tr>
+                <td>#{{ transaction.transaction_id }}</td>
+                <td>{{ transaction.transaction_type|capitalize }}</td>
+                <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                <td>
+                    <span class="status-badge status-{{ transaction.status }}">
+                        {{ transaction.status|capitalize }}
+                    </span>
+                </td>
+                <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-message">No fund transactions found for this user</div>
+    {% endif %}
+    
+    <h2 class="section-title">Recent Orders</h2>
+    {% if user.orders %}
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in user.orders %}
+            <tr>
+                <td>#{{ order.order_id }}</td>
+                <td>{{ order.order_type|capitalize }}</td>
+                <td>
+                    <span class="status-badge status-{{ order.order_status }}">
+                        {{ order.order_status|capitalize }}
+                    </span>
+                </td>
+                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-message">No orders found for this user</div>
+    {% endif %}
+</div>
+{% endblock %} 

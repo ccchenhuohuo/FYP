@@ -141,12 +141,14 @@
 
 /* 过滤器和选项卡样式 */
 .filter-section {
-    margin-bottom: 20px;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
     align-items: center;
-    border-bottom: 1px solid #e0e0e0;
-    padding-bottom: 15px;
 }
 
 .filter-buttons {
@@ -154,78 +156,93 @@
     gap: 10px;
 }
 
-.btn-outline {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    color: #666;
+.filter-buttons a.btn {
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.btn-outline:hover {
-    background-color: #f5f5f5;
+.filter-buttons a.btn-primary {
+    background-color: #4a6fa5;
+    color: white;
+    border: 1px solid #4a6fa5;
+}
+
+.filter-buttons a.btn-outline {
+    background-color: transparent;
+    color: #4a6fa5;
+    border: 1px solid #4a6fa5;
+}
+
+.filter-buttons a.btn-outline:hover {
+    background-color: #f0f5ff;
 }
 
 .filters-form {
     display: flex;
     gap: 15px;
+    align-items: center;
 }
 
 .filter-group {
     display: flex;
-    flex-direction: column;
-    min-width: 150px;
+    align-items: center;
+    gap: 8px;
 }
 
 .filter-group label {
-    margin-bottom: 5px;
     font-size: 13px;
-    color: #666;
+    font-weight: 500;
+    color: #555;
+}
+
+.filter-group .form-control {
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    min-width: 150px;
 }
 
 /* 选项卡样式 */
 .tabs-container {
     margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
 }
 
 .tab-header {
     display: flex;
-    gap: 5px;
-    border-bottom: 1px solid #e0e0e0;
 }
 
 .tab-button {
     padding: 10px 20px;
     cursor: pointer;
+    font-size: 15px;
     font-weight: 500;
+    color: #666;
     border-bottom: 3px solid transparent;
-    transition: all 0.2s ease;
+    margin-bottom: -1px; /* Overlap border */
+    transition: color 0.2s, border-color 0.2s;
 }
 
 .tab-button:hover {
-    background-color: #f5f5f5;
+    color: #333;
 }
 
 .tab-button.active {
-    border-bottom: 3px solid #1976d2;
-    color: #1976d2;
+    color: #4a6fa5;
+    border-bottom-color: #4a6fa5;
 }
 
 .tab-content {
     display: none;
-    padding: 20px 0;
 }
 
 .tab-content.active {
     display: block;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
 }
 
 /* 表格样式调整 */

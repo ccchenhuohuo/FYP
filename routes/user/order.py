@@ -1,12 +1,13 @@
 """
-用户订单相关路由
-包含创建订单、取消订单等功能
+User order related routes
+Includes creating orders, canceling orders, etc.
 """
 from flask import jsonify, request
 from flask_login import login_required, current_user
 from datetime import datetime
 from models import db, Order, AccountBalance
-from utils.order_utils import process_new_order
+from utils.order_utils import process_new_order, simplified_process_order
+from models.enums import OrderStatus, OrderType, OrderExecutionType
 
 from . import user_bp
 
@@ -14,24 +15,24 @@ from . import user_bp
 @login_required
 def create_order():
     """
-    创建订单API
-    处理用户买入或卖出股票的请求
+    Create Order API
+    Handles user requests to buy or sell stocks
     """
     try:
-        # 获取请求数据
+        # Get request data
         data = request.get_json()
         if not data:
-            return jsonify({'error': '无效的请求数据'}), 400
+            return jsonify({'error': 'Invalid request data'}), 400
         
-        # 提取必要参数
+        # Extract necessary parameters
         ticker = data.get('ticker')
         order_quantity = data.get('order_quantity')
         order_type = data.get('order_type')
         order_execution_type = data.get('order_execution_type')
         order_price = data.get('order_price')
         
-        # 处理订单请求
-        response_data, status_code = process_new_order(
+        # Use the simplified order processing function
+        result = simplified_process_order(
             current_user.user_id,
             ticker,
             order_type,
@@ -40,106 +41,122 @@ def create_order():
             order_price
         )
         
-        return jsonify(response_data), status_code
+        # Return different HTTP status codes based on order status
+        if result.get('status') == 'valid': # Check if 'status' key exists
+            order_status_value = result.get('order_status') # Check if 'order_status' key exists
+            if order_status_value == OrderStatus.EXECUTED.value:
+                # Executed order
+                return jsonify(result), 200
+            else:
+                # Valid but pending order
+                return jsonify(result), 201
+        else:
+            # Invalid order (e.g., insufficient funds, validation fail)
+            # Return 200 OK because the request was processed, but the business logic failed
+            return jsonify(result), 200 
         
     except Exception as e:
-        return jsonify({'error': f'处理订单请求时发生错误: {str(e)}'}), 500
+        # Log the exception for debugging
+        current_app.logger.error(f'Error processing create_order request: {str(e)}', exc_info=True)
+        return jsonify({'error': f'Error processing order request: {str(e)}'}), 500
 
 @user_bp.route('/orders/<order_id>/cancel', methods=['POST'])
 @login_required
 def cancel_order(order_id):
     """
-    取消订单API
-    处理用户取消未执行订单的请求
+    Cancel Order API
+    Handles user requests to cancel pending orders
     """
     try:
-        # 查找订单
+        # Find the order
         order = Order.query.get_or_404(order_id)
         
-        # 检查订单是否属于当前用户
+        # Check if the order belongs to the current user
         if order.user_id != current_user.user_id:
-            return jsonify({'error': '您没有权限取消此订单'}), 403
+            return jsonify({'error': 'You do not have permission to cancel this order'}), 403
         
-        # 检查订单状态是否为待处理
-        if order.order_status != 'pending':
-            return jsonify({'error': f'无法取消已{order.order_status}的订单'}), 400
+        # Check if the order status is pending
+        if order.order_status != OrderStatus.PENDING:
+            return jsonify({'error': f'Cannot cancel an order with status {order.order_status}'}), 400
         
-        # 如果是买入限价单，需要解冻资金
-        if order.order_type == 'buy' and order.order_execution_type == 'limit':
-            # 计算被冻结的金额
+        # If it's a buy limit order, unfreeze the funds
+        if order.order_type == OrderType.BUY and order.order_execution_type == OrderExecutionType.LIMIT:
+            # Calculate the frozen amount
             frozen_amount = order.order_price * order.order_quantity
             
-            # 获取用户账户
+            # Get user account
             account = AccountBalance.query.filter_by(user_id=order.user_id).first()
             if account:
-                # 将冻结的金额转回可用余额
+                # Transfer the frozen amount back to available balance
                 account.frozen_balance -= frozen_amount
                 account.available_balance += frozen_amount
-                # 总余额保持不变
-                print(f"已解冻用户 {order.user_id} 资金: ¥{frozen_amount:.2f} (取消限价单)")
+                # Total balance remains unchanged
+                print(f"Unfrozen funds for user {order.user_id}: ¥{frozen_amount:.2f} (Limit order cancelled)")
         
-        # 更新订单状态
-        order.order_status = 'cancelled'
+        # Update order status
+        order.order_status = OrderStatus.CANCELLED
         order.updated_at = datetime.utcnow()
         
         db.session.commit()
         
         return jsonify({
-            'message': f'已取消订单 #{order_id}',
+            'message': f'Order #{order_id} has been cancelled',
             'order': {
                 'id': order.order_id,
                 'ticker': order.ticker,
                 'quantity': order.order_quantity,
-                'order_type': order.order_type,
-                'status': order.order_status
+                'order_type': str(order.order_type), # Return string representation
+                'status': str(order.order_status)    # Return string representation
             }
         })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'取消订单失败: {str(e)}'}), 500
+        # Log the exception
+        current_app.logger.error(f'Error cancelling order {order_id}: {str(e)}', exc_info=True)
+        return jsonify({'error': f'Failed to cancel order: {str(e)}'}), 500
 
 @user_bp.route('/api/orders', methods=['GET'])
 @login_required
 def get_user_orders():
     """
-    获取用户订单列表
-    支持过滤和分页
+    Get user order list
+    Supports filtering and pagination
     """
     try:
-        # 获取查询参数
+        # Get query parameters
         status = request.args.get('status')
         order_type = request.args.get('order_type')
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 10))
         
-        # 构建查询
+        # Build query
         query = Order.query.filter_by(user_id=current_user.user_id)
         
-        # 应用过滤
+        # Apply filters
         if status:
-            query = query.filter_by(order_status=status)
+            query = query.filter(Order.order_status == status) # Compare with string value
         if order_type:
-            query = query.filter_by(order_type=order_type)
+            query = query.filter(Order.order_type == order_type) # Compare with string value
         
-        # 按创建时间倒序排序
+        # Sort by creation time descending
         query = query.order_by(Order.created_at.desc())
         
-        # 分页
+        # Paginate
         paginated_orders = query.paginate(page=page, per_page=per_page, error_out=False)
         
-        # 格式化响应
+        # Format response
         orders_data = []
         for order in paginated_orders.items:
             orders_data.append({
                 'order_id': order.order_id,
                 'ticker': order.ticker,
-                'order_type': order.order_type,
-                'order_execution_type': order.order_execution_type,
+                'order_type': str(order.order_type), # Return string representation
+                'order_execution_type': str(order.order_execution_type), # Return string representation
                 'order_price': order.order_price,
                 'order_quantity': order.order_quantity,
-                'order_status': order.order_status,
-                'created_at': order.created_at.isoformat(),
+                'order_status': str(order.order_status), # Return string representation
+                'created_at': order.created_at.isoformat() if order.created_at else None,
                 'updated_at': order.updated_at.isoformat() if order.updated_at else None,
                 'executed_at': order.executed_at.isoformat() if order.executed_at else None
             })
@@ -152,4 +169,6 @@ def get_user_orders():
         })
         
     except Exception as e:
-        return jsonify({'error': f'获取订单列表失败: {str(e)}'}), 500 
+        # Log the exception
+        current_app.logger.error(f'Error fetching user orders: {str(e)}', exc_info=True)
+        return jsonify({'error': f'Failed to get order list: {str(e)}'}), 500 

@@ -1,15 +1,15 @@
 {% extends 'admin/layout.html' %}
 
-{% block title %}充值管理{% endblock %}
+{% block title %}Deposit Management{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_common.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_deposits.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_common.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_deposits.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="fund-management">
-    <h1>充值管理</h1>
+    <h1>Deposit Management</h1>
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -27,12 +27,12 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>用户</th>
-                    <th>金额</th>
-                    <th>申请时间</th>
-                    <th>状态</th>
-                    <th>备注</th>
-                    <th>操作</th>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Request Time</th>
+                    <th>Status</th>
+                    <th>Remark</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -45,11 +45,11 @@
                     <td>
                         <span class="status-badge status-{{ deposit.status }}">
                             {% if deposit.status == 'pending' %}
-                                待审核
+                                Pending
                             {% elif deposit.status == 'completed' %}
-                                已完成
+                                Completed
                             {% elif deposit.status == 'rejected' %}
-                                已拒绝
+                                Rejected
                             {% else %}
                                 {{ deposit.status }}
                             {% endif %}
@@ -61,11 +61,11 @@
                         <div class="action-buttons">
                             <form action="{{ url_for('admin.approve_deposit', deposit_id=deposit.deposit_id) }}" method="post">
                                 <button type="submit" class="btn btn-approve">
-                                    <i class="fas fa-check mr-1"></i> 批准
+                                    <i class="fas fa-check mr-1"></i> Approve
                                 </button>
                             </form>
                             <button class="btn btn-reject" onclick="openRejectModal('{{ deposit.deposit_id }}')">
-                                <i class="fas fa-times mr-1"></i> 拒绝
+                                <i class="fas fa-times mr-1"></i> Reject
                             </button>
                         </div>
                         {% else %}
@@ -79,27 +79,27 @@
     {% else %}
         <div class="empty-state">
             <i class="fas fa-coins empty-state-icon"></i>
-            <p>当前没有充值申请记录</p>
+            <p>No deposit requests found</p>
         </div>
     {% endif %}
 </div>
 
-<!-- 拒绝充值的模态框 -->
+<!-- Reject Deposit Modal -->
 <div id="rejectModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">拒绝充值申请</h3>
+            <h3 class="modal-title">Reject Deposit Request</h3>
             <button type="button" class="close-modal" onclick="closeRejectModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <p>请输入拒绝理由：</p>
+            <p>Please enter the reason for rejection:</p>
             <form id="rejectForm" method="post">
-                <textarea name="rejection_reason" class="form-control" rows="4" placeholder="请输入拒绝理由" required></textarea>
+                <textarea name="rejection_reason" class="form-control" rows="4" placeholder="Enter rejection reason" required></textarea>
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn" onclick="closeRejectModal()">取消</button>
-            <button type="button" class="btn btn-reject" onclick="submitRejectForm()">确认拒绝</button>
+            <button type="button" class="btn" onclick="closeRejectModal()">Cancel</button>
+            <button type="button" class="btn btn-reject" onclick="submitRejectForm()">Confirm Rejection</button>
         </div>
     </div>
 </div>
@@ -109,7 +109,7 @@
 <script>
     let currentDepositId = null;
     
-    // 打开拒绝模态框
+    // Open reject modal
     function openRejectModal(depositId) {
         currentDepositId = depositId;
         document.getElementById('rejectForm').action = `/admin/deposits/${depositId}/reject`;
@@ -118,7 +118,7 @@
         setTimeout(() => modal.classList.add('show'), 10);
     }
     
-    // 关闭拒绝模态框
+    // Close reject modal
     function closeRejectModal() {
         const modal = document.getElementById('rejectModal');
         modal.classList.remove('show');
@@ -126,16 +126,16 @@
         document.getElementById('rejectForm').reset();
     }
     
-    // 提交拒绝表单
+    // Submit reject form
     function submitRejectForm() {
         if (document.querySelector('#rejectForm textarea').value.trim()) {
             document.getElementById('rejectForm').submit();
         } else {
-            alert('请输入拒绝理由');
+            alert('Please enter a reason for rejection');
         }
     }
     
-    // 当点击模态框外部区域时关闭模态框
+    // Close modal when clicking outside the modal content
     window.onclick = function(event) {
         const modal = document.getElementById('rejectModal');
         if (event.target === modal) {

@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户注册</title>
+    <title>User Registration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header>
         <div class="admin-link">
-            <a href="{{ url_for('auth.admin_login') }}"><i class="fas fa-user-shield"></i> 管理员登录</a>
+            <a href="{{ url_for('auth.admin_login') }}"><i class="fas fa-user-shield"></i> Admin Login</a>
         </div>
     </header>
     
     <main>
-        <h1>用户注册</h1>
+        <h1>User Registration</h1>
         
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -29,26 +29,26 @@
         
         <form id="registerForm" method="post" action="{{ url_for('auth.register') }}">
             <div class="form-group">
-                <label for="user_name">用户名</label>
-                <input type="text" id="user_name" name="user_name" placeholder="请创建用户名" required>
+                <label for="user_name">Username</label>
+                <input type="text" id="user_name" name="user_name" placeholder="Create a username" required>
             </div>
             <div class="form-group">
-                <label for="user_email">邮箱</label>
-                <input type="email" id="user_email" name="user_email" placeholder="请输入您的邮箱" required>
+                <label for="user_email">Email</label>
+                <input type="email" id="user_email" name="user_email" placeholder="Enter your email" required>
             </div>
             <div class="form-group">
-                <label for="user_password">密码</label>
-                <input type="password" id="user_password" name="user_password" placeholder="请设置您的密码" required>
+                <label for="user_password">Password</label>
+                <input type="password" id="user_password" name="user_password" placeholder="Set your password" required>
             </div>
             <div class="form-group">
-                <label for="confirm_password">确认密码</label>
-                <input type="password" id="confirm_password" name="confirm_password" placeholder="请再次输入密码" required>
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Enter password again" required>
             </div>
             <div class="button-group">
-                <button type="submit"><i class="fas fa-user-plus"></i> 注册</button>
+                <button type="submit"><i class="fas fa-user-plus"></i> Register</button>
             </div>
             <div class="auth-links">
-                <p>已有账户? <a href="{{ url_for('auth.login') }}">立即登录 <i class="fas fa-arrow-right"></i></a></p>
+                <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login now <i class="fas fa-arrow-right"></i></a></p>
             </div>
         </form>
     </main>

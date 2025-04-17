@@ -1,6 +1,6 @@
-// 初始化表单验证
+// Initialize form validation
 document.addEventListener('DOMContentLoaded', function() {
-    // 创建订单表单验证
+    // Order form validation
     const orderForm = document.getElementById('orderForm');
     if (orderForm) {
         orderForm.addEventListener('submit', function(e) {
@@ -9,12 +9,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (isNaN(price) || price <= 0 || isNaN(quantity) || quantity <= 0) {
                 e.preventDefault();
-                alert('请输入有效的价格和数量');
+                alert('Please enter a valid price and quantity');
             }
         });
     }
     
-    // 充值表单验证和提交
+    // Deposit form validation and submission
     const depositForm = document.getElementById('depositForm');
     if (depositForm) {
         depositForm.addEventListener('submit', async function(e) {
@@ -22,9 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const amount = parseFloat(document.getElementById('amount').value);
             
-            // 客户端验证：金额必须大于0
+            // Client-side validation: amount must be greater than 0
             if (isNaN(amount) || amount <= 0) {
-                alert('充值金额必须大于0');
+                alert('Deposit amount must be greater than 0');
                 return;
             }
             
@@ -40,40 +40,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (response.ok) {
-                    alert('充值申请已提交，等待管理员审核');
-                    location.reload();  // 刷新页面以显示最新状态
+                    alert('Deposit request submitted, pending administrator approval');
+                    location.reload();  // Reload page to show latest status
                 } else {
-                    alert(data.error || '充值申请提交失败');
+                    alert(data.error || 'Failed to submit deposit request');
                 }
             } catch (error) {
-                alert('提交充值申请时发生错误');
+                alert('An error occurred while submitting the deposit request');
                 console.error('Error:', error);
             }
             
-            // 关闭模态框
-            const modal = bootstrap.Modal.getInstance(document.getElementById('depositModal'));
-            modal.hide();
+            // Close modal
+            const depositModalElement = document.getElementById('depositModal');
+            if (depositModalElement) {
+                const modal = bootstrap.Modal.getInstance(depositModalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
         });
     }
     
-    // 提现表单验证
+    // Withdrawal form validation
     const withdrawalForm = document.getElementById('withdrawalForm');
     if (withdrawalForm) {
         withdrawalForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
-            const availableBalance = parseFloat(document.getElementById('availableBalance')?.dataset?.balance || 0);
+            const availableBalanceElement = document.getElementById('availableBalance');
+            const availableBalance = parseFloat(availableBalanceElement?.dataset?.balance || 0);
             
-            // 客户端验证：金额必须大于0
+            // Client-side validation: amount must be greater than 0
             if (isNaN(amount) || amount <= 0) {
-                alert('提现金额必须大于0');
+                alert('Withdrawal amount must be greater than 0');
                 return;
             }
             
-            // 客户端验证：提现金额不能超过可用余额
+            // Client-side validation: withdrawal amount cannot exceed available balance
             if (amount > availableBalance) {
-                alert(`提现金额不能超过可用余额 ${availableBalance}`);
+                alert(`Withdrawal amount cannot exceed available balance: ¥${availableBalance.toFixed(2)}`);
                 return;
             }
             
@@ -89,28 +95,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (response.ok) {
-                    alert('提现申请已提交，等待管理员审核');
-                    location.reload();  // 刷新页面以显示最新状态
+                    alert('Withdrawal request submitted, pending administrator approval');
+                    location.reload();  // Reload page to show latest status
                 } else {
-                    alert(data.error || '提现申请提交失败');
+                    alert(data.error || 'Failed to submit withdrawal request');
                 }
             } catch (error) {
-                alert('提交提现申请时发生错误');
+                alert('An error occurred while submitting the withdrawal request');
                 console.error('Error:', error);
             }
             
-            // 关闭模态框
-            const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawalModal'));
-            modal.hide();
+            // Close modal
+            const withdrawalModalElement = document.getElementById('withdrawalModal');
+            if (withdrawalModalElement) {
+                const modal = bootstrap.Modal.getInstance(withdrawalModalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
         });
     }
     
-    // 处理取消订单按钮的点击事件
+    // Handle cancel order button click events
     const cancelOrderForms = document.querySelectorAll('form[action*="/orders/"][action*="/cancel"]');
     cancelOrderForms.forEach(form => {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            if (!confirm('Are you sure you want to cancel this order?')) {
+                return; // Stop if user cancels
+            }
+
             try {
                 const response = await fetch(form.action, {
                     method: 'POST',
@@ -120,25 +135,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (response.ok) {
-                    alert('订单已成功取消');
-                    location.reload(); // 刷新页面以显示最新状态
+                    alert('Order successfully cancelled');
+                    location.reload(); // Reload page to show latest status
                 } else {
                     const errorData = await response.json();
-                    alert(errorData.error || '取消订单失败');
+                    alert(errorData.error || 'Failed to cancel order');
                 }
             } catch (error) {
-                alert('取消订单时发生错误');
+                alert('An error occurred while cancelling the order');
                 console.error('Error:', error);
             }
         });
     });
     
-    // 高亮当前导航菜单项
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('nav a');
-    navLinks.forEach(link => {
-        if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
-        }
-    });
+    // Highlight current navigation menu item (moved to navigation.js potentially)
+    // const currentPath = window.location.pathname;
+    // const navLinks = document.querySelectorAll('nav a');
+    // navLinks.forEach(link => {
+    //     if (link.getAttribute('href') === currentPath) {
+    //         link.classList.add('active');
+    //     }
+    // });
 });

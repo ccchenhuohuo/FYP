@@ -1,67 +1,46 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}管理员系统{% endblock %}</title>
-    <!-- Font Awesome 图标 -->
+    <title>{% block title %}Admin System{% endblock %}</title>
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_layout.css') }}">
+    <!-- Layout Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_layout.css') }}">
+    <!-- Common Admin Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_common.css') }}">
+    <!-- Page Specific Styles -->
     {% block styles %}{% endblock %}
 </head>
 <body>
     <div class="admin-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-tachometer-alt"></i> 管理系统</h2>
+                <h2><i class="fas fa-tachometer-alt"></i> Admin System</h2>
                 <button id="sidebarToggle" class="sidebar-toggle"><i class="fas fa-bars"></i></button>
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="{{ url_for('admin.admin_dashboard') }}"><i class="fas fa-home"></i> 仪表盘</a></li>
-                    <li><a href="{{ url_for('admin.manage_orders') }}"><i class="fas fa-list"></i> 订单管理</a></li>
-                    <li><a href="{{ url_for('admin.manage_fund_transactions') }}"><i class="fas fa-exchange-alt"></i> 交易记录</a></li>
-                    <li><a href="{{ url_for('admin.manage_withdrawals') }}"><i class="fas fa-money-bill-wave"></i> 提现管理</a></li>
-                    <li><a href="{{ url_for('admin.manage_deposits') }}"><i class="fas fa-hand-holding-usd"></i> 充值管理</a></li>
+                    <li><a href="{{ url_for('admin.admin_dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="{{ url_for('admin.users') }}"><i class="fas fa-users"></i> User Management</a></li>
+                    <li><a href="{{ url_for('admin.manage_orders') }}"><i class="fas fa-list"></i> Order Management</a></li>
+                    <li><a href="{{ url_for('admin.manage_fund_transactions') }}"><i class="fas fa-exchange-alt"></i> Transaction History</a></li>
+                    <li><a href="{{ url_for('admin.manage_deposits') }}"><i class="fas fa-wallet"></i> Deposit & Withdrawal</a></li>
                     <li class="nav-divider"></li>
-                    <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> 登出</a></li>
+                    <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </aside>
         
         <div class="main-content">
-            <header class="top-header">
-                <div class="user-info">
-                    <span>欢迎，管理员{% if current_user.admin_name %} {{ current_user.admin_name }}{% endif %}</span>
-                </div>
-            </header>
-            
             <main class="content-area">
                 {% block content %}{% endblock %}
             </main>
         </div>
     </div>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const adminLayout = document.querySelector('.admin-layout');
-            
-            sidebarToggle.addEventListener('click', function() {
-                adminLayout.classList.toggle('sidebar-collapsed');
-            });
-            
-            // 检查当前页面链接并添加活动状态
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.sidebar-nav a');
-            
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.parentElement.classList.add('active');
-                }
-            });
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/admin/admin_layout.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html> 

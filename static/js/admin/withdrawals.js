@@ -1,8 +1,8 @@
 /**
- * 管理员提现管理页面脚本
+ * Admin Withdrawal Management Page Script
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // 为所有拒绝按钮添加点击事件
+    // Add click event listeners to all reject buttons
     document.querySelectorAll('.reject-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             const withdrawalId = this.getAttribute('data-id');
@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * 打开拒绝提现模态框
- * @param {string} withdrawalId - 提现记录ID
+ * Open the reject withdrawal modal
+ * @param {string} withdrawalId - The withdrawal record ID
  */
 function openRejectModal(withdrawalId) {
     const modal = document.getElementById('rejectModal');
@@ -23,14 +23,14 @@ function openRejectModal(withdrawalId) {
 }
 
 /**
- * 关闭拒绝提现模态框
+ * Close the reject withdrawal modal
  */
 function closeRejectModal() {
     const modal = document.getElementById('rejectModal');
     modal.style.display = 'none';
 }
 
-// 点击模态框外部关闭
+// Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('rejectModal');
     if (event.target == modal) {

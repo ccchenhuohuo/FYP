@@ -1,6 +1,6 @@
 """
-市场数据相关模型定义
-包括股票行情数据、基本面数据、资产负债表和利润表
+Market data related model definitions
+Include stock market data, fundamental data, balance sheet and income statement
 """
 from . import db
 from datetime import datetime
@@ -8,23 +8,23 @@ from sqlalchemy.dialects.mysql import NUMERIC
 
 class MarketData(db.Model):
     """
-    股票市场数据模型
-    对应数据库中的market_data表
-    存储股票的OHLCV(开盘价、最高价、最低价、收盘价、交易量)数据
+    Stock market data model
+    Corresponds to the market_data table in the database
+    Store stock OHLCV (opening price, highest price, lowest price, closing price, transaction volume) data
     
-    属性:
-        ticker (str): 股票代码，如'AAPL'，最长10字符
-        date (datetime): 数据日期，与ticker联合构成主键
-        open (NUMERIC): 开盘价，精确到0.0001
-        high (NUMERIC): 当日最高价，精确到0.0001
-        low (NUMERIC): 当日最低价，精确到0.0001
-        close (NUMERIC): 收盘价，精确到0.0001
-        volume (BigInteger): 成交量(股数)
-        data_collected_at (datetime): 数据采集时间
+    Attributes:
+        ticker (str): Stock code, e.g. 'AAPL', max 10 characters
+        date (datetime): Data date, combined with ticker as primary key
+        open (NUMERIC): Opening price, accurate to 0.0001
+        high (NUMERIC): Highest price of the day, accurate to 0.0001
+        low (NUMERIC): Lowest price of the day, accurate to 0.0001
+        close (NUMERIC): Closing price, accurate to 0.0001
+        volume (BigInteger): Transaction volume (shares)
+        data_collected_at (datetime): Data collection time
     """
     __tablename__ = 'market_data'
     
-    # 使用ticker和date作为联合主键
+    # Use ticker and date as a composite primary key
     ticker = db.Column(db.String(10), primary_key=True, nullable=False, index=True)
     date = db.Column(db.DateTime, primary_key=True, nullable=False, index=True)
     open = db.Column(NUMERIC(12,4), nullable=True)
@@ -36,30 +36,30 @@ class MarketData(db.Model):
     
     def __repr__(self):
         """
-        模型的字符串表示
+        Model string representation
         """
         return f'<MarketData {self.ticker} @ {self.date.strftime("%Y-%m-%d")}>'
 
 class FundamentalData(db.Model):
     """
-    股票基本面数据模型
-    对应数据库中的fundamental_data表
-    存储股票的市值、市盈率、市净率等基本面数据
+    Stock fundamental data model
+    Corresponds to the fundamental_data table in the database
+    Store fundamental data such as market cap, PE ratio, PB ratio, etc.
     
     属性:
-        ticker (str): 股票代码，如'AAPL'，最长10字符
-        date (datetime): 数据日期，与ticker联合构成主键
-        market_cap (BigInteger): 市值，以基础货币单位计算
-        pe_ratio (NUMERIC): 市盈率，精确到0.0001
-        pb_ratio (NUMERIC): 市净率，精确到0.0001
-        dividend_yield (NUMERIC): 股息收益率，精确到0.000001
-        net_income (BigInteger): 净利润，以基础货币单位计算
-        operating_cash_flow (BigInteger): 经营现金流，以基础货币单位计算
-        data_collected_at (datetime): 数据采集时间
+        ticker (str): Stock code, e.g. 'AAPL', max 10 characters
+        date (datetime): Data date, combined with ticker as primary key
+        market_cap (BigInteger): Market cap, calculated in base currency
+        pe_ratio (NUMERIC): PE ratio, accurate to 0.0001
+        pb_ratio (NUMERIC): PB ratio, accurate to 0.0001
+        dividend_yield (NUMERIC): Dividend yield, accurate to 0.000001
+        net_income (BigInteger): Net income, calculated in base currency
+        operating_cash_flow (BigInteger): Operating cash flow, calculated in base currency
+        data_collected_at (datetime): Data collection time
     """
     __tablename__ = 'fundamental_data'
     
-    # 使用ticker和date作为联合主键
+    # Use ticker and date as a composite primary key
     ticker = db.Column(db.String(10), primary_key=True, nullable=False, index=True)
     date = db.Column(db.DateTime, primary_key=True, nullable=False, index=True)
     market_cap = db.Column(db.BigInteger, nullable=True)
@@ -72,28 +72,28 @@ class FundamentalData(db.Model):
     
     def __repr__(self):
         """
-        模型的字符串表示
+        Model string representation
         """
         return f'<FundamentalData {self.ticker} @ {self.date.strftime("%Y-%m-%d")}>'
 
 class BalanceSheet(db.Model):
     """
-    资产负债表数据模型
-    对应数据库中的balance_sheet表
-    存储公司的资产和负债信息
+    Balance sheet data model
+    Corresponds to the balance_sheet table in the database
+    Store company's assets and liabilities information
     
     属性:
-        ticker (str): 股票代码，如'AAPL'，最长10字符
-        date (datetime): 数据日期，与ticker联合构成主键
-        current_assets (BigInteger): 流动资产总额，以基础货币单位计算
-        non_current_assets (BigInteger): 非流动资产总额，以基础货币单位计算
-        current_liabilities (BigInteger): 流动负债总额，以基础货币单位计算
-        non_current_liabilities (BigInteger): 非流动负债总额，以基础货币单位计算
-        data_collected_at (datetime): 数据采集时间
+        ticker (str): Stock code, e.g. 'AAPL', max 10 characters
+        date (datetime): Data date, combined with ticker as primary key
+        current_assets (BigInteger): Total current assets, calculated in base currency
+        non_current_assets (BigInteger): Total non-current assets, calculated in base currency
+        current_liabilities (BigInteger): Total current liabilities, calculated in base currency
+        non_current_liabilities (BigInteger): Total non-current liabilities, calculated in base currency
+        data_collected_at (datetime): Data collection time
     """
     __tablename__ = 'balance_sheet'
     
-    # 使用ticker和date作为联合主键
+    # Use ticker and date as a composite primary key
     ticker = db.Column(db.String(10), primary_key=True, nullable=False, index=True)
     date = db.Column(db.DateTime, primary_key=True, nullable=False, index=True)
     current_assets = db.Column(db.BigInteger, nullable=True)
@@ -104,29 +104,29 @@ class BalanceSheet(db.Model):
     
     def __repr__(self):
         """
-        模型的字符串表示
+        Model string representation
         """
         return f'<BalanceSheet {self.ticker} @ {self.date.strftime("%Y-%m-%d")}>'
 
 class IncomeStatement(db.Model):
     """
-    利润表数据模型
-    对应数据库中的income_statement表
-    存储公司的收入和利润信息
+    Income statement data model
+    Corresponds to the income_statement table in the database
+    Store company's income and profit information
     
     属性:
-        ticker (str): 股票代码，如'AAPL'，最长10字符
-        date (datetime): 数据日期，与ticker联合构成主键
-        revenue (BigInteger): 营业收入，以基础货币单位计算
-        cost_of_revenue (BigInteger): 营业成本，以基础货币单位计算
-        operating_income (BigInteger): 营业利润，以基础货币单位计算
-        income_before_tax (BigInteger): 税前利润，以基础货币单位计算
-        net_income (BigInteger): 净利润，以基础货币单位计算
-        data_collected_at (datetime): 数据采集时间
+        ticker (str): Stock code, e.g. 'AAPL', max 10 characters
+        date (datetime): Data date, combined with ticker as primary key
+        revenue (BigInteger): Revenue, calculated in base currency
+        cost_of_revenue (BigInteger): Cost of revenue, calculated in base currency
+        operating_income (BigInteger): Operating income, calculated in base currency
+        income_before_tax (BigInteger): Income before tax, calculated in base currency
+        net_income (BigInteger): Net income, calculated in base currency
+        data_collected_at (datetime): Data collection time
     """
     __tablename__ = 'income_statement'
     
-    # 使用ticker和date作为联合主键
+    # Use ticker and date as a composite primary key
     ticker = db.Column(db.String(10), primary_key=True, nullable=False, index=True)
     date = db.Column(db.DateTime, primary_key=True, nullable=False, index=True)
     revenue = db.Column(db.BigInteger, nullable=True)
@@ -138,6 +138,6 @@ class IncomeStatement(db.Model):
     
     def __repr__(self):
         """
-        模型的字符串表示
+        Model string representation
         """
         return f'<IncomeStatement {self.ticker} @ {self.date.strftime("%Y-%m-%d")}>'

@@ -1,6 +1,6 @@
 """
-股票数据采集模块
-使用Yahoo Finance API获取并存储主要科技股的财务数据
+Stock data collection module
+Use Yahoo Finance API to get and store financial data of major tech stocks
 """
 import yfinance as yf
 import pandas as pd
@@ -10,40 +10,41 @@ from config import DB_CONFIG, TECH_TICKERS
 
 def fetch_stock_data():
     """
-    获取所有股票代码的数据并整理为结构化DataFrame
+    Get all stock codes data and organize it into structured DataFrames
     
-    返回:
-        tuple: 四个DataFrame，分别包含市场数据、基本面数据、资产负债表数据和利润表数据
+    Returns:
+        tuple: Four DataFrames,It includes market data, fundamental data, 
+        balance sheet data and income statement data respectively
     """
-    # 创建空DataFrame用于存储不同类型的数据
+    # Create empty DataFrames to store different types of data
     market_data = pd.DataFrame()
     fundamental_data = pd.DataFrame()
     balance_sheet_data = pd.DataFrame()
     income_statement_data = pd.DataFrame()
     
-    # 获取当前时间作为数据获取时间戳
+    # Get current time as data acquisition timestamp
     current_time = datetime.now()
     
     for ticker in TECH_TICKERS:
-        print(f"正在获取 {ticker} 的数据...")
+        print(f"Getting data for {ticker}...")
         
         try:
-            # 获取股票信息
+            # Get stock information
             stock = yf.Ticker(ticker)
             
-            # 获取历史价格数据 (从2018年开始)
+            # Get historical price data (from 2018)
             hist = stock.history(start="2018-01-01")
             if hist.empty:
-                print(f"警告: 未能获取到 {ticker} 的历史数据")
+                print(f"Warning: Unable to get historical data for {ticker}")
                 continue
             
-            # 获取财务数据
+            # Get financial data
             info = stock.info
             financials = stock.financials
             balance_sheet = stock.balance_sheet
             cash_flow = stock.cashflow
             
-            # 市场数据表 (OHLCV)
+            # Market data table (OHLCV)
             ticker_market_data = pd.DataFrame({
                 'ticker': ticker,
                 'date': hist.index,
@@ -56,7 +57,7 @@ def fetch_stock_data():
             })
             market_data = pd.concat([market_data, ticker_market_data], ignore_index=True)
             
-            # 基本面数据表
+            # Fundamental data table
             fundamental_row = {
                 'ticker': ticker,
                 'date': current_time,
@@ -67,7 +68,7 @@ def fetch_stock_data():
                 'data_collected_at': current_time
             }
             
-            # 添加收入和净利润数据（如果可用）
+            # Add income and net income data (if available)
             if not financials.empty and 'Total Revenue' in financials.index:
                 fundamental_row['revenue'] = financials.loc['Total Revenue'].values[0]
             else:
@@ -85,7 +86,7 @@ def fetch_stock_data():
                 
             fundamental_data = pd.concat([fundamental_data, pd.DataFrame([fundamental_row])], ignore_index=True)
             
-            # 资产负债表数据
+            # Balance sheet data
             if not balance_sheet.empty:
                 balance_sheet_row = {
                     'ticker': ticker,
@@ -98,7 +99,7 @@ def fetch_stock_data():
                 }
                 balance_sheet_data = pd.concat([balance_sheet_data, pd.DataFrame([balance_sheet_row])], ignore_index=True)
             
-            # 利润表数据
+            # Income statement data
             if not financials.empty:
                 income_statement_row = {
                     'ticker': ticker,
@@ -113,138 +114,138 @@ def fetch_stock_data():
                 income_statement_data = pd.concat([income_statement_data, pd.DataFrame([income_statement_row])], ignore_index=True)
         
         except Exception as e:
-            print(f"获取 {ticker} 数据时出错: {str(e)}")
+            print(f"Error getting data for {ticker}: {str(e)}")
     
     return market_data, fundamental_data, balance_sheet_data, income_statement_data
 
 def save_to_database(market_data, fundamental_data, balance_sheet_data, income_statement_data):
     """
-    将所有收集的数据保存到MySQL数据库
+    Save all collected data to MySQL database
     
-    参数:
-        market_data (DataFrame): 市场价格和交易量数据
-        fundamental_data (DataFrame): 关键财务指标
-        balance_sheet_data (DataFrame): 资产负债表信息
-        income_statement_data (DataFrame): 利润表信息
+    Parameters:
+        market_data (DataFrame): Market price and transaction volume data
+        fundamental_data (DataFrame): Key financial indicators
+        balance_sheet_data (DataFrame): Balance sheet information
+        income_statement_data (DataFrame): Income statement information
     """
-    # 创建数据库连接字符串
+    # Create database connection string
     connection_string = f"mysql+mysqlconnector://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?charset=utf8mb4"
     
     try:
-        # 创建数据库引擎
+        # Create database engine
         engine = create_engine(connection_string, echo=False)
         
-        # 检查是否有数据要保存
+        # Check if there is data to save
         if not market_data.empty:
             market_data.to_sql(name='market_data', con=engine, if_exists='replace', index=False)
-            print(f"已保存 {len(market_data)} 条市场数据记录")
+            print(f"Saved {len(market_data)} market data records")
         else:
-            print("没有市场数据可保存")
+            print("No market data to save")
             
         if not fundamental_data.empty:
             fundamental_data.to_sql(name='fundamental_data', con=engine, if_exists='replace', index=False)
-            print(f"已保存 {len(fundamental_data)} 条基本面数据记录")
+            print(f"Saved {len(fundamental_data)} fundamental data records")
         else:
-            print("没有基本面数据可保存")
+            print("No fundamental data to save")
             
         if not balance_sheet_data.empty:
             balance_sheet_data.to_sql(name='balance_sheet', con=engine, if_exists='replace', index=False)
-            print(f"已保存 {len(balance_sheet_data)} 条资产负债表数据记录")
+            print(f"Saved {len(balance_sheet_data)} balance sheet data records")
         else:
-            print("没有资产负债表数据可保存")
+            print("No balance sheet data to save")
             
         if not income_statement_data.empty:
             income_statement_data.to_sql(name='income_statement', con=engine, if_exists='replace', index=False)
-            print(f"已保存 {len(income_statement_data)} 条利润表数据记录")
+            print(f"Saved {len(income_statement_data)} income statement data records")
         else:
-            print("没有利润表数据可保存")
+            print("No income statement data to save")
             
-        print("所有数据已成功写入MySQL数据库!")
+        print("All data has been successfully written to the MySQL database!")
         
     except Exception as e:
-        print(f"保存数据到数据库时出错: {str(e)}")
+        print(f"Error saving data to database: {str(e)}")
 
 def clear_database():
     """
-    清空数据库中的所有股票数据表
+    Clear all stock data tables in the database
     """
-    # 创建数据库连接字符串
+    # Create database connection string
     connection_string = f"mysql+mysqlconnector://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?charset=utf8mb4"
     
     try:
-        # 创建数据库引擎
+        # Create database engine
         engine = create_engine(connection_string, echo=False)
         
-        # 清空各个表
+        # Clear each table
         with engine.connect() as connection:
             connection.execute("DELETE FROM market_data")
             connection.execute("DELETE FROM fundamental_data")
             connection.execute("DELETE FROM balance_sheet")
             connection.execute("DELETE FROM income_statement")
         
-        print("所有数据表已成功清空!")
+        print("All data tables have been successfully cleared!")
         
     except Exception as e:
-        print(f"清空数据表时出错: {str(e)}")
+        print(f"Error clearing data tables: {str(e)}")
 
 def print_data_samples(market_data, fundamental_data, balance_sheet_data, income_statement_data):
     """
-    打印每个DataFrame的样本行进行验证
+    Print sample rows of each DataFrame for verification
     
-    参数:
-        market_data (DataFrame): 市场价格和交易量数据
-        fundamental_data (DataFrame): 关键财务指标
-        balance_sheet_data (DataFrame): 资产负债表信息
-        income_statement_data (DataFrame): 利润表信息
+    Parameters:
+        market_data (DataFrame): Market price and transaction volume data
+        fundamental_data (DataFrame): Key financial indicators
+        balance_sheet_data (DataFrame): Balance sheet information
+        income_statement_data (DataFrame): Income statement information
     """
-    print("\n===================== 数据样本 =====================")
+    print("\n===================== Data samples =====================")
     
-    print("\n市场数据:")
+    print("\nMarket data:")
     if not market_data.empty:
-        # 显示每个股票的最新一条记录
+        # Display the latest record for each stock
         latest_records = market_data.sort_values('date').groupby('ticker').tail(1)
         print(latest_records[['ticker', 'date', 'open', 'close', 'volume']].head(7))
     else:
-        print("无数据")
+        print("No data")
         
-    print("\n基本面数据:")
+    print("\nFundamental data:")
     if not fundamental_data.empty:
         print(fundamental_data[['ticker', 'date', 'market_cap', 'pe_ratio', 'pb_ratio']].head(7))
     else:
-        print("无数据")
+        print("No data")
         
-    print("\n资产负债表数据:")
+    print("\nBalance sheet data:")
     if not balance_sheet_data.empty:
         print(balance_sheet_data[['ticker', 'date', 'current_assets', 'current_liabilities']].head(7))
     else:
-        print("无数据")
+        print("No data")
         
-    print("\n利润表数据:")
+    print("\nIncome statement data:")
     if not income_statement_data.empty:
         print(income_statement_data[['ticker', 'date', 'revenue', 'net_income']].head(7))
     else:
-        print("无数据")
+        print("No data")
         
     print("\n=====================================================")
 
-# 测试函数
+# Test function
 def run_stock_data_collection():
-    """运行股票数据采集和存储流程"""
-    print("开始获取股票数据...")
+    """Run the stock data collection and storage process"""
+    print("Starting to get stock data...")
     
-    # 获取所有股票数据
+    # Get all stock data
     market_data, fundamental_data, balance_sheet_data, income_statement_data = fetch_stock_data()
     
-    # 显示每个数据集的记录计数
-    print(f"\n获取到 {len(market_data)} 条市场数据记录")
-    print(f"获取到 {len(fundamental_data)} 条基本面数据记录")
-    print(f"获取到 {len(balance_sheet_data)} 条资产负债表数据记录")
-    print(f"获取到 {len(income_statement_data)} 条利润表数据记录")
+    # Display the record count of each dataset
+    print(f"\nGot {len(market_data)} market data records")
+    print(f"Got {len(fundamental_data)} fundamental data records")
+    print(f"Got {len(balance_sheet_data)} balance sheet data records")
+    print(f"Got {len(income_statement_data)} income statement data records")
     
-    # 打印样本数据进行验证
+    # Print sample data for verification
     print_data_samples(market_data, fundamental_data, balance_sheet_data, income_statement_data)
     
-    # 保存所有数据到数据库
+    # Save all data to database
     save_to_database(market_data, fundamental_data, balance_sheet_data, income_statement_data)
     
-    print("\n数据采集和存储完成!") 
+    print("\nData collection and storage completed!") 

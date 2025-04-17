@@ -1,8 +1,8 @@
-"""\n交易系统枚举类定义\n集中管理所有交易相关的枚举值\n"""
+"""\nDefine the enumeration class for the trading system\nManage all enumeration values related to trading\n"""
 from enum import Enum, auto
 
 class OrderType(Enum):
-    """订单方向枚举类，买入或卖出"""
+    """Order direction enumeration class, buy or sell"""
     BUY = 'buy'
     SELL = 'sell'
     
@@ -10,7 +10,7 @@ class OrderType(Enum):
         return self.value
 
 class OrderExecutionType(Enum):
-    """订单执行类型枚举类，限价单或市价单"""
+    """Order execution type enumeration class, limit order or market order"""
     LIMIT = 'limit'
     MARKET = 'market'
     
@@ -18,29 +18,30 @@ class OrderExecutionType(Enum):
         return self.value
 
 class OrderStatus(Enum):
-    """订单状态枚举类"""
-    PENDING = 'pending'     # 待执行
-    EXECUTED = 'executed'   # 已执行
-    CANCELLED = 'cancelled' # 已取消
-    REJECTED = 'rejected'   # 已拒绝
+    """Order status enumeration class"""
+    PENDING = 'pending'     # Pending execution
+    EXECUTED = 'executed'   # Executed
+    CANCELLED = 'cancelled' # Cancelled
+    REJECTED = 'rejected'   # Rejected (can be used for manual rejection by admin)
+    FAILED = 'failed'       # Execution failed (e.g. insufficient balance, system error, etc.)
     
     def __str__(self):
         return self.value
 
 class TransactionStatus(Enum):
-    """交易状态枚举类"""
-    COMPLETED = 'completed' # 已完成
-    FAILED = 'failed'       # 失败
-    REVERSED = 'reversed'   # 已撤销
+    """Transaction status enumeration class"""
+    COMPLETED = 'completed' # Completed
+    FAILED = 'failed'       # Failed
+    REVERSED = 'reversed'   # Reversed
     
     def __str__(self):
         return self.value
 
 class AccountStatus(Enum):
-    """用户账户状态枚举类"""
-    ACTIVE = 'active'       # 活跃状态
-    SUSPENDED = 'suspended' # 已暂停
-    DELETED = 'deleted'     # 已删除
+    """User account status enumeration class"""
+    ACTIVE = 'active'       # Active
+    SUSPENDED = 'suspended' # Suspended
+    DELETED = 'deleted'     # Deleted
     
     def __str__(self):
         return self.value

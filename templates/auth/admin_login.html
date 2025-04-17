@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员登录</title>
+    <title>Admin Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="admin-login">
     <header>
         <div class="admin-link">
-            <a href="{{ url_for('auth.login') }}"><i class="fas fa-user"></i> 用户登录</a>
+            <a href="{{ url_for('auth.login') }}"><i class="fas fa-user"></i> User Login</a>
         </div>
     </header>
     
     <main>
-        <h1>管理员登录</h1>
+        <h1>Admin Login</h1>
         
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -29,22 +29,22 @@
         
         {% if locked_until %}
         <div class="account-locked-info" data-locked-until="{{ locked_until.isoformat() }}">
-            <p>您的账户已被锁定，将在 {{ locked_until.strftime('%Y-%m-%d %H:%M:%S') }} 解锁</p>
-            <p>剩余时间: <span id="lockCountdown"></span></p>
+            <p>Your account is locked. It will be unlocked at {{ locked_until.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p>Time remaining: <span id="lockCountdown"></span></p>
         </div>
         {% endif %}
         
         <form id="adminLoginForm" method="post" action="{{ url_for('auth.admin_login') }}">
             <div class="form-group">
-                <label for="username">管理员用户名</label>
-                <input type="text" id="username" name="username" placeholder="请输入管理员用户名" required>
+                <label for="username">Admin Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter admin username" required>
             </div>
             <div class="form-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter password" required>
             </div>
             <div class="button-group">
-                <button type="submit"><i class="fas fa-sign-in-alt"></i> 登录</button>
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
             </div>
         </form>
     </main>

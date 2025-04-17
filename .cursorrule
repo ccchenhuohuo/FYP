@@ -1,0 +1,33 @@
+```yaml
+rules:
+  - id: ADMIN_FRONTEND_SEPARATION
+    message: "Admin front-end code (HTML, CSS, JavaScript) should be separated into distinct files."
+    advice: |
+      Keep admin templates (`templates/admin/*.html`) focused on structure.
+      Move all page-specific styles to corresponding CSS files in `static/css/` (e.g., `admin_users.css`).
+      Move all page-specific JavaScript to corresponding JS files in `static/js/` (e.g., `admin_users.js`).
+      Use Jinja blocks (`{% block styles %}` and `{% block scripts %}`) to link external assets.
+      Layout-specific styles (`admin_layout.css`) and scripts (`admin_layout.js`) are acceptable.
+    languages: [html, jinja]
+    files: ["templates/admin/*.html"]
+    level: advice
+    pattern: |
+      <style>...</style>
+      <script>...</script>
+
+  - id: NO_UNSOLICITED_CHANGES
+    message: "Do not add new features or delete existing code without explicit instructions."
+    advice: |
+     Focus on implementing the user's request accurately. Avoid making assumptions about desired functionality or removing code unless specifically asked to.
+    languages: [python, html, css, javascript]
+    files: ["**/*"]
+    level: advice
+
+  - id: LANGUAGE_REQUIREMENTS
+    message: "Code comments must be in Chinese. All user-facing text on web pages must be in English."
+    advice: |
+     Use Chinese for all code comments (`# ...`, `/* ... */`, `<!-- ... -->`). Ensure all text visible to the end-user in HTML templates (e.g., labels, button text, titles, messages) is in English.
+    languages: [python, html, css, javascript]
+    files: ["**/*"]
+    level: advice
+``` 

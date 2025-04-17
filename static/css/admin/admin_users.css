@@ -1,0 +1,132 @@
+/* User Management Styles */
+
+/* Keep search specific styles */
+.search-container {
+    display: flex;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 15px;
+    padding-left: 40px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+    outline: none;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 16px;
+}
+
+/* Keep user table specific styles */
+.user-table {
+    /* Extends .content-table from common.css */
+}
+
+.user-table th.sortable {
+    cursor: pointer;
+}
+
+.user-table th.sortable:hover {
+    background-color: #f0f2f5;
+}
+
+.user-table th.sortable i {
+    margin-left: 5px;
+    font-size: 12px;
+}
+
+.user-table tbody tr.clickable-row:hover {
+    background-color: #f0f5ff; /* Lighter hover effect */
+    cursor: pointer;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f0f5ff;
+    display: inline-flex; 
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #4a6fa5;
+    margin-right: 10px;
+}
+
+.user-name-cell {
+    display: flex;
+    align-items: center;
+}
+
+/* Keep pagination styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.pagination-item {
+    width: 36px;
+    height: 36px;
+    border-radius: 5px;
+    margin: 0 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #444;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.pagination-item:hover {
+    background-color: #f0f5ff;
+}
+
+.pagination-item.active {
+    background-color: #4a6fa5;
+    color: white;
+}
+
+.pagination-item.disabled {
+    color: #ccc;
+    pointer-events: none;
+}
+
+/* Remove common styles */
+/* .user-container, .page-header, .status-badge variants, .empty-message removed */
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .search-container {
+        margin-top: 15px;
+        max-width: 100%;
+    }
+    
+    .user-table {
+        display: block;
+        overflow-x: auto;
+    }
+} 

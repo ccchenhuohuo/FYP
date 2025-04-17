@@ -1,6 +1,5 @@
 """
-AI聊天模块
-用于与Gemini AI进行聊天
+AI chat module
 """
 import google.generativeai as genai
 import os
@@ -8,87 +7,87 @@ from rich.console import Console
 from rich.markdown import Markdown
 from config import GEMINI_API_KEY
 
-# 创建Rich控制台实例，用于美化输出
+# create a rich console instance for beautiful output
 console = Console()
 
-# 配置API密钥
+# configure the API key
 genai.configure(api_key=GEMINI_API_KEY)
 
-# 初始化模型
+# initialize the model
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 def print_markdown(text):
     """
-    使用Rich打印markdown格式的文本
+    Use Rich to print markdown formatted text
     
-    参数:
-    text (str): markdown格式的文本
+    Parameters:
+    text (str): markdown formatted text
     """
     md = Markdown(text)
     console.print(md)
 
 def chat_with_gemini_api(message):
     """
-    与Gemini AI进行单次对话，用于API调用
+    Chat with Gemini AI for a single conversation, for API calls
     
-    参数:
-    message (str): 用户消息
+    Parameters:
+    message (str): user message
     
-    返回:
-    str: Gemini的响应文本
+    Returns:
+    str: Gemini's response text
     """
     try:
-        print(f"开始处理AI请求，消息: {message[:50]}...")
+        print(f"Processing AI request, message: {message[:50]}...")
         
-        # 创建聊天会话并发送消息
+        # create a chat session and send a message
         chat = model.start_chat(history=[])
-        print("已创建聊天会话")
+        print("chat session created")
         
         response = chat.send_message(message)
-        print("已收到AI响应")
+        print("received AI response")
         
         return response.text
     except Exception as e:
         import traceback
-        print(f"AI聊天出错: {str(e)}")
+        print(f"AI chat error: {str(e)}")
         traceback.print_exc()
-        raise Exception(f"AI聊天出错: {str(e)}")
+        raise Exception(f"AI chat error: {str(e)}")
 
 def chat_with_gemini():
     """
-    与Gemini AI进行交互式聊天
+    Interact with Gemini AI in an interactive chat
     """
-    # 创建聊天会话
+    # create a chat session
     chat = model.start_chat(history=[])
     
-    console.print("\n[bold green]欢迎使用Gemini聊天程序![/bold green]")
-    console.print("[yellow]输入'quit'或'exit'结束对话[/yellow]\n")
+    console.print("\n[bold green]Welcome to the Gemini chat program![/bold green]")
+    console.print("[yellow]Enter 'quit' or 'exit' to end the conversation[/yellow]\n")
     
     while True:
-        # 获取用户输入
-        user_input = input("[bold blue]你: [/bold blue]")
+        # get user input
+        user_input = input("[bold blue]You: [/bold blue]")
         
-        # 检查是否退出
+        # check if the user wants to quit
         if user_input.lower() in ['quit', 'exit']:
-            console.print("\n[bold green]感谢使用，再见！[/bold green]")
+            console.print("\n[bold green]Thank you for using, goodbye![/bold green]")
             break
             
         try:
-            # 发送消息给Gemini并获取响应
+            # send a message to Gemini and get the response
             response = chat.send_message(user_input)
             
-            # 打印Gemini的响应
+            # print the response from Gemini
             console.print("\n[bold purple]Gemini: [/bold purple]")
             print_markdown(response.text)
             console.print("\n" + "-"*50 + "\n")
             
         except Exception as e:
-            console.print(f"\n[bold red]发生错误: {str(e)}[/bold red]\n")
+            console.print(f"\n[bold red]An error occurred: {str(e)}[/bold red]\n")
 
-# 测试函数
+# test function
 def run_chat():
-    """运行聊天程序"""
+    """Run the chat program"""
     try:
         chat_with_gemini()
     except KeyboardInterrupt:
-        console.print("\n\n[bold green]程序已被用户中断，再见！[/bold green]") 
+        console.print("\n\n[bold green]The program has been interrupted by the user, goodbye![/bold green]") 

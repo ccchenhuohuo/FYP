@@ -1,84 +1,320 @@
 {% extends 'admin/layout.html' %}
 
-{% block title %}管理员仪表盘{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_dashboard.css') }}">
+<style>
+  /* 内联样式覆盖，优化整体布局 */
+  .page-container {
+      /* Optional: Add max-width if needed, otherwise let it fill */
+  }
+
+  .dashboard-top-section {
+      margin-bottom: 1.5rem; /* Space below chart */
+  }
+
+  .stats-grid-5 {
+    display: grid; /* Ensure grid display */
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem; /* Slightly larger gap */
+    margin-bottom: 1.5rem; /* Space below stats */
+  }
+  
+  .stat-card {
+    padding: 1rem; /* Slightly more padding */
+    min-height: 120px; /* Ensure cards have some height */
+  }
+  
+  .stat-value {
+    font-size: 1.75rem; /* Slightly larger value */
+  }
+  
+  .chart-container {
+    height: 280px; /* Increased chart height */
+    margin-bottom: 0; /* Removed margin as top-section handles it */
+  }
+
+  .dashboard-bottom-section h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #333;
+  }
+
+  .recent-activity-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* Two equal columns */
+      gap: 1.5rem;
+  }
+  
+  .recent-card {
+    margin-bottom: 0; /* Remove bottom margin as grid gap handles spacing */
+  }
+  
+  .activity-table th, .activity-table td {
+    padding: 0.5rem 0.75rem; /* Adjust padding for tables */
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 1200px) {
+      .stats-grid-5 {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+  }
+
+  @media (max-width: 768px) { 
+      .stats-grid-5 {
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+      .recent-activity-grid {
+          grid-template-columns: 1fr; /* Stack recent activity */
+          gap: 1rem;
+      }
+      .stat-value {
+          font-size: 1.5rem;
+      }
+      .chart-container {
+          height: 250px;
+      }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <h1>管理员仪表盘</h1>
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-home"></i> Admin Dashboard</h1>
+    </div>
     
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-card-header">用户总数</div>
-            <div class="stat-card-value">{{ users_count }}</div>
-            <div class="stat-card-footer">
-                <i class="fas fa-users"></i>
-            </div>
-        </div>
+    <div class="dashboard-content"> 
+        <div class="dashboard-top-section">
+            {# 统计卡片 - 紧凑布局 #}
+            <div class="stats-grid stats-grid-5">
+                <!-- Total Users -->
+                <a href="{{ url_for('admin.users') }}" class="stat-card" title="View user details">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-title">Total Users</div>
+                    <div class="stat-value">{{ users_count }}</div>
+                </a>
 
-        <div class="stat-card">
-            <div class="stat-card-header">订单总数</div>
-            <div class="stat-card-value">{{ orders_count }}</div>
-            <div class="stat-card-footer">
-                <i class="fas fa-shopping-cart"></i>
-            </div>
-        </div>
+                <!-- Total Orders -->
+                <a href="{{ url_for('admin.manage_orders') }}" class="stat-card" title="Manage orders">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-title">Total Orders</div>
+                    <div class="stat-value">{{ orders_count }}</div>
+                </a>
 
-        <div class="stat-card">
-            <div class="stat-card-header">交易总数</div>
-            <div class="stat-card-value">{{ transactions_count }}</div>
-            <div class="stat-card-footer">
-                <i class="fas fa-exchange-alt"></i>
-            </div>
-        </div>
+                <!-- Total Transactions -->
+                <a href="{{ url_for('admin.manage_fund_transactions') }}" class="stat-card" title="View transaction history">
+                    <div class="stat-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-title">Total Transactions</div>
+                    <div class="stat-value">{{ transactions_count }}</div>
+                </a>
 
-        <div class="stat-card urgent">
-            <div class="stat-card-header">待处理提现</div>
-            <div class="stat-card-value">{{ pending_withdrawals_count }}</div>
-            <div class="stat-card-footer">
-                <a href="{{ url_for('admin.manage_withdrawals') }}" class="btn-sm">查看详情</a>
+                <!-- Total Deposits -->
+                <a href="{{ url_for('admin.manage_deposits') }}" class="stat-card" title="Manage deposits">
+                    <div class="stat-icon">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div class="stat-title">Total Deposits</div>
+                    <div class="stat-value">{{ deposits_count }}</div>
+                </a>
+                
+                <!-- Total Withdrawals -->
+                <a href="{{ url_for('admin.manage_withdrawals') }}" class="stat-card" title="Manage withdrawals">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-title">Total Withdrawals</div>
+                    <div class="stat-value">{{ withdrawals_count }}</div>
+                </a>
+            </div>
+
+            {# 趋势图表 - 增加高度 #}
+            <div class="chart-container">
+                <h2>Daily Activity Trends (Last 30 Days)</h2>
+                <canvas id="dailyTrendChart"></canvas>
             </div>
         </div>
         
-        <div class="stat-card urgent">
-            <div class="stat-card-header">待处理充值</div>
-            <div class="stat-card-value">{{ pending_deposits_count }}</div>
-            <div class="stat-card-footer">
-                <a href="{{ url_for('admin.manage_deposits') }}" class="btn-sm">查看详情</a>
+        <div class="dashboard-bottom-section">
+            <h2>Recent Activity</h2>
+            <div class="recent-activity-grid"> 
+                <!-- Recent Orders -->
+                <div class="recent-card">
+                    <div class="recent-title">
+                        <i class="fas fa-clipboard-list"></i> Recent Orders
+                    </div>
+                    {% if recent_orders %}
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td class="id-cell">#{{ order.order_id }}</td>
+                                <td>{{ order.user.user_name }}</td>
+                                <td>
+                                    <i class="fas fa-{% if order.order_type == 'buy' %}arrow-down text-success{% else %}arrow-up text-danger{% endif %} fa-fw"></i>
+                                    {{ order.order_type|capitalize }}
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ order.order_status|lower }}">
+                                        {{ order.order_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-message">
+                        <i class="fas fa-inbox"></i>
+                        <p>No recent orders</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Recent Fund Transactions -->
+                <div class="recent-card">
+                    <div class="recent-title">
+                        <i class="fas fa-wallet"></i> Recent Fund Transactions
+                    </div>
+                    {% if recent_fund_transactions %}
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_fund_transactions %}
+                            <tr>
+                                <td class="id-cell">#{{ transaction.transaction_id }}</td>
+                                <td>{{ transaction.user.user_name }}</td>
+                                <td>
+                                    <i class="fas fa-{% if transaction.transaction_type == 'deposit' %}arrow-down text-success{% else %}arrow-up text-danger{% endif %} fa-fw"></i>
+                                    {{ transaction.transaction_type|capitalize }}
+                                </td>
+                                <td class="{% if transaction.transaction_type == 'deposit' %}amount-positive{% endif %}">
+                                    ${{ "%.2f"|format(transaction.amount) }}
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ transaction.status|lower }}">
+                                        {{ transaction.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-message">
+                        <i class="fas fa-exchange-alt"></i>
+                        <p>No recent transactions</p>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="admin-modules">
-        <div class="module-card">
-            <h3>用户管理</h3>
-            <p>管理系统用户、权限和账户信息</p>
-            <a href="{{ url_for('admin.admin_dashboard') }}" class="module-link">进入 →</a>
-        </div>
-        <div class="module-card">
-            <h3>订单管理</h3>
-            <p>查看和管理用户订单</p>
-            <a href="{{ url_for('admin.manage_orders') }}" class="module-link">进入 →</a>
-            {% if pending_orders_count > 0 %}
-            <span class="badge">{{ pending_orders_count }}</span>
-            {% endif %}
-        </div>
-        <div class="module-card">
-            <h3>交易记录</h3>
-            <p>查看和管理所有交易记录</p>
-            <a href="{{ url_for('admin.manage_fund_transactions') }}" class="module-link">进入 →</a>
-        </div>
-        <div class="module-card highlight-card">
-            <h3>提现管理</h3>
-            <p>审核和处理用户提现请求</p>
-            <a href="{{ url_for('admin.manage_withdrawals') }}" class="module-link">进入 →</a>
-            {% if pending_withdrawals_count > 0 %}
-            <span class="badge">{{ pending_withdrawals_count }}</span>
-            {% endif %}
-        </div>
-    </div>
 </div>
-{% endblock %} 
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('dailyTrendChart').getContext('2d');
+        
+        // 使用安全的JSON解析方式获取数据
+        const chartData = JSON.parse('{{ chart_data|tojson|safe }}');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 10,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    title: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 9
+                            },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8 // Adjusted for potentially wider chart
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: false
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: 9
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                elements: {
+                    point: {
+                        radius: 1.5
+                    },
+                    line: {
+                        borderWidth: 1.5
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

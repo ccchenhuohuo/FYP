@@ -45,37 +45,55 @@
 
 /* 过滤区域样式 */
 .filter-section {
-    background-color: #f9f9f9;
+    background-color: #f8f9fa;
     padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    margin-bottom: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
 }
 
 .filters-form {
     display: flex;
-    flex-wrap: wrap;
     gap: 15px;
+    align-items: flex-end;
 }
 
 .filter-group {
-    flex: 1;
-    min-width: 200px;
+    display: flex;
+    flex-direction: column;
 }
 
 .filter-group label {
-    display: block;
-    margin-bottom: 5px;
+    font-size: 13px;
     font-weight: 500;
     color: #555;
+    margin-bottom: 5px;
 }
 
-.form-control {
-    width: 100%;
+.filter-group .form-control {
     padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
     font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    min-width: 250px;
+}
+
+.filter-group .btn {
+    padding: 8px 20px;
+    font-size: 14px;
+    background-color: #4a6fa5;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.filter-group .btn:hover {
+    background-color: #3a5985;
 }
 
 /* 表格样式 */
@@ -101,6 +119,22 @@
 
 .orders-table tbody tr:hover {
     background-color: #f9f9f9;
+}
+
+.orders-table h3 {
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.8rem;
+    color: #334155;
+}
+
+.orders-table strong {
+    font-weight: 600;
+}
+
+.orders-table .btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
 }
 
 /* 订单标签样式 */

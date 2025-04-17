@@ -11,6 +11,7 @@
 # 导入所需的Flask模块和扩展
 from flask import Flask, redirect, url_for, render_template
 from flask_login import LoginManager, current_user
+from flask_migrate import Migrate
 import os
 from datetime import datetime
 import jinja2
@@ -43,6 +44,9 @@ def create_app():
 
     # 初始化数据库
     init_db(app)
+    
+    # 初始化Flask-Migrate
+    migrate = Migrate(app, db)
 
     # 初始化Flask-Login
     init_login_manager(app)

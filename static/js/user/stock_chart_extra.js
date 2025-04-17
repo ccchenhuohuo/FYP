@@ -1,34 +1,35 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // 选项卡切换功能
+    // Tab switching functionality
     const tabs = document.querySelectorAll('.tab-button');
     const contents = document.querySelectorAll('.tab-content');
     
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // 移除所有活动状态
+            // Remove all active states
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
             
-            // 添加当前活动状态
+            // Add current active state
             tab.classList.add('active');
             const target = tab.id.replace('tab', 'content');
             document.getElementById(target).classList.add('active');
         });
     });
     
-    // 加载基本面数据
+    // Load fundamental data
     const stockSelector = document.getElementById('stockSelector');
     
     function formatNumber(num) {
         if (num === null || num === undefined) return '-';
         
-        // 对于大数值，转换为适当的单位（百万或十亿）
+        // For large values, convert to appropriate units (million or billion)
         if (Math.abs(num) >= 1e9) {
-            return (num / 1e9).toFixed(2) + '十亿';
+            return (num / 1e9).toFixed(2) + ' B'; // Billion
         } else if (Math.abs(num) >= 1e6) {
-            return (num / 1e6).toFixed(2) + '百万';
+            return (num / 1e6).toFixed(2) + ' M'; // Million
         } else {
-            return num.toLocaleString();
+            // Format with commas for thousands separator
+            return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
     }
     
@@ -42,12 +43,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return num.toFixed(2);
     }
     
-    function formatDate(date) {
-        if (!date || isNaN(date)) return '-';
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '-'; // Check for invalid date
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            console.error("Error formatting date:", dateString, e);
+            return '-';
+        }
     }
     
     function loadFundamentalData(ticker) {
@@ -58,12 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`${window.location.origin}/user/api/fundamental_data?ticker=${ticker}`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
+                    throw new Error(`HTTP status code: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                // 填充数据
+                // Fill data
                 document.getElementById('marketCap').textContent = formatNumber(data.market_cap);
                 document.getElementById('peRatio').textContent = formatRatio(data.pe_ratio);
                 document.getElementById('pbRatio').textContent = formatRatio(data.pb_ratio);
@@ -72,12 +80,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('netIncome').textContent = formatNumber(data.net_income);
                 document.getElementById('operatingCashFlow').textContent = formatNumber(data.operating_cash_flow);
                 
-                document.getElementById('fundamentalDate').textContent = `数据更新日期: ${formatDate(new Date(data.date))}`;
+                document.getElementById('fundamentalDate').textContent = `Data as of: ${formatDate(data.date)}`;
                 document.getElementById('fundamentalData').style.display = 'grid';
             })
             .catch(error => {
-                console.error('加载基本面数据错误:', error);
-                document.getElementById('errorFundamental').querySelector('span').textContent = `加载基本面数据失败: ${error.message}`;
+                console.error('Error loading fundamental data:', error);
+                document.getElementById('errorFundamental').querySelector('span').textContent = `Failed to load fundamental data: ${error.message}`;
                 document.getElementById('errorFundamental').style.display = 'block';
             })
             .finally(() => {
@@ -93,55 +101,54 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`${window.location.origin}/user/api/balance_sheet?ticker=${ticker}`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
+                    throw new Error(`HTTP status code: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('资产负债表数据:', data); // 调试输出
+                console.log('Balance sheet data:', data); // Debug output
                 
                 try {
-                    // 安全地设置元素内容 - 添加元素存在性检查
+                    // Safely set element content - add element existence check
                     const safeSetText = (id, value) => {
                         const element = document.getElementById(id);
                         if (element) {
                             element.textContent = formatNumber(value);
                         } else {
-                            console.warn(`元素 #${id} 不存在`);
+                            console.warn(`Element #${id} not found`);
                         }
                     };
                     
-                    // 填充数据 - 使用安全的方法
+                    // Fill data - use safe method
                     safeSetText('currentAssets', data.current_assets);
                     safeSetText('nonCurrentAssets', data.non_current_assets);
                     safeSetText('totalAssets', data.total_assets);
                     safeSetText('currentLiabilities', data.current_liabilities);
                     safeSetText('nonCurrentLiabilities', data.non_current_liabilities);
                     safeSetText('totalLiabilities', data.total_liabilities);
-                    safeSetText('totalEquity', data.total_equity);
                     
-                    // 注意: HTML中使用了"equity"而不是"totalEquity"
+                    // Use the correct ID that exists in the HTML
                     safeSetText('equity', data.total_equity);
                     
                     const dateElement = document.getElementById('balanceDate');
                     if (dateElement) {
-                        dateElement.textContent = `数据更新日期: ${formatDate(new Date(data.date))}`;
+                        dateElement.textContent = `Data as of: ${formatDate(data.date)}`;
                     }
                     
-                    const balanceData = document.getElementById('balanceData');
-                    if (balanceData) {
-                        balanceData.style.display = 'block';
+                    const balanceDataElement = document.getElementById('balanceData');
+                    if (balanceDataElement) {
+                        balanceDataElement.style.display = 'block'; // Changed to display: block (or grid)
                     }
                 } catch (err) {
-                    console.error('处理资产负债表数据时出错:', err);
-                    throw new Error(`处理数据时出错: ${err.message}`);
+                    console.error('Error processing balance sheet data:', err);
+                    throw new Error(`Error processing data: ${err.message}`);
                 }
             })
             .catch(error => {
-                console.error('加载资产负债表数据错误:', error);
+                console.error('Error loading balance sheet data:', error);
                 const errorElement = document.getElementById('errorBalance');
                 if (errorElement && errorElement.querySelector('span')) {
-                    errorElement.querySelector('span').textContent = `加载资产负债表数据失败: ${error.message}`;
+                    errorElement.querySelector('span').textContent = `Failed to load balance sheet data: ${error.message}`;
                     errorElement.style.display = 'block';
                 }
             })
@@ -161,12 +168,12 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`${window.location.origin}/user/api/income_statement?ticker=${ticker}`)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
+                    throw new Error(`HTTP status code: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                // 填充数据
+                // Fill data
                 document.getElementById('incomeRevenue').textContent = formatNumber(data.revenue);
                 document.getElementById('costOfRevenue').textContent = formatNumber(data.cost_of_revenue);
                 document.getElementById('grossProfit').textContent = formatNumber(data.gross_profit);
@@ -174,16 +181,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('incomeBeforeTax').textContent = formatNumber(data.income_before_tax);
                 document.getElementById('incomeNetIncome').textContent = formatNumber(data.net_income);
                 
-                // 计算利润率
+                // Calculate profit margin
                 const profitMargin = data.revenue ? (data.net_income / data.revenue * 100) : null;
                 document.getElementById('profitMargin').textContent = formatPercentage(profitMargin);
                 
-                document.getElementById('incomeDate').textContent = `数据更新日期: ${formatDate(new Date(data.date))}`;
-                document.getElementById('incomeData').style.display = 'block';
+                document.getElementById('incomeDate').textContent = `Data as of: ${formatDate(data.date)}`;
+                document.getElementById('incomeData').style.display = 'block'; // Changed to display: block (or grid)
             })
             .catch(error => {
-                console.error('加载利润表数据错误:', error);
-                document.getElementById('errorIncome').querySelector('span').textContent = `加载利润表数据失败: ${error.message}`;
+                console.error('Error loading income statement data:', error);
+                document.getElementById('errorIncome').querySelector('span').textContent = `Failed to load income statement data: ${error.message}`;
                 document.getElementById('errorIncome').style.display = 'block';
             })
             .finally(() => {
@@ -195,13 +202,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const simulationDays = document.getElementById('simulationDays').value || 60;
         const simulationCount = document.getElementById('simulationCount').value || 200;
         
-        // 更新URL中的查询参数
+        // Update URL with query parameters
         const url = `${window.location.origin}/user/api/monte-carlo/${ticker}?days=${simulationDays}&simulations=${simulationCount}`;
         
         fetch(url)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP状态码: ${response.status}`);
+                    throw new Error(`HTTP status code: ${response.status}`);
                 }
                 return response.json();
             })
@@ -210,34 +217,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(data.error);
                 }
                 
-                // 保存模拟数据到全局变量，供图表使用
-                window.monteCarloData = data; // 直接使用整个数据对象
+                // Save simulation data to global variable for chart use
+                window.monteCarloData = data; // Use the whole data object
                 
-                // 显示模拟统计数据
+                // Display simulation statistics
                 const statsDiv = document.getElementById('simulationStats');
                 statsDiv.innerHTML = `
                     <div class="row">
                         <div class="col-md-6">
-                            <h5><i class="fas fa-calculator"></i> 模拟统计</h5>
+                            <h5><i class="fas fa-calculator"></i> Simulation Statistics</h5>
                             <table class="table table-sm table-bordered">
                                 <tr>
-                                    <td>当前价格</td>
+                                    <td>Current Price</td>
                                     <td class="text-end">${formatNumber(data.current_price)}</td>
                                 </tr>
                                 <tr>
-                                    <td>模拟天数</td>
-                                    <td class="text-end">${simulationDays} 天</td>
+                                    <td>Simulation Days</td>
+                                    <td class="text-end">${simulationDays} days</td>
                                 </tr>
                                 <tr>
-                                    <td>模拟次数</td>
+                                    <td>Simulation Count</td>
                                     <td class="text-end">${simulationCount}</td>
                                 </tr>
                                 <tr>
-                                    <td>预测平均价格</td>
+                                    <td>Predicted Mean Price</td>
                                     <td class="text-end">${formatNumber(data.mean_price)}</td>
                                 </tr>
                                 <tr>
-                                    <td>预测价格区间 (90%置信度)</td>
+                                    <td>Predicted Price Range (90% Confidence)</td>
                                     <td class="text-end">${formatNumber(data.percentile_5)} - ${formatNumber(data.percentile_95)}</td>
                                 </tr>
                             </table>
@@ -246,16 +253,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 statsDiv.style.display = 'block';
                 
-                // 显示视图模式切换按钮
+                // Show view mode toggle buttons
                 document.getElementById('viewModeToggle').style.display = 'flex';
                 
-                // 触发更新图表
+                // Trigger chart update
                 const simulateEvent = new Event('monte-carlo-ready');
                 document.dispatchEvent(simulateEvent);
             })
             .catch(error => {
-                console.error('模拟失败:', error);
-                alert(`蒙特卡洛模拟失败: ${error.message}`);
+                console.error('Simulation failed:', error);
+                alert(`Monte Carlo simulation failed: ${error.message}`);
             });
     }
     
@@ -265,17 +272,17 @@ document.addEventListener('DOMContentLoaded', function() {
         loadIncomeStatement(ticker);
     }
     
-    // 初始加载
+    // Initial load
     loadAllData(stockSelector.value);
     
-    // 股票选择变化时重新加载数据
+    // Reload data when stock selection changes
     stockSelector.addEventListener('change', function() {
         loadAllData(this.value);
-        // 同步更新创建订单表单中的股票代码
+        // Synchronize the stock ticker in the order form
         document.getElementById('ticker').value = this.value;
     });
     
-    // 处理市价单和限价单切换
+    // Handle market/limit order type switch
     document.getElementById('order_execution_type').addEventListener('change', function() {
         const priceField = document.querySelector('.price-field');
         if (this.value === 'market') {
@@ -287,10 +294,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 初始化页面时，设置订单表单中的股票代码为当前选中的股票
+    // Set the stock ticker in the order form on page load
     document.getElementById('ticker').value = stockSelector.value;
     
-    // 蒙特卡洛模拟相关
+    // Monte Carlo simulation related
     const simulateButton = document.getElementById('simulateButton');
     if (simulateButton) {
         simulateButton.addEventListener('click', function() {
@@ -298,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 监听模式切换按钮
+    // Listen for mode switch buttons
     const historyModeBtn = document.getElementById('historyModeBtn');
     const simulationModeBtn = document.getElementById('simulationModeBtn');
     

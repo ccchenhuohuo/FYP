@@ -292,4 +292,192 @@
         width: 90%;
         max-width: 450px;
     }
+}
+
+/* Admin Common Styles */
+
+/* General page container for consistent padding */
+.page-container {
+    padding: 25px 40px;
+}
+
+/* Standard page header layout */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px; /* Further reduced margin-bottom */
+    padding-bottom: 10px; /* Also reduced padding-bottom */
+    border-bottom: 1px solid #eee; 
+}
+
+/* Standard page title style */
+.page-header h1 {
+    display: flex; 
+    align-items: center;
+    font-size: 26px; 
+    font-weight: 600;
+    color: #333;
+    margin: 0; 
+}
+
+.page-header h1 i {
+    margin-right: 12px; 
+    font-size: 1.1em; 
+    color: #4a6fa5; 
+}
+
+/* Responsive adjustments for page header */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 10px; /* Further reduced margin-bottom */
+        padding-bottom: 8px; /* Further reduced padding-bottom */
+    }
+    
+    .page-header h1 {
+        margin-bottom: 8px; /* Further reduced margin */
+    }
+    
+    /* Adjust elements inside header if needed, e.g., search */
+    .page-header .search-container {
+        width: 100%;
+    }
+}
+
+/* General table styling */
+.content-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.content-table th {
+    background-color: #f8f9fa;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.content-table td {
+    padding: 12px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #444;
+    vertical-align: middle;
+}
+
+.content-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.content-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Common status badge styles */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize; 
+}
+
+.status-active, .status-approved, .status-executed {
+    background-color: #e3f9e5;
+    color: #1b8a2f;
+}
+
+.status-inactive, .status-rejected, .status-failed {
+    background-color: #feecee;
+    color: #e53935;
+}
+
+.status-pending {
+    background-color: #fff8e1;
+    color: #f57c00;
+}
+
+/* Common empty message style */
+.empty-message {
+    text-align: center;
+    padding: 50px 20px;
+    color: #999;
+    font-style: italic;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.empty-message i {
+    font-size: 48px;
+    color: #ccc;
+    margin-bottom: 15px;
+    display: block; /* Ensure icon is on its own line */
+}
+
+/* Common button styles (basic example) */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: #4a6fa5;
+    color: white;
+}
+
+.btn-primary:hover {
+     background-color: #3a5985;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-secondary {
+     background-color: #6c757d;
+     color: white;
+}
+
+.btn-secondary:hover {
+     background-color: #5a6268;
+}
+
+.btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
 } 

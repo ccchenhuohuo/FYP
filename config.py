@@ -44,6 +44,9 @@ TECH_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "NFLX", "TSLA"]
 ADMIN_MAX_LOGIN_ATTEMPTS = 5  # 管理员最大登录尝试次数
 ADMIN_LOCKOUT_DURATION = 2    # 管理员账户锁定时间（分钟）
 
+# 订单处理配置
+ORDER_CHECK_INTERVAL = 5  # 订单处理器检查间隔（秒）
+
 # 应用运行配置
 DEBUG = True
 PORT = 5003

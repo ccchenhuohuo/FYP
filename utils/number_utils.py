@@ -1,19 +1,19 @@
 """
-数字处理工具模块
-提供数字格式化和处理的辅助函数
+Number processing utility module
+Provide helper functions for number formatting and processing
 """
 
 def db_round(value, method='common', precision=2):
     """
-    对数值进行四舍五入
+    Round a number
     
-    参数:
-    value (float): 要四舍五入的值
-    method (str): 四舍五入的方法，可选值为'common'（普通四舍五入）, 'ceil'（向上取整）, 'floor'（向下取整）
-    precision (int): 保留的小数位数
+    Parameters:
+    value (float): the number to round
+    method (str): rounding method, optional values are 'common' (common rounding), 'ceil' (round up), 'floor' (round down)
+    precision (int): number of decimal places to keep
     
-    返回:
-    float: 四舍五入后的值
+    Returns:
+    float: the rounded number
     """
     if method not in ("common", "ceil", "floor"):
         raise ValueError("Method must be common, ceil or floor")
@@ -31,25 +31,25 @@ def db_round(value, method='common', precision=2):
 
 class RoundableDict(dict):
     """
-    支持round方法的字典类
-    用于在模板中使用round过滤器
+    A dictionary class that supports the round method
+    Used in templates to use round filter
     """
     def __round__(self, precision=0):
         """
-        实现四舍五入方法
+        Implement the round method
         
-        参数:
-        precision (int): 保留的小数位数
+        Parameters:
+        precision (int): number of decimal places to keep
         
-        返回:
-        float: 四舍五入后的值
+        Returns:
+        float: the rounded number
         """
-        # 如果字典中有value键，则对其进行四舍五入
+        # If the dictionary has a value key, round it
         if 'value' in self:
             return round(float(self['value']), precision)
-        # 否则尝试找到可能需要四舍五入的键
+        # Otherwise try to find a key that needs rounding
         for key in ['amount', 'price', 'average_price', 'current_price', 'market_value', 'pnl', 'pnl_percentage']:
             if key in self:
                 return round(float(self[key]), precision)
-        # 如果没有找到合适的键，返回0
+        # If no suitable key is found, return 0
         return 0.0 

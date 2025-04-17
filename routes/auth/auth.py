@@ -5,6 +5,7 @@
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta
 
 from . import auth_bp
 from models import db, User, Admin
@@ -32,35 +33,35 @@ def login():
         user_name = request.form.get('user_name')
         user_password = request.form.get('user_password')
         
-        print(f"接收到的登录信息 - 用户名: {user_name}")  # 调试信息，不打印密码
+        print(f"Received login information - Username: {user_name}")  # Debug info, do not print password
         
         if not user_name or not user_password:
-            flash('请填写所有必填字段')
+            flash('Please fill in all required fields')
             return redirect(url_for('auth.login'))
         
         try:
-            # 查询用户
+            # Query user
             user = User.query.filter_by(user_name=user_name).first()
-            print(f"查询到的用户: {user}")  # 调试信息
+            print(f"Query user: {user}")  # Debug info
             
             if not user:
-                print("用户不存在")  # 调试信息
-                flash('用户名或密码错误')
+                print("User does not exist") # Debug info
+                flash('Invalid username or password', 'error')
                 return redirect(url_for('auth.login'))
                 
-            # 验证密码
+            # Verify password
             if user.user_password == user_password:
-                print("密码验证成功")  # 调试信息
+                print("Password verification successful") # Debug info
                 login_user(user)
                 return redirect(url_for('user.account'))
             else:
-                print("密码验证失败")  # 调试信息
-                flash('用户名或密码错误')
+                print("Password verification failed") # Debug info
+                flash('Invalid username or password', 'error')
                 return redirect(url_for('auth.login'))
                 
         except Exception as e:
-            print(f"登录过程发生错误: {str(e)}")  # 调试信息
-            flash('登录失败，请稍后重试')
+            print(f"Error during login process: {str(e)}") # Debug info
+            flash('An error occurred during the login process.', 'error')
             return redirect(url_for('auth.login'))
         
     return render_template('auth/login.html')
@@ -75,120 +76,136 @@ def register():
         return redirect(url_for('user.stock_chart'))
         
     if request.method == 'POST':
-        # 打印整个表单数据以进行调试
-        print("接收到的注册表单数据:", request.form)
+        # Print entire form data for debugging
+        print("Received registration form data:", request.form)
         
         user_name = request.form.get('user_name')
         user_email = request.form.get('user_email')
         user_password = request.form.get('user_password')
         confirm_password = request.form.get('confirm_password')
         
-        print(f"用户名: {user_name}, 邮箱: {user_email}, 密码长度: {len(user_password) if user_password else 0}, 确认密码长度: {len(confirm_password) if confirm_password else 0}")
+        print(f"Username: {user_name}, Email: {user_email}, Password length: {len(user_password) if user_password else 0}, Confirm password length: {len(confirm_password) if confirm_password else 0}")
         
         if not user_name or not user_email or not user_password:
-            print("缺少必填字段")
-            flash('请填写所有必填字段')
+            print("Missing required fields")
+            flash('Please fill in all required fields')
             return redirect(url_for('auth.register'))
             
         if user_password != confirm_password:
-            print("密码不匹配")
-            flash('两次输入的密码不一致')
+            flash('Passwords do not match', 'error')
             return redirect(url_for('auth.register'))
         
-        # 检查用户名或邮箱是否已存在
-        existing_user = User.query.filter_by(user_email=user_email).first()
+        # Check if username or email already exists
+        existing_user = User.query.filter((User.user_name == user_name) | (User.user_email == user_email)).first()
         
         if existing_user:
-            print("邮箱已被注册")
-            flash('该邮箱已被注册')
+            if existing_user.user_name == user_name:
+                flash('Username already exists.', 'error')
+            if existing_user.user_email == user_email:
+                flash('Email already registered.', 'error')
             return redirect(url_for('auth.register'))
         
-        # 创建新用户 - 直接存储明文密码
+        # Create new user - directly store plaintext password
         new_user = User(
             user_name=user_name,
             user_email=user_email,
-            user_password=user_password  # 直接存储明文密码
+            user_password=user_password  # Directly store plaintext password
         )
         
         try:
             db.session.add(new_user)
             db.session.commit()
-            print("用户注册成功")
-            flash('注册成功，请登录')
+            print("User registration successful") # Debug info
+            flash('Registration successful. Please log in.', 'success')
             return redirect(url_for('auth.login'))
         except Exception as e:
             db.session.rollback()
-            print(f"注册失败: {str(e)}")
-            flash('注册失败，请稍后重试')
+            flash(f'An error occurred during registration: {str(e)}', 'error')
             return redirect(url_for('auth.register'))
         
     return render_template('auth/register.html')
 
 @auth_bp.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
-    # 导入日志记录器
+    # Import logger and AdminAccountLockedError
     from models.admin import logger, AdminAccountLockedError
     
-    # 如果用户已登录，重定向到管理员仪表板
+    # If user is already logged in, redirect to admin dashboard
     if current_user.is_authenticated:
-        # 检查是否为管理员
+        # Check if user is admin
         if hasattr(current_user, 'is_admin') and current_user.is_admin:
-            logger.info(f"管理员 {current_user.admin_name} 已登录，重定向到管理员仪表板")
+            logger.info(f"Admin {current_user.admin_name} logged in, redirecting to admin dashboard")
             return redirect(url_for('admin.admin_dashboard'))
     
     if request.method == 'POST':
         admin_name = request.form.get('username')
         admin_password = request.form.get('password')
         
-        logger.info(f"接收到管理员登录请求 - 用户名: {admin_name}")
+        logger.info(f"Received admin login request - Username: {admin_name}")
         
         if not admin_name or not admin_password:
-            flash('请输入用户名和密码')
-            logger.warning("管理员登录失败：用户名或密码为空")
+            flash('Please enter username and password')
+            logger.warning("Admin login failed: Username or password is empty")
             return render_template('auth/admin_login.html')
         
         try:
-            # 查询管理员
+            # Query admin
             admin = Admin.query.filter_by(admin_name=admin_name).first()
             
             if not admin:
-                flash('用户名或密码错误')
-                logger.warning(f"管理员登录失败：用户名 {admin_name} 不存在")
+                flash('Invalid username or password', 'error')
+                logger.warning(f"Admin login failed: Username {admin_name} does not exist")
                 return render_template('auth/admin_login.html')
             
             try:
-                # 检查账户是否被锁定
+                # Check if account is locked
                 admin.is_account_locked()
                 
                 if check_password_hash(admin.admin_password, admin_password):
-                    # 登录成功，重置登录尝试次数
+                    # Login successful, reset login attempts
                     admin.reset_login_attempts()
                     db.session.commit()
                     login_user(admin)
-                    logger.info(f"管理员 {admin_name} 登录成功")
+                    logger.info(f"Admin {admin_name} logged in successfully")
                     return redirect(url_for('admin.admin_dashboard'))
                 else:
-                    # 登录失败，增加登录尝试次数
+                    # Login failed, increment login attempts
                     is_locked = admin.increment_login_attempts()
                     db.session.commit()
                     if is_locked:
-                        flash('登录尝试次数过多，账户已被锁定')
-                        logger.warning(f"管理员 {admin_name} 登录尝试次数过多，账户已被锁定")
+                        flash('Too many login attempts. Account locked until {admin.lockout_until.strftime("%Y-%m-%d %H:%M:%S UTC")}.', 'error')
+                        logger.warning(f"Admin {admin_name} account locked due to too many failed login attempts.")
                     else:
-                        flash('用户名或密码错误')
-                        logger.warning(f"管理员 {admin_name} 登录失败：密码错误")
+                        flash('Invalid username or password', 'error')
+                        logger.warning(f"Admin {admin_name} login failed: Incorrect password.")
                     return render_template('auth/admin_login.html')
             
             except AdminAccountLockedError as e:
-                flash(f'账户已被锁定，请稍后再试')
+                flash(f'Account is locked. Please try again later. Lock duration: {admin.lockout_until - datetime.utcnow()}.', 'error')
                 return render_template('auth/admin_login.html')
                 
         except Exception as e:
-            flash('登录过程中发生错误')
-            logger.error(f"管理员登录过程中发生错误: {str(e)}")
+            flash('An error occurred during login.', 'error')
+            logger.error(f"Error during admin login process: {str(e)}")
             return render_template('auth/admin_login.html')
     
-    return render_template('auth/admin_login.html')
+    # For GET request, render the login page
+    # Check if the admin is already locked out when rendering the page initially
+    admin_for_get = Admin.query.filter_by(admin_name=request.form.get('username')).first() # Check if username exists
+    locked_until_get = None
+    if admin_for_get and admin_for_get.lockout_until and admin_for_get.lockout_until > datetime.utcnow():
+        locked_until_get = admin_for_get.lockout_until
+        flash(f'Account is locked. Please try again later.', 'error') # Re-display lock message on GET if still locked
+
+    return render_template('auth/admin_login.html', locked_until=locked_until_get)
+
+@auth_bp.route('/admin/logout')
+@login_required # Ensure only logged-in admins can logout
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)
+    flash('You have successfully logged out as admin.', 'success')
+    return redirect(url_for('auth.admin_login'))
 
 @auth_bp.route('/logout')
 @login_required
@@ -197,16 +214,16 @@ def logout():
     用户登出路由
     登出当前用户并重定向到对应的登录页面
     """
-    # 判断当前用户是否为管理员
+    # Check if current user is admin
     is_admin = hasattr(current_user, 'is_admin') and current_user.is_admin
     
-    # 登出用户
+    # Logout user
     logout_user()
     
-    # 根据用户类型重定向到不同的登录页面
+    # Redirect based on user type
     if is_admin:
-        flash('您已成功登出管理员账户', 'success')
+        flash('You have successfully logged out as admin.', 'success')
         return redirect(url_for('auth.admin_login'))
     else:
-        flash('您已成功登出', 'success')
+        flash('You have successfully logged out.', 'success')
         return redirect(url_for('auth.login'))

@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户登录</title>
+    <title>User Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header>
         <div class="admin-link">
-            <a href="{{ url_for('auth.admin_login') }}"><i class="fas fa-user-shield"></i> 管理员登录</a>
+            <a href="{{ url_for('auth.admin_login') }}"><i class="fas fa-user-shield"></i> Admin Login</a>
         </div>
     </header>
     
     <main>
-        <h1>用户登录</h1>
+        <h1>User Login</h1>
         
         {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -31,18 +31,18 @@
         
         <form id="loginForm" method="post" action="{{ url_for('auth.login') }}">
             <div class="form-group">
-                <label for="user_name">用户名</label>
-                <input type="text" id="user_name" name="user_name" placeholder="请输入用户名" required>
+                <label for="user_name">Username</label>
+                <input type="text" id="user_name" name="user_name" placeholder="Enter username" required>
             </div>
             <div class="form-group">
-                <label for="user_password">密码</label>
-                <input type="password" id="user_password" name="user_password" placeholder="请输入密码" required>
+                <label for="user_password">Password</label>
+                <input type="password" id="user_password" name="user_password" placeholder="Enter password" required>
             </div>
             <div class="button-group">
-                <button type="submit"><i class="fas fa-sign-in-alt"></i> 登录</button>
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
             </div>
             <div class="auth-links">
-                <p>没有账户? <a href="{{ url_for('auth.register') }}">立即注册 <i class="fas fa-arrow-right"></i></a></p>
+                <p>Don't have an account? <a href="{{ url_for('auth.register') }}">Register now <i class="fas fa-arrow-right"></i></a></p>
             </div>
         </form>
     </main>

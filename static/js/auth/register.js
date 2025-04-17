@@ -2,11 +2,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerForm = document.getElementById('registerForm');
     
     if (registerForm) {
-        // 清除表单中可能的错误状态
+        // Clear any initial error states on the form
         clearErrors();
         
         registerForm.addEventListener('submit', function(e) {
-            // 清除之前的错误提示
+            // Clear previous errors
             clearErrors();
             
             const userName = document.getElementById('user_name').value.trim();
@@ -16,64 +16,65 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let isValid = true;
             
-            // 验证用户名
+            // Validate username
             if (!userName) {
                 isValid = false;
-                showError('user_name', '请输入用户名');
+                showError('user_name', 'Please enter a username');
             }
             
-            // 验证邮箱
+            // Validate email
             if (!userEmail) {
                 isValid = false;
-                showError('user_email', '请输入邮箱');
+                showError('user_email', 'Please enter an email address');
             } else {
-                // 验证邮箱格式
+                // Validate email format
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(userEmail)) {
                     isValid = false;
-                    showError('user_email', '请输入有效的邮箱地址');
+                    showError('user_email', 'Please enter a valid email address');
                 }
             }
             
-            // 验证密码
+            // Validate password
             if (!userPassword) {
                 isValid = false;
-                showError('user_password', '请输入密码');
+                showError('user_password', 'Please enter a password');
             }
             
-            // 验证确认密码
+            // Validate confirm password
             if (!confirmPassword) {
                 isValid = false;
-                showError('confirm_password', '请确认密码');
+                showError('confirm_password', 'Please confirm your password');
             } else if (userPassword !== confirmPassword) {
                 isValid = false;
-                showError('confirm_password', '两次输入的密码不一致');
+                showError('confirm_password', 'Passwords do not match');
             }
             
             if (!isValid) {
-                e.preventDefault(); // 阻止表单提交
+                e.preventDefault(); // Prevent form submission
             }
         });
     }
     
-    // 辅助函数：显示错误消息
+    // Helper function: Show error message
     function showError(inputId, message) {
         const input = document.getElementById(inputId);
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
         errorDiv.textContent = message;
         
-        input.parentNode.appendChild(errorDiv);
+        // Insert error message after the input field
+        input.parentNode.insertBefore(errorDiv, input.nextSibling);
         input.classList.add('error');
     }
     
-    // 辅助函数：清除所有错误
+    // Helper function: Clear all errors
     function clearErrors() {
-        // 移除所有错误消息
+        // Remove all error messages
         const errorMessages = document.querySelectorAll('.error-message');
         errorMessages.forEach(msg => msg.remove());
         
-        // 移除所有错误样式
+        // Remove all error styles
         const errorInputs = document.querySelectorAll('.error');
         errorInputs.forEach(input => input.classList.remove('error'));
     }
