@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+    <!-- Link to the single CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth/auth.css') }}">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"/>
+</head>
+<body class="auth-body">
+
+    <header>
+        <div class="admin-link">
+            <a href="{{ url_for('auth.admin_login') }}"><i class="fas fa-user-shield"></i> Admin Login</a>
+        </div>
+    </header>
+
+    <!-- Registration Container -->
+    <div class="container register-container">
+        <h2>Sign Up</h2>
+
+        <!-- Display Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="message {{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Registration Form -->
+        <form id="registerForm" method="post" action="{{ url_for('auth.register') }}" class="auth-form">
+            <!-- Username section -->
+            <div class="section" id="username-section">
+                <i class="fa-regular fa-user"></i>
+                <input type="text" id="user_name" name="user_name" placeholder="Create username" required>
+            </div>
+
+            <!-- Email section -->
+            <div class="section" id="email-section">
+                <i class="fa-regular fa-envelope"></i>
+                <input type="email" id="user_email" name="user_email" placeholder="Enter email address" required>
+            </div>
+
+            <!-- Password section -->
+            <div class="section" id="password-section">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="user_password" name="user_password" placeholder="Create password" required>
+            </div>
+
+            <!-- Confirm Password section -->
+            <div class="section" id="confirm-password-section">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm password" required>
+            </div>
+
+            <!-- Register Button -->
+            <button type="submit" class="process-btn" id="create-account">Create Account</button>
+
+            <!-- Link to go sign in screen -->
+            <p class="switch-link">Already a member? <a href="{{ url_for('auth.login') }}">Log In</a></p>
+        </form>
+    </div>
+
+    <!-- Link to the registration JS file -->
+    <script src="{{ url_for('static', filename='js/auth/register.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/auth/ui_effects.js') }}"></script> -->
+</body>
+</html> 

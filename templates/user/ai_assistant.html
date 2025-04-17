@@ -1,0 +1,39 @@
+{% extends "user/layout.html" %}
+
+{% block title %}AI Assistant{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user/ai_assistant.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="ai-assistant-container">
+    <div class="ai-assistant-header">
+        <h1>AI Assistant</h1>
+        <button id="clear-button" type="button">
+            <i class="fas fa-trash"></i> Clear Chat
+        </button>
+    </div>
+    
+    <p class="welcome-message">Welcome to the AI Assistant, {{ current_user.user_name }}!</p>
+    
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        
+        <div id="chat-input-container">
+            <form id="chat-form">
+                <input type="text" id="message-input" placeholder="Enter your question..." required>
+                <div class="chat-buttons">
+                    <button id="send-button" type="submit">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/user/ai_assistant.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,140 @@
+{% extends "user/layout.html" %} {# Assuming a base layout exists #}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block styles %}
+{{ super() }} {# Include styles from base layout if any #}
+{# Removed main.css link as it should be inherited from user/layout.html #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user/privacy.css') }}">
+{% endblock %}
+
+{% block content %}
+{# Removed header, footer, and back-to-top button as they should be in user/layout.html #}
+    <main class="container">
+        <div class="privacy-header">
+            <h1>Privacy Policy</h1>
+            <p class="last-updated">Last Updated: March 15, 2024</p>
+        </div>
+        
+        <div class="privacy-summary">
+            <p><strong>Summary:</strong> We value your privacy and are committed to protecting your personal information. This policy details how we collect, use, store, and protect your data, and the rights you have as a user. Please take a few minutes to read this policy to understand how we handle your information.</p>
+        </div>
+        
+        <div class="privacy-content">
+            <div class="privacy-toc">
+                <h3><i class="fas fa-list"></i> Table of Contents</h3>
+                <ul>
+                    <li><a href="#section-1"><i class="fas fa-angle-right"></i> 1. Introduction</a></li>
+                    <li><a href="#section-2"><i class="fas fa-angle-right"></i> 2. Information Collection</a></li>
+                    <li><a href="#section-3"><i class="fas fa-angle-right"></i> 3. Information Use</a></li>
+                    <li><a href="#section-4"><i class="fas fa-angle-right"></i> 4. Information Sharing</a></li>
+                    <li><a href="#section-5"><i class="fas fa-angle-right"></i> 5. Data Security</a></li>
+                    <li><a href="#section-6"><i class="fas fa-angle-right"></i> 6. Your Rights</a></li>
+                    <li><a href="#section-7"><i class="fas fa-angle-right"></i> 7. Cookie Policy</a></li>
+                    <li><a href="#section-8"><i class="fas fa-angle-right"></i> 8. Changes to Privacy Policy</a></li>
+                    <li><a href="#section-9"><i class="fas fa-angle-right"></i> 9. Contact Us</a></li>
+                </ul>
+            </div>
+            
+            <div class="privacy-sections">
+                <section id="section-1" class="privacy-section">
+                    <h2><i class="fas fa-info-circle"></i> 1. Introduction</h2>
+                    <p>Welcome to the Stock Trading System. We highly value your privacy and are committed to protecting your personal information. This privacy policy aims to explain how we collect, use, store, and protect your personal information.</p>
+                </section>
+                
+                <section id="section-2" class="privacy-section">
+                    <h2><i class="fas fa-database"></i> 2. Information Collection</h2>
+                    <p>We may collect the following types of information:</p>
+                    <ul>
+                        <li><strong>Personal Identification Information:</strong> Such as name, email address, phone number, etc.</li>
+                        <li><strong>Account Information:</strong> Such as username, password, etc.</li>
+                        <li><strong>Transaction Information:</strong> Such as stock trading records, simulated investment data, etc.</li>
+                        <li><strong>Device Information:</strong> Such as IP address, browser type, operating system, etc.</li>
+                        <li><strong>Usage Data:</strong> Such as page visit records, feature usage, etc.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-3" class="privacy-section">
+                    <h2><i class="fas fa-cogs"></i> 3. Information Use</h2>
+                    <p>We use the collected information to:</p>
+                    <ul>
+                        <li>Provide, maintain, and improve our services.</li>
+                        <li>Create and maintain your account.</li>
+                        <li>Process your transaction requests.</li>
+                        <li>Send you service-related notifications.</li>
+                        <li>Prevent fraud and enhance system security.</li>
+                        <li>Analyze user behavior to improve user experience.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-4" class="privacy-section">
+                    <h2><i class="fas fa-share-alt"></i> 4. Information Sharing</h2>
+                    <p>We do not sell, rent, or trade your personal information. We may share your information in the following circumstances:</p>
+                    <ul>
+                        <li>With your consent.</li>
+                        <li>With third-party service providers necessary to provide the service.</li>
+                        <li>To comply with legal requirements, court orders, or government agency requests.</li>
+                        <li>To protect our rights, property, or safety, and the rights, property, or safety of our users or the public.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-5" class="privacy-section">
+                    <h2><i class="fas fa-shield-alt"></i> 5. Data Security</h2>
+                    <p>We take reasonable technical and organizational measures to protect your personal information from unauthorized access, use, or disclosure. However, no internet transmission or electronic storage method is 100% secure, and we cannot guarantee the absolute security of information.</p>
+                </section>
+                
+                <section id="section-6" class="privacy-section">
+                    <h2><i class="fas fa-user-shield"></i> 6. Your Rights</h2>
+                    <p>Under applicable data protection laws, you may have the following rights:</p>
+                    <ul>
+                        <li><strong>Right to Access:</strong> You have the right to access, correct, or delete your personal information.</li>
+                        <li><strong>Right to Restrict Processing:</strong> You have the right to restrict or object to our processing of your personal information.</li>
+                        <li><strong>Right to Data Portability:</strong> You have the right to receive your data in a structured, commonly used, and machine-readable format.</li>
+                        <li><strong>Right to Withdraw Consent:</strong> You have the right to withdraw your consent at any time.</li>
+                        <li><strong>Right to Complain:</strong> You have the right to lodge a complaint with the relevant data protection authority.</li>
+                    </ul>
+                </section>
+                
+                <section id="section-7" class="privacy-section">
+                    <h2><i class="fas fa-cookie"></i> 7. Cookie Policy</h2>
+                    <p>We use cookies and similar technologies to collect and store information about your use of our services. You can refuse or delete cookies through your browser settings, but this may affect the availability of certain features.</p>
+                </section>
+                
+                <section id="section-8" class="privacy-section">
+                    <h2><i class="fas fa-sync-alt"></i> 8. Changes to Privacy Policy</h2>
+                    <p>We may update this privacy policy from time to time. If there are significant changes, we will notify you through website notifications or email.</p>
+                </section>
+                
+                <section id="section-9" class="privacy-section">
+                    <h2><i class="fas fa-envelope"></i> 9. Contact Us</h2>
+                    <p>If you have any questions or suggestions regarding this privacy policy, please contact our data protection team through the following means:</p>
+                    <ul>
+                        <li>Email: bc10441@um.edu.mo</li>
+                        <li>Phone: +853 68555390</li>
+                        <li>Address: University of Macau</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </main>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }} {# Include scripts from base layout if any #}
+    <script>
+        // Smooth scroll to anchor
+        document.querySelectorAll('.privacy-toc a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                window.scrollTo({
+                    top: targetElement.offsetTop - 20, 
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+{% endblock %}

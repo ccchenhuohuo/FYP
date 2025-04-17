@@ -1,0 +1,124 @@
+/* About page styles with compact layout inspired by account.css */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.about-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.about-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.25rem;
+    color: var(--primary-color, #3a86ff);
+}
+
+.about-header p {
+    color: var(--text-secondary, #6c757d);
+    margin: 0;
+}
+
+.team-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.team-member {
+    background-color: var(--card-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.team-member:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.member-photo {
+    flex: 0 0 70px;
+    margin-right: 1rem;
+}
+
+.member-image {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-color, #3a86ff);
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-info h3 {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary, #333);
+}
+
+.member-role {
+    color: var(--primary-color, #3a86ff);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.member-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #6c757d);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.about-project {
+    background-color: var(--card-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+    margin-top: 1rem;
+}
+
+.about-project h2 {
+    font-size: 1.25rem;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color, #3a86ff);
+}
+
+.about-project p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--text-primary, #333);
+}
+
+.about-project a {
+    color: var(--primary-color, #3a86ff);
+    text-decoration: none;
+}
+
+.about-project a:hover {
+    text-decoration: underline;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+    .team-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-member {
+        max-width: 100%;
+    }
+} 

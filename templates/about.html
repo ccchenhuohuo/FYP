@@ -1,0 +1,99 @@
+{% extends "user/layout.html" %}  {# Assuming a base layout exists #}
+
+{% block title %}About Us{% endblock %}
+
+{% block styles %}
+{{ super() }}  {# Include styles from base layout if any #}
+{# Removed main.css link as it should be inherited from user/layout.html #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user/about.css') }}">
+{% endblock %}
+
+{% block content %}
+{# Removed header and footer as they should be in user/layout.html #}
+    <main class="container">
+        <div class="about-header">
+            <h1>Team Introduction</h1>
+            <p>ISOM4007 Final Project Team</p>
+        </div>
+        
+        <div class="team-container">
+            <div class="team-member">
+                <div class="member-photo">
+                    <!-- Member 1 Photo -->
+                    <img src="{{ url_for('static', filename='chenyu.png') }}" alt="Team Member 1" class="member-image">
+                </div>
+                <div class="member-info">
+                    <h3>Chen Yu</h3>
+                    <p class="member-role">Architect</p>
+                    <p class="member-desc">Personal introduction to be added later...</p>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-photo">
+                    <!-- Member 2 Photo -->
+                    <img src="{{ url_for('static', filename='frankie.png') }}" alt="Team Member 2" class="member-image">
+                </div>
+                <div class="member-info">
+                    <h3>Frankie Lam</h3>
+                    <p class="member-role">Frontend Developer</p>
+                    <p class="member-desc">Personal introduction to be added later...</p>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-photo">
+                    <!-- Member 3 Photo -->
+                    <img src="{{ url_for('static', filename='xumingyang.png') }}" alt="Team Member 3" class="member-image">
+                </div>
+                <div class="member-info">
+                    <h3>Xu Mingyang</h3>
+                    <p class="member-role">Database Developer</p>
+                    <p class="member-desc">Personal introduction to be added later...</p>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-photo">
+                    <!-- Member 4 Photo -->
+                    <img src="{{ url_for('static', filename='zhenghaowen.png') }}" alt="Team Member 4" class="member-image">
+                </div>
+                <div class="member-info">
+                    <h3>Zheng Haowen</h3>
+                    <p class="member-role">Security Engineer</p>
+                    <p class="member-desc">Personal introduction to be added later...</p>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-photo">
+                    <!-- Member 5 Photo -->
+                    <img src="{{ url_for('static', filename='chenguanqi.png') }}" alt="Team Member 5" class="member-image">
+                </div>
+                <div class="member-info">
+                    <h3>Chen Guanqi</h3>
+                    <p class="member-role">DevOps Engineer</p>
+                    <p class="member-desc">Personal introduction to be added later...</p>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="member-photo">
+                    <!-- Member 6 Photo -->
+                    <img src="{{ url_for('static', filename='liaoqiyue.png') }}" alt="Team Member 6" class="member-image">
+                </div>
+                <div class="member-info">
+                    <h3>Liao Qiyue</h3>
+                    <p class="member-role">Backend Developer</p>
+                    <p class="member-desc">Personal introduction to be added later...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="about-project">
+            <h2>Project Information</h2>
+            <p>This project is the ISOM4007 Final Project - Stock Trading System</p>
+            <p>GitHub Address: <a href="https://github.com/ccchenhuohuo/code-2" target="_blank">https://github.com/ccchenhuohuo/code-2</a></p>
+        </div>
+    </main>
+{% endblock %} 

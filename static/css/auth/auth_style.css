@@ -1,0 +1,194 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* Apply default font */
+}
+
+body.auth-body { /* Use a specific class for the body to avoid conflicts */
+    background-color: #223243;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* Add some padding for smaller screens */
+}
+
+.auth-container {
+    width: 100%; /* Make width responsive */
+    max-width: 350px; /* Set a max-width */
+    /* height: 420px; /* Remove fixed height */
+    padding: 20px; /* Increase padding */
+    box-shadow: -5px -5px 15px #ffffff1a, 5px 5px 15px #00000059,
+    inset -5px -5px 15px #ffffff1a, inset 5px 5px 15px #00000059;
+    border-radius: 20px;
+    border: 8px solid #223243;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px; /* Add margin between containers if needed */
+    color: white; /* Default text color */
+}
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 25px; /* Add more margin */
+    font-weight: 600; /* Adjust font weight */
+}
+.auth-section {
+    margin-bottom: 20px; /* Use margin-bottom instead of margin-top for consistent spacing */
+    width: 90%; /* Increase width slightly */
+    height: 40px; /* Increase height slightly */
+    box-shadow: -5px -5px 15px #ffffff1a, 5px 5px 15px #00000038;
+    border-radius: 25px; /* Increase border-radius */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease-in-out;
+    background-color: #223243; /* Ensure background matches */
+    position: relative; /* Needed for icon positioning if desired */
+}
+
+.auth-section.active {
+    box-shadow: inset -5px -5px 15px #ffffff1a, inset 5px 5px 15px #00000038;
+}
+
+.auth-section i {
+    color: #6fe6e6;
+    width: 40px; /* Fixed width for icon area */
+    text-align: center; /* Center icon */
+    line-height: 40px; /* Vertically center icon */
+    border-right: 1px solid #4db5b5; /* Slightly softer border color */
+    flex-shrink: 0; /* Prevent icon area from shrinking */
+}
+.auth-section input {
+    background: none;
+    border: none;
+    flex-grow: 1; /* Allow input to take remaining space */
+    height: 100%; /* Use full height */
+    border-radius: 0 25px 25px 0; /* Match parent radius */
+    color: white;
+    outline: none;
+    padding-left: 15px; /* Increase padding */
+    padding-right: 15px; /* Add right padding */
+    font-size: 15px;
+    width: calc(100% - 40px); /* Explicit width calculation */
+}
+
+/* Style placeholders */
+.auth-section input::placeholder {
+  color: #ffffffa0; /* Lighter placeholder text */
+  font-style: italic;
+}
+
+
+.auth-container .process-btn {
+    margin-top: 15px; /* Adjust margin */
+    width: 90%; /* Match input width */
+    height: 40px; /* Match input height */
+    border-radius: 25px; /* Match input radius */
+    border: none;
+    background-color: #46fbfb;
+    color: #223243; /* Dark text on light button */
+    cursor: pointer;
+    font-size: 16px; /* Slightly larger font */
+    font-weight: bold; /* Bolder text */
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    box-shadow:  -4px -4px 10px #ffffff1a,  4px 4px 10px #0000002d;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Add transitions */
+}
+
+.auth-container .process-btn:hover {
+    background-color: #3adedd; /* Slightly darker on hover */
+    box-shadow:  -2px -2px 5px #ffffff1a,  2px 2px 5px #0000002d, inset -1px -1px 3px #ffffff1a, inset 1px 1px 3px #0000002d; /* Subtle inner shadow on hover */
+}
+
+
+.auth-container p {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    margin-top: 20px; /* Adjust margin */
+    color: #ffffff72;
+    font-size: 14px; /* Slightly smaller */
+}
+
+.auth-container p a, /* Style the link directly */
+.auth-container p span { /* Keep span for potential JS hooks if needed */
+    color: #6fe6e6; /* Match icon color */
+    cursor: pointer;
+    text-decoration: none; /* Remove default underline */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+.auth-container p a:hover,
+.auth-container p span:hover {
+     color: #ffffff; /* White on hover */
+     text-decoration: underline; /* Underline on hover */
+}
+
+
+/* Flash Messages Styling */
+.flash-messages {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+    width: 90%;
+    text-align: center;
+}
+
+.flash-messages li {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.flash-messages .success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flash-messages .error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.flash-messages .info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.flash-messages .warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+
+/* Responsive Adjustments */
+@media screen and (max-width: 400px) {
+    .auth-container {
+        max-width: 300px;
+        padding: 15px;
+        border-width: 6px;
+    }
+    .auth-section {
+        height: 38px;
+    }
+     .auth-section i {
+        width: 35px;
+        line-height: 38px;
+    }
+     .auth-section input {
+        padding-left: 10px;
+        width: calc(100% - 35px);
+    }
+    .auth-container .process-btn {
+        height: 38px;
+        font-size: 15px;
+    }
+    .auth-container h2 {
+        font-size: 1.5rem; /* Adjust heading size */
+    }
+} 

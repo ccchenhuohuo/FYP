@@ -1,0 +1,232 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Order Management{% endblock %}
+
+{% block styles %}
+{# <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_base.css') }}"> #} <!-- Removed -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_orders.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-list"></i> Order Management</h1>
+        {# Filters remain below for now, could move here if simple #}
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <i class="alert-icon fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    
+    <div class="filter-section">
+        <form method="get" action="{{ url_for('admin.manage_orders') }}" class="filters-form">
+            <div class="filter-group">
+                <label for="user_email">User Email</label>
+                <input type="email" name="user_email" id="user_email" class="form-control" placeholder="Filter by user email" value="{{ user_email or '' }}">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn">Filter</button>
+            </div>
+        </form>
+    </div>
+    
+    {% if user_email %}
+    <!-- Pending Orders Section -->
+    <div id="pending-orders">
+        <h3>Pending Orders</h3>
+        {% if buy_orders or sell_orders %}
+            {% if buy_orders %}
+                <h4>Buy Orders</h4>
+                <table class="orders-table content-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>User</th>
+                            <th>Ticker</th>
+                            <th>Exec Type</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in buy_orders %}
+                        <tr>
+                            <td><small>{{ order.order_id }}</small></td>
+                            <td>{{ order.user.user_name }}</td>
+                            <td><strong>{{ order.ticker }}</strong></td>
+                            <td>{{ order.order_execution_type|string|capitalize }}</td>
+                            <td>${{ "%.2f"|format(order.order_price) if order.order_price and order.order_price > 0 else 'Market' }}</td>
+                            <td>{{ order.order_quantity }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ order.order_id }}')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            
+            {% if sell_orders %}
+                <h4>Sell Orders</h4>
+                 <table class="orders-table content-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>User</th>
+                            <th>Ticker</th>
+                            <th>Exec Type</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in sell_orders %}
+                        <tr>
+                            <td><small>{{ order.order_id }}</small></td>
+                            <td>{{ order.user.user_name }}</td>
+                            <td><strong>{{ order.ticker }}</strong></td>
+                            <td>{{ order.order_execution_type|string|capitalize }}</td>
+                            <td>${{ "%.2f"|format(order.order_price) if order.order_price and order.order_price > 0 else 'Market' }}</td>
+                            <td>{{ order.order_quantity }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ order.order_id }}')">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% else %}
+            <div class="empty-message">
+                <i class="fas fa-inbox empty-state-icon"></i>
+                <p>No pending orders found for user {{ user_email }}.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Completed Orders Section -->
+    <div id="completed-orders" style="margin-top: 30px;">
+        <h3>Completed Orders</h3>
+        {% if completed_orders %}
+            <table class="orders-table content-table">
+                 <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User</th>
+                        <th>Ticker</th>
+                        <th>Type</th>
+                        <th>Exec Type</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in completed_orders %}
+                        <tr>
+                            <td><small>{{ order.order_id }}</small></td>
+                             <td>{{ order.user.user_name }}</td>
+                            <td><strong>{{ order.ticker }}</strong></td>
+                            <td>{{ order.order_type|string|capitalize }}</td>
+                            <td>{{ order.order_execution_type|string|capitalize }}</td>
+                            <td>${{ "%.2f"|format(order.order_price) if order.order_price and order.order_price > 0 else 'Market' }}</td>
+                            <td>{{ order.order_quantity }}</td>
+                             <td>
+                                <span class="status-badge status-{{ order.order_status|lower }}">
+                                    {{ order.order_status|string|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+             <div class="empty-message">
+                <i class="fas fa-check-circle empty-state-icon"></i>
+                <p>No completed orders found for user {{ user_email }}.</p>
+            </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty-message" style="margin-top: 50px;">
+        <i class="fas fa-search empty-state-icon"></i>
+        <p>Please enter a user email to view their orders</p>
+    </div>
+    {% endif %}
+    
+</div>
+
+<!-- Reject Order Modal -->
+<div id="rejectOrderModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Reject Order</h3>
+            <button type="button" class="close-button" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Please enter the reason for rejection:</p>
+            <form id="rejectOrderForm" method="post" action="" data-base-url="{{ url_for('admin.reject_order', order_id=0) }}">
+                <div class="form-group">
+                    <textarea id="rejection_reason" name="rejection_reason" rows="4" class="form-control" required></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="submitRejectForm()">Confirm Rejection</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Modal logic (Similar to fund_transactions, could be moved to common JS)
+    const rejectModal = document.getElementById('rejectOrderModal');
+    const rejectForm = document.getElementById('rejectOrderForm');
+    const baseUrl = rejectForm.dataset.baseUrl.replace('/0', ''); // Adjust if URL structure is different
+
+    function openRejectModal(orderId) {
+        rejectForm.action = `${baseUrl}/${orderId}/reject`; // Assuming endpoint is /admin/orders/<order_id>/reject
+        rejectModal.style.display = 'block';
+        rejectForm.elements['rejection_reason'].focus();
+    }
+
+    function closeRejectModal() {
+        rejectModal.style.display = 'none';
+        rejectForm.reset();
+    }
+
+    function submitRejectForm() {
+        rejectForm.submit();
+    }
+
+    window.onclick = function(event) {
+        if (event.target == rejectModal) {
+            closeRejectModal();
+        }
+    }
+    
+    // Remove old tab switching logic if not used
+    /* function showTab(tabId) { ... } */
+</script>
+{% endblock %} 

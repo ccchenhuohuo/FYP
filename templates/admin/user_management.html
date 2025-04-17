@@ -1,0 +1,96 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}User Management{% endblock %}
+
+{% block styles %}
+{# <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}"> #} <!-- No longer needed? -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_users.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-users"></i> User Management</h1>
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="userSearchInput" 
+                   placeholder="Search by username, email or id..." 
+                   onkeyup="searchUsers()">
+        </div>
+    </div>
+    
+    <div class="user-grid">
+        {% if users %}
+        <table class="user-table content-table" id="userTable">
+            <thead>
+                <tr>
+                    <th class="sortable" onclick="sortTable(0)">ID <i class="fas fa-sort"></i></th>
+                    <th class="sortable" onclick="sortTable(1)">User Name <i class="fas fa-sort"></i></th>
+                    <th>Email</th>
+                    <th>Registration Date</th>
+                    <th>Last Login</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="clickable-row" data-href="{{ url_for('admin.view_user', user_id=user.user_id) }}">
+                    <td>{{ user.user_id }}</td>
+                    <td class="user-name-cell">
+                        <div class="avatar">{{ user.user_name|upper|first }}</div>
+                        {{ user.user_name }}
+                    </td>
+                    <td>{{ user.user_email }}</td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else 'Never' }}</td>
+                    <td>${{ "%.2f"|format(user.balance.total_balance if user.balance else 0) }}</td>
+                    <td>
+                        <span class="status-badge status-{{ user.account_status.name|lower }}">
+                            {{ user.account_status.name|capitalize }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">
+            <i class="fas fa-users"></i>
+            <p>No users found</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if pagination and pagination.pages > 1 %}
+    <div class="pagination">
+        <a href="{{ url_for('admin.users', page=pagination.prev_page, search=search) if pagination.has_prev else '#' }}" 
+           class="pagination-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != pagination.page %}
+                    <a href="{{ url_for('admin.users', page=page_num, search=search) }}" 
+                       class="pagination-item">{{ page_num }}</a>
+                {% else %}
+                    <span class="pagination-item active">{{ page_num }}</span>
+                {% endif %}
+            {% else %}
+                <span class="pagination-item disabled">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        <a href="{{ url_for('admin.users', page=pagination.next_page, search=search) if pagination.has_next else '#' }}" 
+           class="pagination-item {% if not pagination.has_next %}disabled{% endif %}">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/admin_users.js') }}"></script>
+{% endblock %} 

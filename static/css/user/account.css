@@ -1,0 +1,705 @@
+/* 账户页面样式 */
+/* 添加容器样式，与其他页面保持一致 */
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.account-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.account-header h1 {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.user-welcome {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-welcome p {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.balance-display {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.balance-display h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.current-balance {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 1rem 0;
+}
+
+.section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    transition: var(--transition);
+}
+
+.section:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.section.card {
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+}
+
+.section.card:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.deposit-form {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.deposit-form h3 {
+    margin-bottom: 1rem;
+    color: var(--dark-gray);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.order-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.order-table {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.order-table td, .order-table th {
+    font-size: 0.95rem;
+}
+
+.transaction-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.tag-buy {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #27ae60;
+}
+
+.tag-sell {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+}
+
+.tag-deposit {
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #2980b9;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.tag-withdraw {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-pending {
+    color: #f39c12;
+}
+
+.status-executed, .status-completed {
+    color: #27ae60;
+}
+
+.status-cancelled, .status-failed, .status-reversed {
+    color: #c0392b;
+}
+
+.positive-amount {
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.negative-amount {
+    color: #c0392b;
+    font-weight: 500;
+}
+
+.no-data-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--dark-gray);
+    font-style: italic;
+}
+
+/* 余额信息样式 */
+.balance-info {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+}
+
+/* 资金操作区域样式 */
+.fund-operations {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.deposit-form, .withdraw-form {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    flex: 1;
+}
+
+.withdraw-form h3 {
+    margin-bottom: 1rem;
+    color: var(--dark-gray);
+}
+
+.withdraw-form button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.withdraw-form button:hover {
+    background-color: var(--primary-dark);
+}
+
+.balance-item {
+    flex: 1;
+    min-width: 200px;
+}
+
+.balance-label {
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+    margin-bottom: 0.5rem;
+}
+
+.current-balance, .net-worth {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.floating-pnl {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.floating-pnl.positive {
+    color: #27ae60;
+}
+
+.floating-pnl.negative {
+    color: #c0392b;
+}
+
+.pnl-indicator {
+    font-size: 1rem;
+    margin-left: 0.5rem;
+}
+
+/* 持仓信息样式 */
+.portfolio-section, .deposits-section, .withdrawals-section {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.portfolio-section h2, .deposits-section h2, .withdrawals-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+
+.portfolio-table, .deposits-table, .withdrawals-table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.portfolio-table table, .deposits-table table, .withdrawals-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.portfolio-table th, .deposits-table th, .withdrawals-table th {
+    background-color: var(--light-gray);
+    padding: 0.8rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.portfolio-table td, .deposits-table td, .withdrawals-table td {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.portfolio-table tr:hover, .deposits-table tr:hover, .withdrawals-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.positive {
+    color: #27ae60;
+}
+
+.negative {
+    color: #c0392b;
+}
+
+.empty-portfolio, .empty-deposits, .empty-withdrawals {
+    text-align: center;
+    padding: 2rem;
+    color: var(--dark-gray);
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+}
+
+.cta-button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.cta-button:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Account Page Specific Styles */
+/* Top grid for Account + Portfolio side by side */
+.top-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 40%) 1fr; /* Account takes 40%, Portfolio takes the rest */
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.account-overview {
+    margin-bottom: 0; /* Reset margin as the grid provides spacing */
+    height: 100%; /* Equal height with portfolio */
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.account-overview:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.account-header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.75rem;
+}
+
+.account-header h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+}
+
+.account-header h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.welcome-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.welcome-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: baseline;
+}
+
+.greeting {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    font-weight: normal;
+    font-style: italic;
+}
+
+.user-name {
+    color: var(--primary-color);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.login-time {
+    color: var(--dark-gray);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.login-time i {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.time-value {
+    font-family: "Monaco", "Consolas", monospace;
+    color: var(--text-color);
+}
+
+.balance-container h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+}
+
+.balance-container h3 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+}
+
+.balance-item {
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 0.3rem;
+    box-shadow: inset 2px 2px 4px var(--neumorphic-shadow-inset-dark),
+                inset -2px -2px 4px var(--neumorphic-shadow-inset-light);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    overflow: hidden;
+}
+
+.balance-label {
+    font-size: 0.7rem;
+    color: var(--dark-gray);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.balance-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: "Monaco", "Consolas", monospace;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Portfolio section adjustments */
+.portfolio-section {
+    margin-bottom: 0; /* Reset margin as the grid provides spacing */
+    height: 100%; /* Equal height with account overview */
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.portfolio-section:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.portfolio-section h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+.portfolio-section h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.portfolio-table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Account actions */
+.account-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    justify-content: center;
+}
+
+.account-actions button {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* History sections layout */
+.history-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns of equal width */
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.history-card {
+    margin-bottom: 0; /* Reset margin as the grid provides the spacing */
+    height: 100%; /* Equal height cards */
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.history-card:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.history-card h2, 
+.section h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.history-card h2 i, 
+.section h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+/* Compact table styles */
+.compact-table {
+    font-size: 0.85rem;
+}
+
+.compact-table th,
+.compact-table td {
+    padding: 0.4rem 0.5rem;
+}
+
+.compact-table th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dark-gray);
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .top-grid,
+    .history-sections {
+        grid-template-columns: 1fr; /* Stack columns on smaller screens */
+    }
+    
+    .account-overview,
+    .portfolio-section {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .balance-grid {
+        grid-template-columns: repeat(3, 1fr); /* Keep 3 columns for balance */
+    }
+    
+    .account-actions {
+        flex-direction: row;
+    }
+    
+    .order-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .account-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .user-welcome {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
+    .balance-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on very small screens */
+    }
+    
+    .account-actions {
+        flex-direction: column;
+    }
+    
+    .account-actions button {
+        width: 100%;
+    }
+}
+
+/* 新的紧凑型余额显示 */
+.balance-compact {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: inset 2px 2px 4px var(--neumorphic-shadow-inset-dark),
+                inset -2px -2px 4px var(--neumorphic-shadow-inset-light);
+    padding: 0.75rem 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden; /* 防止内容溢出 */
+}
+
+.balance-row {
+    display: flex;
+    justify-content: space-around; /* Distribute space more evenly */
+    width: 100%;
+    gap: 0.2rem; /* Further reduce gap between cells */
+}
+
+.balance-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.1rem; /* Minimal horizontal padding */
+    flex: 1;
+    text-align: center;
+    min-width: 0; /* Allow shrinking */
+}
+
+.balance-cell:not(:last-child) {
+    border-right: none; /* Remove divider for more space */
+}
+
+.balance-label {
+    font-size: 0.6rem; /* Further reduced label size */
+    color: var(--dark-gray);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em; /* Slightly reduced spacing */
+    white-space: nowrap;
+    margin-bottom: 0.15rem; /* Reduced margin */
+}
+
+.balance-value {
+    font-size: 0.9rem; /* Further reduced value size */
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: "Monaco", "Consolas", monospace;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1; /* Adjust line height */
+} 

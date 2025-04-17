@@ -1,0 +1,163 @@
+{% extends 'admin/layout.html' %}
+
+{% block title %}Transaction History{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_fund_transactions.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-exchange-alt"></i> Transaction History</h1>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="alert-icon fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Filters for combined history page -->
+    <div class="filter-section">
+        <div class="filter-buttons">
+             {# Only show All Transactions button, Deposits/Withdrawals are separate pages now #}
+             <a href="{{ url_for('admin.manage_fund_transactions') }}" class="btn {% if request.path == url_for('admin.manage_fund_transactions') and not request.args.get('status') %}btn-primary{% else %}btn-outline{% endif %}">All Transactions</a>
+        </div>
+        <form action="{{ url_for('admin.manage_fund_transactions') }}" method="get" class="filters-form">
+            <div class="filter-group">
+                <label for="status">Status</label>
+                <select name="status" id="status" class="form-control" onchange="this.form.submit()">
+                    <option value="all" {% if current_status == 'all' %}selected{% endif %}>All</option>
+                    <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    
+    {# Display all transactions directly, no tabs needed for combined history? Or keep tabs? 
+       Let's keep tabs for consistency for now, showing filtered pending/completed #}
+       
+    <div class="tabs-container">
+        <div class="tab-header">
+            <div class="tab-button active" onclick="showTab('pending')">Pending</div>
+            <div class="tab-button" onclick="showTab('completed')">Completed</div>
+        </div>
+    </div>
+
+    <div id="pending-tab" class="tab-content active">
+        <h3>Pending Transactions</h3>
+        {% if pending_transactions %}
+            <table class="transactions-table content-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Requested Time</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                        {# No Actions column in combined history #}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in pending_transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td>{{ transaction.user.user_name }}</td>
+                        <td>
+                            <span class="transaction-tag tag-{{ transaction.transaction_type }}">
+                                {{ transaction.transaction_type|capitalize }}
+                            </span>
+                        </td>
+                        <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.created_at|format_datetime }}</td>
+                        <td>
+                            <span class="status-badge status-{{ transaction.status|lower }}">
+                                {{ transaction.status|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.remark or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-message">
+                <i class="fas fa-hourglass-half"></i>
+                <p>No pending transaction records found matching the criteria.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div id="completed-tab" class="tab-content">
+         <h3>Completed Transactions</h3>
+        {% if completed_transactions %}
+            <table class="transactions-table content-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Requested Time</th>
+                        <th>Processed Time</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in completed_transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td>{{ transaction.user.user_name }}</td>
+                         <td>
+                            <span class="transaction-tag tag-{{ transaction.transaction_type }}">
+                                {{ transaction.transaction_type|capitalize }}
+                            </span>
+                        </td>
+                        <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                        <td>{{ transaction.created_at|format_datetime }}</td>
+                        <td>{{ transaction.updated_at|format_datetime }}</td>
+                        <td>
+                            <span class="status-badge status-{{ transaction.status|lower }}">
+                                 {{ transaction.status|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.remark or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-message">
+                <i class="fas fa-check-circle"></i>
+                <p>No completed transaction records found matching the criteria.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{# Basic Tab switching JS - Could be moved to a common file later #}
+<script>
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
+        document.getElementById(tabId + '-tab').classList.add('active');
+        document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`).classList.add('active');
+    }
+    // Ensure the first tab is shown on load if needed
+    document.addEventListener('DOMContentLoaded', () => showTab('pending')); 
+</script>
+{% endblock %} 

@@ -1,0 +1,540 @@
+/* 基础样式 */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 页面标题样式 */
+h1 {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.lead {
+    color: var(--dark-gray);
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* 两栏布局 */
+.analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 992px) {
+    .analysis-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 卡片样式 - Neumorphic */
+.analysis-card {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    padding: 0;
+    margin-bottom: 1.2rem;
+    border: none;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.analysis-card:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.card-header {
+    background-color: transparent;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.card-header h2 {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.card-header h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.card-body {
+    padding: 1.2rem;
+}
+
+/* 表单样式 */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--dark-gray);
+    display: block;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* 股票代码输入区域 */
+.ticker-input {
+    /* Uses Bootstrap flex utilities (d-flex, align-items-center) */
+}
+
+/* Style for the remove button next to the input */
+.remove-ticker-btn {
+    padding: 0.3rem 0.6rem; /* Smaller padding */
+    line-height: 1; /* Adjust line height for icon alignment */
+    box-shadow: 3px 3px 6px var(--neumorphic-shadow-dark), -3px -3px 6px var(--neumorphic-shadow-light);
+    border: none;
+    color: var(--accent-color);
+    background-color: var(--background-color);
+    height: calc(1.5em + 1.4rem + 2px); /* Match form-control height (approx) */
+    display: inline-flex; /* Ensure flex alignment works well */
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.remove-ticker-btn:hover {
+    background-color: var(--accent-color); /* Red background on hover */
+    color: white; /* White icon on hover */
+    box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.2), inset -2px -2px 4px rgba(255, 255, 255, 0.7);
+}
+
+.remove-ticker-btn:active {
+     background-color: #c82333; /* Slightly darker red on active */
+     box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.3), inset -3px -3px 6px rgba(255, 255, 255, 0.6);
+     color: white;
+}
+
+/* 风险阈值设置区域 */
+.threshold-settings {
+    background-color: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin-bottom: 1rem;
+    border: none;
+}
+
+.threshold-settings h4 {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.threshold-settings .text-muted {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* 滑块样式 */
+.form-range {
+    height: 1.5rem;
+    padding: 0;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--primary-color);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--primary-color);
+}
+
+/* Action Buttons Container */
+.action-buttons {
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 0.8rem; /* Space between buttons */
+    margin-top: 1.5rem; /* Space above buttons */
+}
+
+/* Individual button styles (adjust if needed) */
+.add-ticker-btn {
+    /* Apply Neumorphic style similar to other secondary buttons */
+    background-color: var(--background-color);
+    color: var(--dark-gray);
+    box-shadow: 5px 5px 10px var(--neumorphic-shadow-dark), -5px -5px 10px var(--neumorphic-shadow-light);
+    border: none;
+}
+
+.add-ticker-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--background-color);
+}
+
+.add-ticker-btn:active {
+    color: var(--primary-color);
+    box-shadow: inset 4px 4px 8px var(--neumorphic-shadow-inset-dark), inset -4px -4px 8px var(--neumorphic-shadow-inset-light);
+}
+
+.assess-risk-btn {
+     /* Neumorphic primary button style */
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    border: none;
+    box-shadow: 5px 5px 10px var(--neumorphic-shadow-dark), -5px -5px 10px var(--neumorphic-shadow-light);
+}
+
+.assess-risk-btn:hover {
+    background-color: #2980b9; /* Slightly darker primary */
+    transform: translateY(-2px);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+}
+
+.assess-risk-btn:active {
+    transform: translateY(0);
+    background-color: #2980b9;
+    box-shadow: inset 4px 4px 8px var(--neumorphic-shadow-inset-dark), inset -4px -4px 8px var(--neumorphic-shadow-inset-light);
+}
+
+/* 结果区域样式 */
+.risk-dashboard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.risk-card {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    overflow: hidden;
+    transition: var(--transition);
+    border: none;
+    min-width: 0;
+}
+
+.risk-card:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.risk-header {
+    padding: 1rem 1.2rem;
+    background-color: transparent;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.risk-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--primary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.risk-title .badge {
+    font-size: 0.9rem;
+    padding: 0.3em 0.6em;
+}
+
+.risk-title .text-muted {
+    font-size: 0.85rem;
+}
+
+.risk-body {
+    padding: 1.2rem;
+}
+
+.risk-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .risk-content-grid {
+        grid-template-columns: 1fr;
+    }
+    .risk-gauge-area {
+        margin-top: 1.5rem;
+    }
+}
+
+.risk-details {
+    /* Styles for the left column (summary & metrics) */
+}
+
+.metrics-group {
+    margin-bottom: 1.5rem;
+}
+
+.metrics-group-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dark-gray);
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.metrics-group ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 0;
+}
+
+.metrics-group ul li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.risk-metrics-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.risk-metrics-table td {
+    padding: 0.7rem 0.5rem;
+    border-bottom: 1px solid var(--light-gray);
+    vertical-align: middle;
+}
+
+.risk-metrics-table tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.risk-metrics-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.risk-metrics-table td:first-child {
+    font-weight: 500;
+    color: var(--dark-gray);
+    width: 40%;
+    padding-left: 0.8rem;
+}
+
+.risk-metrics-table td:nth-child(2) {
+    text-align: right;
+    font-weight: 600;
+    width: 30%;
+}
+
+.risk-metrics-table td:last-child {
+    text-align: right;
+    width: 30%;
+    padding-right: 0.8rem;
+}
+
+/* Better badges */
+.badge {
+    padding: 0.3em 0.6em;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #fd7e14 !important;
+}
+
+/* Modernize Gauge Container */
+.risk-gauge-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 1rem;
+}
+
+/* Completely redesigned gauge */
+.gauge-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin-bottom: 1rem;
+}
+
+.gauge-background {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: #f5f5f5;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.1), 
+                inset -3px -3px 6px rgba(255, 255, 255, 0.7);
+}
+
+.gauge-fill {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    clip-path: polygon(90px 90px, 180px 90px, 180px 0, 0 0, 0 90px);
+    background: conic-gradient(
+        var(--gauge-color, #dc3545) 0% var(--gauge-percentage, 75%), 
+        transparent var(--gauge-percentage, 75%) 100%
+    );
+    transform-origin: center;
+    transform: rotate(-180deg);
+    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.gauge-center {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.05);
+}
+
+.gauge-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.gauge-label {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    text-align: center;
+    margin-top: 0.2rem;
+}
+
+/* AI Analysis Report Styles */
+#ai-report-container {
+    margin-top: 2rem;
+}
+
+.ai-report-block {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    background-color: #f9f9f9;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.report-ticker {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.report-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.report-content h5 {
+    font-size: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--dark-gray);
+}
+
+.report-content ul {
+    padding-left: 1.5rem;
+}
+
+.report-content p {
+    margin-bottom: 0.8rem;
+}
+
+/* Style for code or data points in the AI report */
+.report-content code {
+    background-color: #f0f0f0;
+    padding: 0.15rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+}
+
+/* Error card styling */
+.error-card .risk-header {
+    border-color: var(--accent-color);
+}
+
+.error-card .risk-title {
+    color: var(--accent-color);
+}
+
+/* Loading indicator */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Risk level colors */
+.risk-high { color: #dc3545; }
+.risk-medium { color: #fd7e14; }
+.risk-low { color: #28a745; }
+.risk-unknown { color: #adb5bd; }
+
+/* 警报样式 */
+.alerts-container {
+    margin-top: 15px;
+}
+
+.alert {
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .risk-card {
+        flex: 1 1 100%;
+    }
+} 
