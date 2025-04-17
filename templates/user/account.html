@@ -7,20 +7,6 @@
 {% endblock %}
 
 {% block content %}
-<div class="account-header">
-    <h1><i class="fas fa-user-circle"></i> My Account</h1>
-</div>
-
-<!-- User Welcome Section -->
-<div class="user-welcome">
-    <div>
-        <p><i class="fas fa-user"></i> Welcome back, <strong>{{ current_user.user_name }}</strong>!</p>
-    </div>
-    <div>
-        <span class="last-login">Last login: March 3, 2024 10:30</span> <!-- Note: Date is hardcoded, consider making dynamic -->
-    </div>
-</div>
-
 <!-- Display Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -41,224 +27,244 @@
     {% endif %}
 {% endwith %}
 
-<!-- Account Balance and Actions -->
-<div class="balance-display">
-    <h2><i class="fas fa-wallet"></i> Account Balance</h2>
-    <div class="balance-info">
-        <div class="balance-item">
-            <p class="balance-label">Available Balance</p>
-            <p class="current-balance">¥ {{ balance.available_balance|safe_round(2) }}</p>
+<!-- Top Section: Account & Portfolio Side by Side -->
+<div class="top-grid">
+    <!-- Left Side: Account Overview -->
+    <div class="account-overview card">
+        <div class="account-header">
+            <h2><i class="fas fa-user-circle"></i> My Account</h2>
+            <div class="welcome-container">
+                <div class="welcome-text">
+                    <span class="greeting">Welcome back,</span>
+                    <span class="user-name">{{ current_user.user_name }}</span>
+                </div>
+                <div class="login-time">
+                    <i class="fas fa-clock"></i> Last login: <span class="time-value">March 3, 2024 10:30</span>
+                </div>
+            </div>
         </div>
-        <div class="balance-item">
-            <p class="balance-label">Frozen Balance</p>
-            <p class="frozen-balance">¥ {{ balance.frozen_balance|safe_round(2) }}</p>
-        </div>
-        <div class="balance-item">
-            <p class="balance-label">Total Balance</p>
-            <p class="total-balance">¥ {{ balance.total_balance|safe_round(2) }}</p>
+        
+        <div class="balance-container">
+            <h3><i class="fas fa-wallet"></i> Account Balance</h3>
+            <div class="balance-compact">
+                <div class="balance-row">
+                    <div class="balance-cell">
+                        <span class="balance-label">Available</span>
+                        <span class="balance-value">¥{{ balance.available_balance|safe_round(2) }}</span>
+                    </div>
+                    <div class="balance-cell">
+                        <span class="balance-label">Frozen</span>
+                        <span class="balance-value">¥{{ balance.frozen_balance|safe_round(2) }}</span>
+                    </div>
+                    <div class="balance-cell">
+                        <span class="balance-label">Total</span>
+                        <span class="balance-value">¥{{ balance.total_balance|safe_round(2) }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deposit and Withdraw Buttons -->
+            <div class="account-actions">
+                <button class="btn deposit-btn" data-bs-toggle="modal" data-bs-target="#depositModal">
+                    <i class="fas fa-plus-circle"></i> Deposit
+                </button>
+                <button class="btn withdraw-btn" data-bs-toggle="modal" data-bs-target="#withdrawalModal">
+                    <i class="fas fa-minus-circle"></i> Withdraw
+                </button>
+            </div>
         </div>
     </div>
     
-    <!-- Deposit and Withdraw Buttons -->
-    <div class="balance-actions">
-        <button class="action-btn deposit-btn" data-bs-toggle="modal" data-bs-target="#depositModal">
-            <i class="fas fa-plus-circle"></i> Deposit
-        </button>
-        <button class="action-btn withdraw-btn" data-bs-toggle="modal" data-bs-target="#withdrawalModal">
-            <i class="fas fa-minus-circle"></i> Withdraw
-        </button>
-    </div>
-</div>
-
-<!-- Portfolio Section -->
-<div class="portfolio-section">
-    <h2><i class="fas fa-chart-pie"></i> My Portfolio</h2>
-    
-    {% if portfolio %}
-    <div class="portfolio-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Ticker</th>
-                    <th>Quantity</th>
-                    <th>Average Cost</th>
-                    <th>Current Price</th>
-                    <th>Market Value</th>
-                    <th>P&L</th>
-                    <th>P&L %</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for position in portfolio %}
-                <tr>
-                    <td>{{ position.ticker }}</td>
-                    <td>{{ position.quantity }}</td>
-                    <td>¥ {{ position.average_price|safe_round(2) }}</td>
-                    <td>¥ {{ position.current_price|safe_round(2) }}</td>
-                    <td>¥ {{ position.market_value|safe_round(2) }}</td>
-                    <td class="{% if position.pnl >= 0 %}positive{% else %}negative{% endif %}">
-                        {{ position.pnl|safe_round(2) }}
-                    </td>
-                    <td class="{% if position.pnl_percentage >= 0 %}positive{% else %}negative{% endif %}">
-                        {{ position.pnl_percentage|safe_round(2) }}%
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="empty-portfolio">
-        <p><i class="fas fa-info-circle"></i> You currently have no holdings.</p>
-        <a href="{{ url_for('user.stock_chart') }}" class="cta-button">Go to Trade</a>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Transaction History -->
-<div class="section">
-    <h2><i class="fas fa-history"></i> My Transaction History</h2>
-    {% if transactions %}
-        <div class="table-responsive">
-            <table class="order-table">
+    <!-- Right Side: Portfolio Section -->
+    <div class="portfolio-section card">
+        <h2><i class="fas fa-chart-pie"></i> My Portfolio</h2>
+        
+        {% if portfolio %}
+        <div class="portfolio-table compact-table">
+            <table>
                 <thead>
                     <tr>
-                        <th>Transaction ID</th>
-                        <th>Order ID</th>
-                        <th>Type</th>
-                        <th>Details</th>
-                        <th>Amount</th>
-                        <th>Transaction Time</th>
-                        <th>Status</th>
+                        <th>Ticker</th>
+                        <th>Qty</th>
+                        <th>Avg Cost</th>
+                        <th>Price</th>
+                        <th>Value</th>
+                        <th>P&L</th>
+                        <th>P&L %</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for transaction in transactions %}
-                        <tr>
-                            <td><small>{{ transaction.transaction_id }}</small></td>
-                            <td><small>{{ transaction.order_id }}</small></td>
-                            <td>
-                                {% if transaction.transaction_type == 'buy' %}
-                                    <span class="transaction-tag tag-buy">Buy</span>
-                                {% elif transaction.transaction_type == 'sell' %}
-                                    <span class="transaction-tag tag-sell">Sell</span>
-                                {% elif transaction.transaction_type == 'deposit' %}
-                                    <span class="transaction-tag tag-deposit">Deposit</span>
-                                {% else %}
-                                    {{ transaction.transaction_type }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if transaction.transaction_type == 'deposit' %}
-                                    Account Deposit
-                                {% else %}
-                                    <strong>{{ transaction.ticker }}</strong> × {{ transaction.transaction_quantity }}<br>
-                                    <small>Unit Price: ¥{{ transaction.transaction_price|safe_round(2) }}</small>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {# Explicitly convert enum to string for comparison #}
-                                {% if transaction.transaction_type|string == 'buy' %}
-                                    <span class="negative-amount">-¥{{ transaction.transaction_amount|safe_round(2) }}</span>
-                                {% else %}
-                                    <span class="positive-amount">+¥{{ transaction.transaction_amount|safe_round(2) }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ transaction.transaction_time }}</td>
-                            <td>
-                                {% if transaction.transaction_status == 'completed' %}
-                                    <span class="status-completed">Completed</span>
-                                {% elif transaction.transaction_status == 'failed' %}
-                                    <span class="status-failed">Failed</span>
-                                {% elif transaction.transaction_status == 'reversed' %}
-                                    <span class="status-reversed">Reversed</span>
-                                {% else %}
-                                    {{ transaction.transaction_status }}
-                                {% endif %}
-                            </td>
-                        </tr>
+                    {% for position in portfolio %}
+                    <tr>
+                        <td>{{ position.ticker }}</td>
+                        <td>{{ position.quantity }}</td>
+                        <td>¥{{ position.average_price|safe_round(2) }}</td>
+                        <td>¥{{ position.current_price|safe_round(2) }}</td>
+                        <td>¥{{ position.market_value|safe_round(2) }}</td>
+                        <td class="{% if position.pnl >= 0 %}positive{% else %}negative{% endif %}">
+                            {{ position.pnl|safe_round(2) }}
+                        </td>
+                        <td class="{% if position.pnl_percentage >= 0 %}positive{% else %}negative{% endif %}">
+                            {{ position.pnl_percentage|safe_round(2) }}%
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    {% else %}
-        <p class="no-data-message"><i class="fas fa-info-circle"></i> No transaction history yet</p>
-    {% endif %}
+        {% else %}
+        <div class="empty-portfolio">
+            <p><i class="fas fa-info-circle"></i> You currently have no holdings.</p>
+            <a href="{{ url_for('user.stock_chart') }}" class="cta-button">Go to Trade</a>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
-<!-- Deposit/Withdrawal History -->
-<div class="section">
-    <h2><i class="fas fa-money-bill-wave"></i> Deposit & Withdrawal History</h2>
-    {% if fund_transactions %}
-        <div class="table-responsive">
-            <table class="order-table">
-                <thead>
-                    <tr>
-                        <th>Transaction ID</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Amount</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for fund_tx in fund_transactions %}
+<!-- Two Column Layout for History Sections -->
+<div class="history-sections">
+    <!-- Transaction History -->
+    <div class="section card history-card">
+        <h2><i class="fas fa-history"></i> Transaction History</h2>
+        {% if transactions %}
+            <div class="table-responsive">
+                <table class="order-table compact-table">
+                    <thead>
                         <tr>
-                            <td>{{ fund_tx.transaction_id }}</td>
-                            <td>
-                                {% if fund_tx.transaction_type == 'deposit' %}
-                                    <span class="transaction-tag tag-deposit">Deposit</span>
-                                {% elif fund_tx.transaction_type == 'withdrawal' %}
-                                    <span class="transaction-tag tag-withdraw">Withdrawal</span>
-                                {% else %}
-                                    {{ fund_tx.transaction_type }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if fund_tx.status == 'pending' %}
-                                    <span class="status-pending">Pending</span>
-                                {% elif fund_tx.status == 'approved' or fund_tx.status == 'completed' %}
-                                    <span class="status-completed">Completed</span>
-                                {% elif fund_tx.status == 'rejected' %}
-                                    <span class="status-cancelled">Rejected</span>
-                                {% else %}
-                                    {{ fund_tx.status }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if fund_tx.transaction_type == 'deposit' %}
-                                    <span class="positive-amount">+¥{{ fund_tx.amount|safe_round(2) }}</span>
-                                {% else %}
-                                    <span class="negative-amount">-¥{{ fund_tx.amount|safe_round(2) }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ fund_tx.created_at }}</td>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th>Amount</th>
+                            <th>Time</th>
+                            <th>Status</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p class="no-data-message"><i class="fas fa-info-circle"></i> No deposit/withdrawal history yet</p>
-    {% endif %}
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                            <tr>
+                                <td><small>{{ transaction.transaction_id }}</small></td>
+                                <td>
+                                    {% if transaction.transaction_type == 'buy' %}
+                                        <span class="transaction-tag tag-buy">Buy</span>
+                                    {% elif transaction.transaction_type == 'sell' %}
+                                        <span class="transaction-tag tag-sell">Sell</span>
+                                    {% elif transaction.transaction_type == 'deposit' %}
+                                        <span class="transaction-tag tag-deposit">Deposit</span>
+                                    {% else %}
+                                        {{ transaction.transaction_type }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transaction.transaction_type == 'deposit' %}
+                                        Account Deposit
+                                    {% else %}
+                                        <strong>{{ transaction.ticker }}</strong> × {{ transaction.transaction_quantity }}<br>
+                                        <small>Unit: ¥{{ transaction.transaction_price|safe_round(2) }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if transaction.transaction_type|string == 'buy' %}
+                                        <span class="negative-amount">-¥{{ transaction.transaction_amount|safe_round(2) }}</span>
+                                    {% else %}
+                                        <span class="positive-amount">+¥{{ transaction.transaction_amount|safe_round(2) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ transaction.transaction_time }}</td>
+                                <td>
+                                    {% if transaction.transaction_status == 'completed' %}
+                                        <span class="status-completed">Completed</span>
+                                    {% elif transaction.transaction_status == 'failed' %}
+                                        <span class="status-failed">Failed</span>
+                                    {% elif transaction.transaction_status == 'reversed' %}
+                                        <span class="status-reversed">Reversed</span>
+                                    {% else %}
+                                        {{ transaction.transaction_status }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="no-data-message"><i class="fas fa-info-circle"></i> No transaction history yet</p>
+        {% endif %}
+    </div>
+
+    <!-- Deposit/Withdrawal History -->
+    <div class="section card history-card">
+        <h2><i class="fas fa-money-bill-wave"></i> Deposit & Withdrawal</h2>
+        {% if fund_transactions %}
+            <div class="table-responsive">
+                <table class="order-table compact-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fund_tx in fund_transactions %}
+                            <tr>
+                                <td>{{ fund_tx.transaction_id }}</td>
+                                <td>
+                                    {% if fund_tx.transaction_type == 'deposit' %}
+                                        <span class="transaction-tag tag-deposit">Deposit</span>
+                                    {% elif fund_tx.transaction_type == 'withdrawal' %}
+                                        <span class="transaction-tag tag-withdraw">Withdrawal</span>
+                                    {% else %}
+                                        {{ fund_tx.transaction_type }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if fund_tx.status == 'pending' %}
+                                        <span class="status-pending">Pending</span>
+                                    {% elif fund_tx.status == 'approved' or fund_tx.status == 'completed' %}
+                                        <span class="status-completed">Completed</span>
+                                    {% elif fund_tx.status == 'rejected' %}
+                                        <span class="status-cancelled">Rejected</span>
+                                    {% else %}
+                                        {{ fund_tx.status }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if fund_tx.transaction_type == 'deposit' %}
+                                        <span class="positive-amount">+¥{{ fund_tx.amount|safe_round(2) }}</span>
+                                    {% else %}
+                                        <span class="negative-amount">-¥{{ fund_tx.amount|safe_round(2) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ fund_tx.created_at }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="no-data-message"><i class="fas fa-info-circle"></i> No deposit/withdrawal history yet</p>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Order List -->
-<div class="section">
+<div class="section card">
     <h2><i class="fas fa-list"></i> My Orders</h2>
     {% if orders %}
         <div class="table-responsive">
-            <table class="order-table">
+            <table class="order-table compact-table">
                 <thead>
                     <tr>
-                        <th>Order ID</th>
+                        <th>ID</th>
                         <th>Ticker</th>
                         <th>Type</th>
                         <th>Order Type</th>
                         <th>Price</th>
-                        <th>Quantity</th>
+                        <th>Qty</th>
                         <th>Status</th>
-                        <th>Created Time</th>
+                        <th>Time</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -285,7 +291,7 @@
                                 {% if order.order_price %}
                                     ¥{{ order.order_price|safe_round(2) }}
                                 {% elif order.order_execution_type == 'market' %}
-                                    Market Price
+                                    Market
                                 {% else %}
                                     -
                                 {% endif %}

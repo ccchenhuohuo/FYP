@@ -1,59 +1,70 @@
 /* 股票走势图页面样式 - 统一美化版 */
 :root {
-    --primary-color: #2c7be5;
-    --primary-light: #d9e9ff;
-    --primary-dark: #1a56a0;
-    --success-color: #00b879;
-    --warning-color: #f6a434;
-    --danger-color: #e63757;
-    --info-color: #39afd1;
-    --dark-color: #12263f;
-    --light-color: #f9fbfd;
-    --body-bg: #f9fbfd;
-    --card-bg: #ffffff;
-    --border-color: #e3ebf6;
-    --text-muted: #95aac9;
-    --text-dark: #3b506c;
-    --text-light: #6e84a3;
-    --shadow-sm: 0 0.75rem 1.5rem rgba(18, 38, 63, 0.03);
-    --shadow: 0 1rem 2rem rgba(18, 38, 63, 0.05);
-    --shadow-lg: 0 1.5rem 4rem rgba(18, 38, 63, 0.1);
-    --border-radius: 0.375rem;
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --accent-color: #e74c3c;
+    --background-color: #f0f3f6;
+    --text-color: #333;
+    --light-gray: #e1e5e9;
+    --medium-gray: #c8cfd6;
+    --dark-gray: #777;
+    --neumorphic-shadow-light: rgba(255, 255, 255, 0.7);
+    --neumorphic-shadow-dark: rgba(163, 177, 198, 0.6);
+    --neumorphic-shadow-inset-light: rgba(255, 255, 255, 0.7);
+    --neumorphic-shadow-inset-dark: rgba(163, 177, 198, 0.6);
+    --border-radius: 12px;
     --transition: all 0.2s ease-in-out;
-    --font-family: 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 body {
-    font-family: var(--font-family);
-    background-color: var(--body-bg);
-    color: var(--text-dark);
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     line-height: 1.5;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    padding-bottom: 2rem;
+    font-size: 0.95rem;
 }
 
 .container {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 15px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* Top Grid Layout - Chart Settings & Real-Time Quote */
+.top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 992px) {
+    .top-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* 卡片组件统一样式 */
 .card {
-    background-color: var(--card-bg);
+    background-color: white;
     border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 1.5rem;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    padding: 0;
+    margin-bottom: 1.2rem;
+    border: none;
     transition: var(--transition);
 }
 
 .card:hover {
-    box-shadow: var(--shadow);
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
 }
 
 .card-header {
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.2rem;
     background-color: transparent;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--light-gray);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -61,45 +72,97 @@ body {
 
 .card-header h5 {
     margin: 0;
-    color: var(--dark-color);
+    color: var(--primary-color);
     font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.card-header h5 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
 }
 
 .card-body {
-    padding: 1.5rem;
+    padding: 1rem;
 }
 
 /* 表单元素样式 */
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+}
+
+.form-row > .col, .form-row > [class*="col-"] {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     font-weight: 500;
-    color: var(--text-dark);
+    color: var(--dark-gray);
+    font-size: 0.9rem;
 }
 
 .form-control {
     display: block;
     width: 100%;
     padding: 0.5rem 0.75rem;
-    font-size: 0.9375rem;
+    font-size: 0.9rem;
     font-weight: 400;
     line-height: 1.5;
-    color: var(--text-dark);
-    background-color: var(--card-bg);
-    background-clip: padding-box;
-    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    background-color: var(--background-color);
+    border: none;
     border-radius: var(--border-radius);
     transition: var(--transition);
+    box-shadow: inset 4px 4px 8px var(--neumorphic-shadow-inset-dark), inset -4px -4px 8px var(--neumorphic-shadow-inset-light);
 }
 
 .form-control:focus {
-    border-color: var(--primary-color);
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(44, 123, 229, 0.25);
+    outline: none;
+    box-shadow: inset 5px 5px 10px var(--neumorphic-shadow-inset-dark), inset -5px -5px 10px var(--neumorphic-shadow-inset-light);
+    border-color: transparent;
+}
+
+/* Chart Settings & Order Creation Section */
+.control-panel .card-body {
+    padding-top: 0.75rem;
+}
+
+/* New 3x2 Grid Layout for combined form */
+.form-grid-3x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem; /* Adjust gap as needed */
+    align-items: end; /* Align items at the bottom if heights differ */
+}
+
+/* Ensure form groups take up the grid space */
+.form-grid-3x2 .form-group {
+    margin-bottom: 0; /* Remove bottom margin as gap handles spacing */
+}
+
+/* Remove older specific section styles if they conflict */
+.settings-section,
+.order-section,
+.divider,
+.section-title {
+    display: none; /* Hide the old structure elements */
+}
+
+/* Adjust button margin if needed */
+.settings-order-form .btn {
+    margin-top: 1rem; /* Add margin above the button */
 }
 
 /* 按钮样式 */
@@ -111,39 +174,62 @@ body {
     vertical-align: middle;
     user-select: none;
     padding: 0.5rem 1rem;
-    font-size: 0.9375rem;
-    line-height: 1.5;
+    font-size: 0.9rem;
     border-radius: var(--border-radius);
     transition: var(--transition);
     cursor: pointer;
+    background-color: var(--background-color);
+    color: var(--primary-color);
+    border: none;
+    box-shadow: 5px 5px 10px var(--neumorphic-shadow-dark), -5px -5px 10px var(--neumorphic-shadow-light);
+}
+
+.btn:hover {
+    color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+}
+
+.btn:active {
+    color: #2980b9;
+    background-color: var(--background-color);
+    box-shadow: inset 4px 4px 8px var(--neumorphic-shadow-inset-dark), inset -4px -4px 8px var(--neumorphic-shadow-inset-light);
+    transform: translateY(0);
 }
 
 .btn-primary {
-    color: #fff;
+    color: white;
     background-color: var(--primary-color);
-    border-color: var(--primary-color);
 }
 
-.btn-primary:hover {
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: calc(var(--border-radius) - 2px);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
 }
 
 .btn-outline-secondary {
-    color: var(--text-light);
+    color: var(--dark-gray);
     background-color: transparent;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--light-gray);
+    box-shadow: 3px 3px 6px var(--neumorphic-shadow-dark), -3px -3px 6px var(--neumorphic-shadow-light);
 }
 
 .btn-outline-secondary:hover {
-    color: var(--text-dark);
-    background-color: var(--light-color);
+    color: var(--primary-color);
+    background-color: var(--background-color);
 }
 
 .btn-outline-secondary.active {
     color: var(--primary-color);
-    background-color: var(--primary-light);
-    border-color: var(--primary-color);
+    background-color: var(--background-color);
+    box-shadow: inset 3px 3px 6px var(--neumorphic-shadow-inset-dark), inset -3px -3px 6px var(--neumorphic-shadow-inset-light);
 }
 
 .btn-group {
@@ -167,13 +253,19 @@ body {
     border-bottom-right-radius: 0;
 }
 
+/* Chart actions */
+.chart-actions {
+    display: flex;
+    align-items: center;
+}
+
 /* 加载动画 */
 .spinner-border {
     display: inline-block;
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
     vertical-align: text-bottom;
-    border: 0.25em solid currentColor;
+    border: 0.2em solid currentColor;
     border-right-color: transparent;
     border-radius: 50%;
     animation: spinner-border 0.75s linear infinite;
@@ -184,87 +276,110 @@ body {
 }
 
 /* 图表容器 */
+.chart-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
 #stockChart {
     width: 100%;
-    height: 400px;
+    height: 380px;
+}
+
+/* Simulation Controls */
+.simulation-controls {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--light-gray);
+}
+
+/* Simulation Statistics */
+.stats-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.stats-content .stat-item {
+    background-color: var(--background-color);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    box-shadow: 3px 3px 6px var(--neumorphic-shadow-dark), -3px -3px 6px var(--neumorphic-shadow-light);
+}
+
+.stats-content .stat-item .label {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    margin-bottom: 0.25rem;
+}
+
+.stats-content .stat-item .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
 }
 
 /* 数据展示与统计信息 */
 .data-card {
-    padding: 1rem;
-    background-color: var(--light-color);
+    padding: 1rem 1.2rem;
+    background-color: white;
     border-radius: var(--border-radius);
     margin-bottom: 1rem;
+    box-shadow: 4px 4px 8px var(--neumorphic-shadow-dark), -4px -4px 8px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.data-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
 }
 
 .data-card h5 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    color: var(--text-light);
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 1rem;
+    color: var(--dark-gray);
+    margin-bottom: 0.8rem;
+    font-weight: 600;
 }
 
 .data-card .value {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-/* 基本面数据部分 */
-.fundamental-section {
-    margin-top: 2rem;
-    margin-bottom: 3rem;
-}
-
-.fundamental-header {
-    margin-bottom: 1.5rem;
-}
-
-.fundamental-header h2 {
-    color: var(--dark-color);
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-    display: flex;
-    align-items: center;
-}
-
-.fundamental-header h2 i {
-    margin-right: 0.5rem;
+    font-size: 1.4rem;
+    font-weight: 700;
     color: var(--primary-color);
 }
 
+/* Tab UI for Fundamentals */
 .fundamental-tabs {
     display: flex;
-    background-color: var(--light-color);
+    background-color: var(--background-color);
     border-radius: var(--border-radius);
     overflow: hidden;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    box-shadow: inset 2px 2px 5px var(--neumorphic-shadow-inset-dark), inset -2px -2px 5px var(--neumorphic-shadow-inset-light);
 }
 
 .tab-button {
     background: none;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1rem;
     cursor: pointer;
     font-weight: 500;
-    color: var(--text-light);
+    color: var(--dark-gray);
     transition: var(--transition);
     flex: 1;
     text-align: center;
+    font-size: 0.9rem;
 }
 
 .tab-button:hover {
-    color: var(--text-dark);
+    color: var(--primary-color);
     background-color: rgba(0, 0, 0, 0.02);
 }
 
 .tab-button.active {
     color: var(--primary-color);
     background-color: rgba(52, 152, 219, 0.1);
-    border-left: 4px solid var(--primary-color);
+    box-shadow: inset 2px 2px 5px var(--neumorphic-shadow-inset-dark), inset -2px -2px 5px var(--neumorphic-shadow-inset-light);
 }
 
 .tab-button i {
@@ -273,7 +388,6 @@ body {
 
 .tab-content {
     display: none;
-    padding: 20px;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -292,40 +406,40 @@ body {
 .data-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
+    gap: 0.75rem;
 }
 
 .data-item {
-    background-color: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: var(--background-color);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    box-shadow: 3px 3px 6px var(--neumorphic-shadow-dark), -3px -3px 6px var(--neumorphic-shadow-light);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .data-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 8px var(--neumorphic-shadow-dark), -4px -4px 8px var(--neumorphic-shadow-light);
 }
 
 .data-item h4 {
     font-size: 0.875rem;
-    margin-bottom: 12px;
-    color: #555;
+    margin-bottom: 0.5rem;
+    color: var(--dark-gray);
     font-weight: 600;
     display: flex;
     align-items: center;
 }
 
 .data-item h4 i {
-    margin-right: 8px;
+    margin-right: 0.5rem;
     color: var(--primary-color);
 }
 
 .data-item .value {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: #333;
+    color: var(--text-color);
 }
 
 .data-item strong {
@@ -334,9 +448,9 @@ body {
 
 .data-note {
     font-size: 0.75rem;
-    color: #6c757d;
+    color: var(--dark-gray);
     text-align: right;
-    margin-top: 15px;
+    margin-top: 0.5rem;
     font-style: italic;
 }
 
@@ -346,18 +460,18 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 30px;
-    color: #6c757d;
+    padding: 1.5rem;
+    color: var(--dark-gray);
 }
 
 .loading-spinner {
-    width: a40px;
-    height: 40px;
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-left: 4px solid var(--primary-color);
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-left: 3px solid var(--primary-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 15px;
+    margin-bottom: 0.75rem;
 }
 
 @keyframes spin {
@@ -368,23 +482,92 @@ body {
 .error-message {
     background-color: #f8d7da;
     color: #721c24;
-    padding: 15px;
+    padding: 0.75rem;
     border-radius: 8px;
-    margin: 15px 0;
+    margin: 0.75rem 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.error-message i {
+    font-size: 1.25rem;
+    margin-right: 0.5rem;
+    color: #dc3545;
+}
+
+/* 实时数据展示 */
+.real-time-data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.real-time-item {
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    box-shadow: 3px 3px 6px var(--neumorphic-shadow-dark), -3px -3px 6px var(--neumorphic-shadow-light);
+}
+
+.real-time-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 8px var(--neumorphic-shadow-dark), -4px -4px 8px var(--neumorphic-shadow-light);
+}
+
+.real-time-item .label {
+    color: var(--dark-gray);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
     display: flex;
     align-items: center;
 }
 
-.error-message i {
-    font-size: 1.5rem;
-    margin-right: 10px;
-    color: #dc3545;
+.real-time-item .label i {
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+.real-time-item .value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.real-time-item .change {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.real-time-item .change.positive {
+    color: var(--secondary-color);
+}
+
+.real-time-item .change.negative {
+    color: var(--accent-color);
+}
+
+#lastUpdated {
+    color: var(--dark-gray);
+    font-size: 0.75rem;
+}
+
+#refreshRealTimeData {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
 }
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -420,151 +603,25 @@ body {
     }
     
     .tab-button.active {
-        border-bottom: 2px solid #3498db;
+        border-bottom: 2px solid var(--primary-color);
     }
-}
-
-/* 自定义日期范围选择器 */
-#customDateRange {
-    display: none; 
-    transition: all 0.3s ease-in-out;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-}
-
-#customDateRange.show {
-    animation: fadeIn 0.3s ease;
-}
-
-#customDateRange .form-group {
-    margin-bottom: 0;
-}
-
-#customDateRange input[type="date"] {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 0.5rem;
-    transition: all 0.2s ease;
-}
-
-#customDateRange input[type="date"]:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
-}
-
-#applyDateRange {
-    height: 38px;  /* 与日期输入框高度一致 */
-    transition: all 0.2s ease;
-}
-
-#applyDateRange:hover {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-    #customDateRange {
+    
+    .form-row {
         flex-direction: column;
     }
     
-    #customDateRange .col-md-4 {
+    .form-row > .col-md-6 {
         width: 100%;
-        margin-bottom: 0.75rem;
     }
     
-    #customDateRange .col-md-4:last-child {
-        margin-bottom: 0;
+    .form-grid-3x2 {
+        grid-template-columns: 1fr; /* Stack elements vertically on small screens */
+        gap: 0.5rem;
     }
-}
-
-/* 实时数据展示 */
-.real-time-data-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.real-time-item {
-    background-color: var(--light-color);
-    border-radius: var(--border-radius);
-    padding: 1.25rem;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border-color);
-    transition: var(--transition);
-}
-
-.real-time-item:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow);
-}
-
-.real-time-item .label {
-    color: var(--text-light);
-    font-size: 0.875rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-}
-
-.real-time-item .label i {
-    margin-right: 0.5rem;
-    color: var(--primary-color);
-}
-
-.real-time-item .value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 0.25rem;
-}
-
-.real-time-item .change {
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.real-time-item .change.positive {
-    color: var(--success-color);
-}
-
-.real-time-item .change.negative {
-    color: var(--danger-color);
-}
-
-#lastUpdated {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-}
-
-#refreshRealTimeData {
-    font-size: 0.8125rem;
-    padding: 0.25rem 0.5rem;
-}
-
-@media (max-width: 768px) {
-    #realTimeDataContent .col-md-3 {
-        margin-bottom: 1rem;
+    .form-grid-3x2 .form-group {
+        margin-bottom: 0.5rem;
     }
-    
-    #realTimeDataContent .col-md-3:last-child {
-        margin-bottom: 0;
-    }
-}
-
-@media (max-width: 992px) {
-    .real-time-data-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 576px) {
-    .real-time-data-grid {
-        grid-template-columns: 1fr;
+    .settings-order-form .btn {
+        margin-top: 0.5rem;
     }
 } 

@@ -727,101 +727,95 @@ function formatDateForInput(date) {
     return formatDate(date);
 }
 
-// 添加获取实时股票数据的函数
+/**
+ * Fetches and updates the real-time quote section.
+ * @param {string} symbol - The stock symbol (e.g., AAPL).
+ */
 async function fetchRealTimeData(symbol) {
+    console.log(`开始获取 ${symbol} 的实时数据`);
+    const loadingDiv = document.getElementById('loadingRealTimeData');
+    const errorDiv = document.getElementById('realTimeDataError');
+    const contentDiv = document.getElementById('realTimeDataContent');
+
+    // Show loading, hide previous content/error
+    if (loadingDiv) loadingDiv.style.display = 'block';
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (contentDiv) contentDiv.style.display = 'none';
+
     try {
-        // 显示加载状态
-        const loadingElement = document.getElementById('loadingRealTimeData');
-        const contentElement = document.getElementById('realTimeDataContent');
-        const errorElement = document.getElementById('realTimeDataError');
-        
-        // 检查元素是否存在
-        if (loadingElement) loadingElement.style.display = 'block';
-        if (contentElement) contentElement.style.display = 'none';
-        if (errorElement) errorElement.style.display = 'none';
-        
-        const response = await fetch(`/user/api/real_time_stock_data?symbol=${symbol}`);
+        const response = await fetch(`/user/api/realtime_quote?ticker=${symbol}`);
         if (!response.ok) {
-            throw new Error(`HTTP status code: ${response.status}`);
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        
-        console.log('Real-time market data:', data); // 调试输出
-        
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        // 安全地更新DOM元素内容
+        console.log(`成功获取 ${symbol} 的实时数据:`, data);
+
+        // Helper to safely update element content
         const safeUpdateElement = (id, content) => {
             const element = document.getElementById(id);
-            if (element) {
-                element.textContent = content;
-            } else {
-                console.warn(`Real-time market update: Element #${id} does not exist`);
-            }
+            if (element) element.textContent = content;
+            else console.warn(`Element with ID '${id}' not found.`);
         };
         
-        // 安全地更新DOM元素类名
+        // Helper to safely update element class
         const safeUpdateClass = (id, className) => {
             const element = document.getElementById(id);
-            if (element) {
-                element.className = className;
-            } else {
-                console.warn(`Real-time market update: Element #${id} does not exist`);
-            }
+            if (element) element.className = className;
+            else console.warn(`Element with ID '${id}' not found.`);
         };
+
+        // Update DOM elements
+        safeUpdateElement('rtPrice', `$${data.current_price.toFixed(2)}`);
         
-        // 更新价格
-        safeUpdateElement('rtPrice', `¥${data.price.toFixed(2)}`);
+        // Update price change and apply class
+        const changeElementId = 'rtPriceChange';
+        const priceChange = data.price_change;
+        const percentageChange = data.percentage_change;
+        safeUpdateElement(changeElementId, `${priceChange.toFixed(2)} (${percentageChange.toFixed(2)}%)`);
+        safeUpdateClass(changeElementId, priceChange >= 0 ? 'change positive' : 'change negative');
+
+        // Format volume using the helper function (assuming it exists globally or is defined here)
+        safeUpdateElement('rtVolume', formatNumber(data.volume)); 
+
+        safeUpdateElement('rtHigh', `$${data.high_price.toFixed(2)}`);
+        safeUpdateElement('rtLow', `$${data.low_price.toFixed(2)}`);
         
-        // 更新价格变化
-        const changeValue = data.change;
-        const changePercent = data.change_percent;
-        const changeClass = changeValue >= 0 ? 'positive' : 'negative';
-        const changeSign = changeValue >= 0 ? '+' : '';
-        
-        safeUpdateElement('rtPriceChange', `${changeSign}${changeValue.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`);
-        
-        // 更新其他信息
-        safeUpdateElement('rtVolume', formatNumber(data.volume));
-        safeUpdateElement('rtHigh', `¥${data.high.toFixed(2)}`);
-        safeUpdateElement('rtLow', `¥${data.low.toFixed(2)}`);
-        safeUpdateElement('lastUpdated', `最后更新: ${data.last_updated || new Date().toLocaleTimeString()}`);
-        
-        // 隐藏加载状态，显示内容
-        if (loadingElement) loadingElement.style.display = 'none';
-        if (contentElement) contentElement.style.display = 'block';
-        
+        // Update last updated timestamp - ensure text is English
+        const now = new Date();
+        safeUpdateElement('lastUpdated', `Last Updated: ${now.toLocaleTimeString()}`);
+
+        // Show content, hide loading
+        if (contentDiv) contentDiv.style.display = 'block';
+        if (loadingDiv) loadingDiv.style.display = 'none';
+
     } catch (error) {
-        console.error('获取实时数据失败:', error);
-        
-        // 显示错误信息
-        const errorElement = document.getElementById('realTimeDataError');
-        const loadingElement = document.getElementById('loadingRealTimeData');
-        
-        if (errorElement) {
-            errorElement.textContent = `获取实时数据失败: ${error.message}`;
-            errorElement.style.display = 'block';
+        console.error(`获取 ${symbol} 实时数据时出错:`, error);
+        if (errorDiv) {
+            errorDiv.textContent = `Failed to load real-time data for ${symbol}: ${error.message}`;
+            errorDiv.style.display = 'block';
         }
-        
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
+        if (loadingDiv) loadingDiv.style.display = 'none';
     }
 }
 
+/**
+ * Formats a number into a more readable string with units (K, M, B).
+ * @param {number} num - The number to format.
+ * @returns {string} - The formatted string.
+ */
 function formatNumber(num) {
-    if (!num && num !== 0) return '-';
-    
-    if (num >= 1e9) {
-        return (num / 1e9).toFixed(2) + '十亿';
-    } else if (num >= 1e6) {
-        return (num / 1e6).toFixed(2) + '百万';
-    } else if (num >= 1e3) {
-        return (num / 1e3).toFixed(2) + '千';
+    if (num === null || num === undefined || isNaN(num)) {
+        return '--';
     }
-    return num.toString();
+    if (num >= 1e9) {
+        return (num / 1e9).toFixed(2) + ' B';
+    } else if (num >= 1e6) {
+        return (num / 1e6).toFixed(2) + ' M';
+    } else if (num >= 1e3) {
+        return (num / 1e3).toFixed(1) + ' K';
+    } else {
+        return num.toString(); // Keep small numbers as is
+    }
 }
 
 function addRealTimeDataListeners() {

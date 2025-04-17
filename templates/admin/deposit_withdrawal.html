@@ -7,13 +7,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-container">
+<div class="page-container fund-management-container">
     <div class="page-header">
         <h1>
-            <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% else %}money-bill-wave{% endif %}"></i> 
+            <i class="fas fa-wallet"></i> 
             {{ title|default('Deposit & Withdrawal Management') }}
         </h1>
-        {# No filters needed on specific Deposit/Withdrawal page #}
     </div>
     
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -27,110 +26,228 @@
         {% endif %}
     {% endwith %}
     
-    <div class="tabs-container">
-        <div class="tab-header">
-            <div class="tab-button active" onclick="showTab('pending')">Pending</div>
-            <div class="tab-button" onclick="showTab('completed')">Completed</div>
+    <!-- Top Level Tabs -->
+    <div class="top-tabs-container">
+        <div class="top-tab-button active" data-tab-group="deposits">
+            <i class="fas fa-hand-holding-usd"></i> Deposits
+        </div>
+        <div class="top-tab-button" data-tab-group="withdrawals">
+             <i class="fas fa-money-bill-wave"></i> Withdrawals
         </div>
     </div>
-    
-    <div id="pending-tab" class="tab-content active">
-        <h3>Pending {{ transaction_type|capitalize }}s</h3>
-        {% if pending_transactions %}
-            <table class="transactions-table content-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        {# No Type column needed for specific page #}
-                        <th>Amount</th>
-                        <th>Requested Time</th>
-                        <th>Status</th>
-                        <th>Remark</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for transaction in pending_transactions %}
-                    <tr>
-                        <td><small>{{ transaction.transaction_id }}</small></td>
-                        <td>{{ transaction.user.user_name }}</td>
-                        <td>${{ "%.2f"|format(transaction.amount) }}</td>
-                        <td>{{ transaction.created_at|format_datetime }}</td>
-                        <td>
-                            <span class="status-badge status-{{ transaction.status|lower }}">
-                                {{ transaction.status|capitalize }}
-                            </span>
-                        </td>
-                        <td>{{ transaction.remark or '-' }}</td>
-                        <td>
-                            {% if transaction.status == 'pending' %}
-                            <div class="action-buttons">
-                                <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
-                                    <button type="submit" class="btn btn-success btn-small">
-                                        <i class="fas fa-check"></i> Approve
+
+    <!-- Deposits Tab Content -->
+    <div class="top-tab-content active" id="deposits-content">
+        <div class="tabs-container">
+            <div class="tab-header">
+                <div class="tab-button active" onclick="showSubTab('deposits', 'pending')">Pending</div>
+                <div class="tab-button" onclick="showSubTab('deposits', 'completed')">Completed</div>
+            </div>
+        </div>
+        
+        <div id="deposits-pending-tab" class="tab-content active">
+            <h3>Pending Deposits</h3>
+            {% if pending_deposits %}
+                 <table class="transactions-table content-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Requested Time</th>
+                            <th>Status</th>
+                            <th>Remark</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in pending_deposits %}
+                        <tr>
+                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td>{{ transaction.user.user_name }}</td>
+                            <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                            <td>{{ transaction.created_at|format_datetime }}</td>
+                            <td>
+                                <span class="status-badge status-{{ transaction.status|lower }}">
+                                    {{ transaction.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.remark or '-' }}</td>
+                            <td>
+                                {% if transaction.status == 'pending' %}
+                                <div class="action-buttons">
+                                    <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
+                                        <button type="submit" class="btn btn-success btn-small">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
+                                        <i class="fas fa-times"></i> Reject
                                     </button>
-                                </form>
-                                <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            </div>
-                            {% else %}
-                            <span class="no-action">-</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="empty-message">
-                 <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% else %}money-bill-wave{% endif %} empty-state-icon"></i>
-                <p>Currently no pending {{ transaction_type }} records</p>
-            </div>
-        {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="no-action">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">
+                    <i class="fas fa-hand-holding-usd empty-state-icon"></i>
+                    <p>Currently no pending deposit records</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div id="deposits-completed-tab" class="tab-content">
+            <h3>Completed/Rejected Deposits</h3>
+            {% if completed_deposits %}
+                 <table class="transactions-table content-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Requested Time</th>
+                            <th>Processed Time</th>
+                            <th>Status</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in completed_deposits %}
+                        <tr>
+                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td>{{ transaction.user.user_name }}</td>
+                            <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                            <td>{{ transaction.created_at|format_datetime }}</td>
+                            <td>{{ transaction.updated_at|format_datetime }}</td>
+                            <td>
+                                <span class="status-badge status-{{ transaction.status|lower }}">
+                                    {{ transaction.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.remark or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">
+                    <i class="fas fa-check-circle empty-state-icon"></i>
+                    <p>Currently no completed or rejected deposit records</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    
-    <div id="completed-tab" class="tab-content">
-        <h3>Completed {{ transaction_type|capitalize }}s</h3>
-        {% if completed_transactions %}
-            <table class="transactions-table content-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        {# No Type column #}
-                        <th>Amount</th>
-                        <th>Requested Time</th>
-                        <th>Processed Time</th>
-                        <th>Status</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for transaction in completed_transactions %}
-                    <tr>
-                        <td><small>{{ transaction.transaction_id }}</small></td>
-                        <td>{{ transaction.user.user_name }}</td>
-                        <td>${{ "%.2f"|format(transaction.amount) }}</td>
-                        <td>{{ transaction.created_at|format_datetime }}</td>
-                        <td>{{ transaction.updated_at|format_datetime }}</td>
-                        <td>
-                             <span class="status-badge status-{{ transaction.status|lower }}">
-                                {{ transaction.status|capitalize }}
-                            </span>
-                        </td>
-                        <td>{{ transaction.remark or '-' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <div class="empty-message">
-                <i class="fas fa-{% if transaction_type == 'deposit' %}hand-holding-usd{% else %}money-bill-wave{% endif %} empty-state-icon"></i>
-                <p>Currently no completed {{ transaction_type }} records</p>
+
+    <!-- Withdrawals Tab Content -->
+    <div class="top-tab-content" id="withdrawals-content">
+        <div class="tabs-container">
+            <div class="tab-header">
+                <div class="tab-button active" onclick="showSubTab('withdrawals', 'pending')">Pending</div>
+                <div class="tab-button" onclick="showSubTab('withdrawals', 'completed')">Completed</div>
             </div>
-        {% endif %}
+        </div>
+        
+        <div id="withdrawals-pending-tab" class="tab-content active">
+            <h3>Pending Withdrawals</h3>
+            {% if pending_withdrawals %}
+                  <table class="transactions-table content-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Requested Time</th>
+                            <th>Status</th>
+                            <th>Remark</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in pending_withdrawals %}
+                        <tr>
+                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td>{{ transaction.user.user_name }}</td>
+                            <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                            <td>{{ transaction.created_at|format_datetime }}</td>
+                            <td>
+                                <span class="status-badge status-{{ transaction.status|lower }}">
+                                    {{ transaction.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.remark or '-' }}</td>
+                            <td>
+                                {% if transaction.status == 'pending' %}
+                                <div class="action-buttons">
+                                    <form action="{{ url_for('admin.approve_fund_transaction', transaction_id=transaction.transaction_id) }}" method="post" class="inline-form">
+                                        <button type="submit" class="btn btn-success btn-small">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    <button class="btn btn-danger btn-small" onclick="openRejectModal('{{ transaction.transaction_id }}')">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                                {% else %}
+                                <span class="no-action">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">
+                    <i class="fas fa-money-bill-wave empty-state-icon"></i>
+                    <p>Currently no pending withdrawal records</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div id="withdrawals-completed-tab" class="tab-content">
+            <h3>Completed/Rejected Withdrawals</h3>
+             {% if completed_withdrawals %}
+                  <table class="transactions-table content-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Requested Time</th>
+                            <th>Processed Time</th>
+                            <th>Status</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in completed_withdrawals %}
+                        <tr>
+                            <td><small>{{ transaction.transaction_id }}</small></td>
+                            <td>{{ transaction.user.user_name }}</td>
+                            <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                            <td>{{ transaction.created_at|format_datetime }}</td>
+                            <td>{{ transaction.updated_at|format_datetime }}</td>
+                            <td>
+                                <span class="status-badge status-{{ transaction.status|lower }}">
+                                    {{ transaction.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.remark or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">
+                    <i class="fas fa-check-circle empty-state-icon"></i>
+                    <p>Currently no completed or rejected withdrawal records</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -138,7 +255,7 @@
 <div id="rejectModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Reject {{ transaction_type|capitalize }} Request</h3>
+            <h3 class="modal-title">Reject Transaction Request</h3>
             <button type="button" class="close-button" onclick="closeRejectModal()">&times;</button>
         </div>
         <div class="modal-body">
@@ -158,17 +275,39 @@
 {% endblock %}
 
 {% block scripts %}
-{# Tab switching and Modal JS - Assumes they are present or moved to common JS #}
 <script>
-    // Switch tabs
-    function showTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
-        document.getElementById(tabId + '-tab').classList.add('active');
-        document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`).classList.add('active');
+    // Show top-level tab
+    function showTopTab(tabGroupId) {
+        document.querySelectorAll('.top-tab-content').forEach(content => content.classList.remove('active'));
+        document.querySelectorAll('.top-tab-button').forEach(button => button.classList.remove('active'));
+
+        document.getElementById(tabGroupId + '-content').classList.add('active');
+        document.querySelector(`.top-tab-button[data-tab-group='${tabGroupId}']`).classList.add('active');
+        
+        // Activate the default sub-tab (pending) for the new top-level tab
+        showSubTab(tabGroupId, 'pending'); 
     }
 
-    // Modal logic
+    // Show sub-tab within a specific top-level group
+    function showSubTab(tabGroupId, subTabId) {
+        const subTabContents = document.querySelectorAll(`#${tabGroupId}-content .tab-content`);
+        const subTabButtons = document.querySelectorAll(`#${tabGroupId}-content .tab-button`);
+
+        subTabContents.forEach(tab => tab.classList.remove('active'));
+        subTabButtons.forEach(button => button.classList.remove('active'));
+
+        document.getElementById(`${tabGroupId}-${subTabId}-tab`).classList.add('active');
+        document.querySelector(`#${tabGroupId}-content .tab-button[onclick="showSubTab('${tabGroupId}', '${subTabId}')"]`).classList.add('active');
+    }
+
+    // Add event listeners for top-level tabs
+    document.querySelectorAll('.top-tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            showTopTab(this.dataset.tabGroup);
+        });
+    });
+
+    // Modal logic (remains mostly the same)
     const rejectModal = document.getElementById('rejectModal');
     const rejectForm = document.getElementById('rejectForm');
     const baseUrl = rejectForm.dataset.baseUrl.replace('/0', ''); 
@@ -176,6 +315,9 @@
     function openRejectModal(transactionId) {
         rejectForm.action = `${baseUrl}/${transactionId}`;
         rejectModal.style.display = 'block';
+        // Update modal title based on which section the button was clicked in (optional)
+        // let transactionType = document.querySelector(".top-tab-button.active").dataset.tabGroup === 'deposits' ? 'Deposit' : 'Withdrawal';
+        // rejectModal.querySelector('.modal-title').textContent = `Reject ${transactionType} Request`;
         rejectForm.elements['reject_reason'].focus(); 
     }
 
@@ -185,7 +327,12 @@
     }
 
     function submitRejectForm() {
-        rejectForm.submit();
+        // Basic validation before submitting
+        if (rejectForm.elements['reject_reason'].value.trim()) {
+             rejectForm.submit();
+        } else {
+            alert("Please provide a rejection reason.");
+        }
     }
 
     window.onclick = function(event) {
@@ -194,7 +341,17 @@
         }
     }
     
-    // Ensure the first tab is shown on load
-    document.addEventListener('DOMContentLoaded', () => showTab('pending')); 
+    // Ensure the first top-tab ('deposits') and its first sub-tab ('pending') are shown on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTab = urlParams.get('tab') || 'deposits'; // Default to 'deposits' if no param
+        
+        // Ensure the initialTab value is valid, default to 'deposits' if not
+        const validTabs = ['deposits', 'withdrawals'];
+        const tabToShow = validTabs.includes(initialTab) ? initialTab : 'deposits';
+        
+        showTopTab(tabToShow); 
+        // showSubTab for the correct pending sub-tab is called within showTopTab
+    }); 
 </script>
 {% endblock %} 

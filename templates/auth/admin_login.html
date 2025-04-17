@@ -2,52 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth/auth.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"/>
 </head>
-<body class="admin-login">
+<body class="auth-body admin-login">
     <header>
-        <div class="admin-link">
+        <div class="admin-link user-link">
             <a href="{{ url_for('auth.login') }}"><i class="fas fa-user"></i> User Login</a>
         </div>
     </header>
     
-    <main>
-        <h1>Admin Login</h1>
+    <div class="container admin-container">
+        <h2>Admin Sign In</h2>
         
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <ul class="messages">
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="message {{ category }}">{{ message }}</li>
                     {% endfor %}
                 </ul>
             {% endif %}
         {% endwith %}
         
         {% if locked_until %}
-        <div class="account-locked-info" data-locked-until="{{ locked_until.isoformat() }}">
+        <div class="account-locked-info flash-messages info" data-locked-until="{{ locked_until.isoformat() }}">
             <p>Your account is locked. It will be unlocked at {{ locked_until.strftime('%Y-%m-%d %H:%M:%S') }}</p>
             <p>Time remaining: <span id="lockCountdown"></span></p>
         </div>
         {% endif %}
         
-        <form id="adminLoginForm" method="post" action="{{ url_for('auth.admin_login') }}">
-            <div class="form-group">
-                <label for="username">Admin Username</label>
+        <form id="adminLoginForm" method="post" action="{{ url_for('auth.admin_login') }}" class="auth-form">
+            <div class="section" id="admin-username-section">
+                <i class="fas fa-user-shield"></i>
                 <input type="text" id="username" name="username" placeholder="Enter admin username" required>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
+            <div class="section" id="admin-password-section">
+                <i class="fa-solid fa-lock"></i>
                 <input type="password" id="password" name="password" placeholder="Enter password" required>
             </div>
-            <div class="button-group">
-                <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
-            </div>
+            <button type="submit" class="process-btn" id="admin-login-btn">Login</button>
         </form>
-    </main>
+    </div>
     
     <script src="{{ url_for('static', filename='js/auth/adminLogin.js') }}"></script>
 </body>

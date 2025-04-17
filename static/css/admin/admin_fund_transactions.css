@@ -270,4 +270,116 @@
         padding: 3px 6px;
         font-size: 0.8rem;
     }
+}
+
+.fund-management-container {
+    padding: 20px;
+}
+
+/* Top Level Tabs */
+.top-tabs-container {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.top-tab-button {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.top-tab-button:hover {
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.top-tab-button.active {
+    color: #4a6fa5; /* Theme primary color */
+    border-bottom-color: #4a6fa5;
+    font-weight: 600;
+}
+
+/* Hide inactive top-level content */
+.top-tab-content {
+    display: none;
+}
+
+.top-tab-content.active {
+    display: block;
+}
+
+
+/* Sub Tabs (Existing styles might need slight adjustments) */
+.tabs-container {
+    margin-bottom: 15px; /* Reduced margin for sub-tabs */
+}
+
+.tab-header {
+    display: flex;
+    background-color: #f8f9fa; /* Lighter background for sub-tabs */
+    border-radius: 6px;
+    padding: 5px;
+}
+
+.tab-button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    color: #555;
+    font-size: 14px;
+}
+
+.tab-button:hover {
+    background-color: #e9ecef;
+}
+
+.tab-button.active {
+    background-color: #fff;
+    color: #333;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Hide inactive sub-tab content (already handled by JS) */
+.tab-content {
+    display: none;
+    padding-top: 15px; 
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Table styles (assuming they exist and are okay) */
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+/* Empty State Message */
+.empty-message {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 20px;
+    color: #6c757d;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ced4da;
 } 

@@ -2,51 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Link to the single CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth/auth.css') }}">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"/>
 </head>
-<body>
+<body class="auth-body">
+
     <header>
         <div class="admin-link">
             <a href="{{ url_for('auth.admin_login') }}"><i class="fas fa-user-shield"></i> Admin Login</a>
         </div>
     </header>
-    
-    <main>
-        <h1>User Login</h1>
-        
-        {% with messages = get_flashed_messages() %}
+
+    <!-- Login Container -->
+    <div class="container login-container">
+        <h2>User Sign In</h2>
+
+        <!-- Display Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="messages-container">
-                    <ul class="messages">
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="message {{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
             {% endif %}
         {% endwith %}
-        
-        <form id="loginForm" method="post" action="{{ url_for('auth.login') }}">
-            <div class="form-group">
-                <label for="user_name">Username</label>
+
+        <!-- Login Form -->
+        <form id="loginForm" method="post" action="{{ url_for('auth.login') }}" class="auth-form">
+
+            <!-- Username section -->
+            <div class="section" id="sign-in-username-section">  {# Changed ID slightly for clarity #}
+                <i class="fa-regular fa-user"></i>
                 <input type="text" id="user_name" name="user_name" placeholder="Enter username" required>
             </div>
-            <div class="form-group">
-                <label for="user_password">Password</label>
+
+            <!-- Password section -->
+            <div class="section" id="sign-in-password-section"> {# Changed ID slightly for clarity #}
+                <i class="fa-solid fa-lock"></i>
                 <input type="password" id="user_password" name="user_password" placeholder="Enter password" required>
             </div>
-            <div class="button-group">
-                <button type="submit"><i class="fas fa-sign-in-alt"></i> Login</button>
-            </div>
-            <div class="auth-links">
-                <p>Don't have an account? <a href="{{ url_for('auth.register') }}">Register now <i class="fas fa-arrow-right"></i></a></p>
-            </div>
+
+            <!-- Login Button -->
+            <button type="submit" class="process-btn" id="login">Login</button>
+
+            <!-- Link to go create account screen -->
+            <p class="switch-link">Not Registered? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
         </form>
-    </main>
-    
+    </div>
+
+    <!-- Link to the login JS file -->
     <script src="{{ url_for('static', filename='js/auth/login.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/auth/ui_effects.js') }}"></script> --> <!-- Removed reference to non-existent file -->
 </body>
 </html> 

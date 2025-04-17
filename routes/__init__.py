@@ -16,7 +16,8 @@ routes/
 │   ├── order.py            # 订单管理功能
 │   ├── stock.py            # 股票相关功能
 │   ├── monte_carlo.py      # 蒙特卡洛模拟功能
-│   └── ai_assistant.py     # AI助手功能
+│   ├── ai_assistant.py     # AI助手功能
+│   └── ai_analysis.py      # AI分析功能
 ├── admin/                  # 管理员相关路由
 │   ├── __init__.py         # 定义admin蓝图
 │   └── admin.py            # 管理员功能实现
@@ -38,6 +39,7 @@ def register_routes(app):
     from .admin import admin_bp
     from .core import main_bp
     from .user.monte_carlo import monte_carlo_bp
+    from .user.ai_analysis import ai_analysis
     
     # 导入路由实现
     from .auth import auth
@@ -51,3 +53,4 @@ def register_routes(app):
     app.register_blueprint(user_bp, url_prefix='/user')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(monte_carlo_bp, url_prefix='/user') 
+    app.register_blueprint(ai_analysis) 

@@ -9,7 +9,7 @@
 该应用主要用于股票数据分析和用户管理，包括普通用户和管理员两种角色。
 """
 # 导入所需的Flask模块和扩展
-from flask import Flask, redirect, url_for, render_template
+from flask import Flask, redirect, url_for, render_template, session
 from flask_login import LoginManager, current_user
 from flask_migrate import Migrate
 import os
@@ -23,6 +23,7 @@ from models import db, User, Admin, init_db
 from auth import init_login_manager
 from routes import register_routes
 from tasks.order_processor import start_order_processor
+from routes.user.ai_analysis import ai_analysis
 
 # 设置环境变量，禁用兼容性警告
 os.environ['SQLALCHEMY_WARN_20'] = '0'
@@ -111,6 +112,14 @@ def create_app():
         except Exception as e:
             app.logger.error(f"格式化日期时间出错: {str(e)}, 值: {repr(value)}, 类型: {type(value)}")
             return str(value)
+
+    @app.route('/')
+    def index():
+        if 'user_id' in session:
+            if session.get('role') == 'admin':
+                return redirect(url_for('admin.dashboard'))
+            return redirect(url_for('user.dashboard'))
+        return redirect(url_for('auth.login'))
 
     return app
 

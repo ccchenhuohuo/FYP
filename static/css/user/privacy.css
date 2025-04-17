@@ -1,87 +1,146 @@
-/* 隐私政策页面样式 */
+/* Privacy policy page styles with compact layout inspired by account.css */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
 
 .privacy-header {
-    text-align: center;
-    margin: 2rem 0;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid #eaeaea;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
 .privacy-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 0.25rem;
+    color: var(--primary-color, #3a86ff);
 }
 
-.privacy-header p {
-    font-size: 1rem;
-    color: #666;
+.last-updated {
+    color: var(--text-secondary, #6c757d);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.privacy-summary {
+    background-color: var(--card-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.privacy-summary p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-primary, #333);
 }
 
 .privacy-content {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1rem 0;
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 3fr;
+    gap: 1.5rem;
 }
 
-.privacy-content section {
-    margin-bottom: 2.5rem;
+.privacy-toc {
+    background-color: var(--card-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    height: fit-content;
 }
 
-.privacy-content h2 {
-    font-size: 1.5rem;
-    color: #333;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #f0f0f0;
+.privacy-toc h3 {
+    font-size: 1.1rem;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color, #3a86ff);
 }
 
-.privacy-content p {
-    font-size: 1rem;
-    color: #333;
-    line-height: 1.6;
-    margin-bottom: 1rem;
+.privacy-toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.privacy-content ul {
-    margin-left: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-.privacy-content li {
-    font-size: 1rem;
-    color: #333;
-    line-height: 1.6;
+.privacy-toc li {
     margin-bottom: 0.5rem;
+    font-size: 0.9rem;
 }
 
-.privacy-content a {
-    color: #007bff;
+.privacy-toc a {
+    color: var(--text-primary, #333);
     text-decoration: none;
-    transition: color 0.2s ease;
+    display: block;
+    padding: 0.35rem 0;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
 }
 
-.privacy-content a:hover {
-    color: #0056b3;
-    text-decoration: underline;
+.privacy-toc a:hover {
+    background-color: rgba(58, 134, 255, 0.08);
+    color: var(--primary-color, #3a86ff);
 }
 
-/* 响应式设计 */
+.privacy-toc i {
+    margin-right: 0.5rem;
+    color: var(--primary-color, #3a86ff);
+    width: 1rem;
+    text-align: center;
+}
+
+.privacy-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.privacy-section {
+    background-color: var(--card-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+}
+
+.privacy-section h2 {
+    font-size: 1.25rem;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color, #3a86ff);
+}
+
+.privacy-section p {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-primary, #333);
+}
+
+.privacy-section ul {
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.privacy-section li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-primary, #333);
+}
+
+/* Media Queries for Responsiveness */
 @media (max-width: 768px) {
-    .privacy-header h1 {
-        font-size: 2rem;
-    }
-    
     .privacy-content {
-        padding: 1rem;
+        grid-template-columns: 1fr;
     }
     
-    .privacy-content h2 {
-        font-size: 1.3rem;
-    }
-    
-    .privacy-content p, 
-    .privacy-content li {
-        font-size: 0.95rem;
+    .privacy-toc {
+        position: static;
+        margin-bottom: 1.25rem;
     }
 } 

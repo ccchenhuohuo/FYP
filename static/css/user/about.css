@@ -1,148 +1,124 @@
-/* 团队介绍页面样式 */
+/* About page styles with compact layout inspired by account.css */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
 
 .about-header {
-    text-align: center;
-    margin: 2rem 0;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid #eaeaea;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
 .about-header h1 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 0.25rem;
+    color: var(--primary-color, #3a86ff);
 }
 
 .about-header p {
-    font-size: 1.2rem;
-    color: #666;
+    color: var(--text-secondary, #6c757d);
+    margin: 0;
 }
 
 .team-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    margin: 2rem 0;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .team-member {
-    background-color: #fff;
+    background-color: var(--card-bg, #fff);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .team-member:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .member-photo {
-    height: 500px;
-    overflow: hidden;
-    background-color: #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex: 0 0 70px;
+    margin-right: 1rem;
 }
 
 .member-image {
-    width: 100%;
-    height: 100%;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.team-member:hover .member-image {
-    transform: scale(1.05);
-}
-
-.placeholder-photo {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #e9ecef;
-    color: #adb5bd;
-}
-
-.placeholder-photo i {
-    font-size: 4rem;
+    border: 2px solid var(--primary-color, #3a86ff);
 }
 
 .member-info {
-    padding: 1.5rem;
+    flex: 1;
 }
 
 .member-info h3 {
-    font-size: 1.3rem;
-    color: #333;
-    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary, #333);
 }
 
 .member-role {
-    font-size: 1rem;
-    color: #6c757d;
-    margin-bottom: 1rem;
+    color: var(--primary-color, #3a86ff);
+    font-size: 0.9rem;
     font-weight: 500;
+    margin-bottom: 0.25rem;
 }
 
 .member-desc {
-    font-size: 0.95rem;
-    color: #495057;
-    line-height: 1.6;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #6c757d);
+    margin: 0;
+    line-height: 1.4;
 }
 
 .about-project {
-    margin: 3rem 0;
-    padding: 2rem;
-    background-color: #f8f9fa;
+    background-color: var(--card-bg, #fff);
     border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+    margin-top: 1rem;
 }
 
 .about-project h2 {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color, #3a86ff);
 }
 
 .about-project p {
-    font-size: 1rem;
-    color: #495057;
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--text-primary, #333);
 }
 
 .about-project a {
-    color: #007bff;
+    color: var(--primary-color, #3a86ff);
     text-decoration: none;
-    transition: color 0.2s ease;
 }
 
 .about-project a:hover {
-    color: #0056b3;
     text-decoration: underline;
 }
 
-/* 响应式设计 */
-@media (max-width: 992px) {
-    .team-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
+/* Media Queries for Responsiveness */
 @media (max-width: 768px) {
     .team-container {
         grid-template-columns: 1fr;
     }
     
-    .about-header h1 {
-        font-size: 2rem;
-    }
-    
-    .about-project {
-        padding: 1.5rem;
+    .team-member {
+        max-width: 100%;
     }
 } 

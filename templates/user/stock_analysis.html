@@ -50,98 +50,109 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="my-4">Stock Risk Threshold Assessment</h1>
-    <p class="lead mb-4">Set your risk thresholds for personalized stock risk assessment</p>
     
-    <div class="analysis-card">
-        <div class="card-header">
-            <h2 class="h5 mb-0">Assessment Settings</h2>
-        </div>
-        <div class="card-body">
-            <form id="stock-analysis-form">
-                <!-- Stock Ticker Input -->
-                <div class="mb-4">
-                    <label class="form-label">Stock Tickers</label>
-                    <div id="tickers-container">
-                        <div class="ticker-input input-group mb-2">
-                            <input type="text" name="tickers" class="form-control" placeholder="Enter stock ticker (e.g., AAPL)" required>
-                            <button type="button" class="btn btn-outline-primary add-ticker" id="add-ticker">
-                                <i class="fas fa-plus"></i> Add Stock
-                            </button>
+    <div class="analysis-grid">
+        <!-- 左侧：Assessment Settings -->
+        <div class="analysis-card">
+            <div class="card-header">
+                <h2><i class="fas fa-cog"></i> Assessment Settings</h2>
+            </div>
+            <div class="card-body">
+                <form id="stock-analysis-form">
+                    <!-- Stock Ticker Input -->
+                    <div class="mb-4">
+                        <label class="form-label">Stock Tickers</label>
+                        <div id="tickers-container">
+                            <div class="ticker-input mb-2">
+                                <input type="text" name="tickers" class="form-control" placeholder="Enter stock ticker (e.g., AAPL)" required>
+                                <!-- No remove button for the first input -->
+                            </div>
+                        </div>
+                        <!-- Removed description text -->
+                    </div>
+                    
+                    <!-- Date Range Selection -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" id="start_date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" id="end_date" name="end_date" class="form-control" required>
                         </div>
                     </div>
-                    <small class="form-text text-muted">Enter the stock tickers you want to assess. You can add multiple stocks for comparison.</small>
-                </div>
-                
-                <!-- Date Range Selection -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="date" id="start_date" name="start_date" class="form-control" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="date" id="end_date" name="end_date" class="form-control" required>
-                    </div>
-                </div>
-                
-                <!-- Risk Threshold Settings -->
-                <div class="threshold-settings mb-4">
-                    <h4 class="mb-3">Risk Threshold Settings</h4>
-                    <p class="text-muted mb-3">Customize the thresholds below based on your risk appetite. The system will assess stock risk based on these thresholds.</p>
                     
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-outline-secondary add-ticker-btn" id="add-ticker">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </button>
+                        <button type="submit" class="btn btn-primary assess-risk-btn">
+                            <i class="fas fa-chart-line me-1"></i> Assess Risk
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 右侧：Risk Threshold Settings -->
+        <div class="analysis-card">
+            <div class="card-header">
+                <h2><i class="fas fa-sliders-h"></i> Risk Threshold Settings</h2>
+            </div>
+            <div class="card-body">
+                <div class="threshold-settings">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="volatility_threshold" class="form-label fw-bold">Volatility Threshold (<span id="volatility_value">30%</span>)</label>
                             <input type="range" class="form-range" id="volatility_threshold" name="volatility_threshold" 
-                                   min="10" max="50" step="5" value="30" 
-                                   oninput="document.getElementById('volatility_value').textContent = this.value + '%'">
-                            <small class="form-text text-muted">Annualized volatility exceeding this value will be considered high risk.</small>
+                                min="10" max="50" step="5" value="30" 
+                                oninput="document.getElementById('volatility_value').textContent = this.value + '%'">
+                            <!-- Removed description text -->
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="drawdown_threshold" class="form-label fw-bold">Max Drawdown Threshold (<span id="drawdown_value">20%</span>)</label>
                             <input type="range" class="form-range" id="drawdown_threshold" name="drawdown_threshold" 
-                                   min="5" max="40" step="5" value="20" 
-                                   oninput="document.getElementById('drawdown_value').textContent = this.value + '%'">
-                            <small class="form-text text-muted">Max drawdown exceeding this value will be considered high risk.</small>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="sharpe_threshold" class="form-label fw-bold">Sharpe Ratio Threshold (<span id="sharpe_value">0</span>)</label>
-                            <input type="range" class="form-range" id="sharpe_threshold" name="sharpe_threshold" 
-                                   min="-1" max="2" step="0.5" value="0" 
-                                   oninput="document.getElementById('sharpe_value').textContent = this.value">
-                            <small class="form-text text-muted">Sharpe Ratio below this value will be considered high risk.</small>
+                                min="5" max="40" step="5" value="20" 
+                                oninput="document.getElementById('drawdown_value').textContent = this.value + '%'">
+                            <!-- Removed description text -->
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label for="sharpe_threshold" class="form-label fw-bold">Sharpe Ratio Threshold (<span id="sharpe_value">0</span>)</label>
+                            <input type="range" class="form-range" id="sharpe_threshold" name="sharpe_threshold" 
+                                min="-1" max="2" step="0.5" value="0" 
+                                oninput="document.getElementById('sharpe_value').textContent = this.value">
+                            <!-- Removed description text -->
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label for="beta_threshold" class="form-label fw-bold">Beta Threshold (<span id="beta_value">1.2</span>)</label>
                             <input type="range" class="form-range" id="beta_threshold" name="beta_threshold" 
-                                   min="0.5" max="2" step="0.1" value="1.2" 
-                                   oninput="document.getElementById('beta_value').textContent = this.value">
-                            <small class="form-text text-muted">Beta higher than this value will be considered high risk.</small>
+                                min="0.5" max="2" step="0.1" value="1.2" 
+                                oninput="document.getElementById('beta_value').textContent = this.value">
+                            <!-- Removed description text -->
                         </div>
-                        <div class="col-md-4 mb-3">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
                             <label for="var_threshold" class="form-label fw-bold">VaR (95%) Threshold (<span id="var_value">2%</span>)</label>
                             <input type="range" class="form-range" id="var_threshold" name="var_threshold" 
-                                   min="1" max="5" step="0.5" value="2" 
-                                   oninput="document.getElementById('var_value').textContent = this.value + '%'">
-                            <small class="form-text text-muted">VaR exceeding this value will be considered high risk.</small>
+                                min="1" max="5" step="0.5" value="2" 
+                                oninput="document.getElementById('var_value').textContent = this.value + '%'">
+                            <!-- Removed description text -->
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="sortino_threshold" class="form-label fw-bold">Sortino Ratio Threshold (<span id="sortino_value">0</span>)</label>
                             <input type="range" class="form-range" id="sortino_threshold" name="sortino_threshold" 
-                                   min="-1" max="2" step="0.5" value="0" 
-                                   oninput="document.getElementById('sortino_value').textContent = this.value">
-                            <small class="form-text text-muted">Sortino Ratio below this value will be considered high risk.</small>
+                                min="-1" max="2" step="0.5" value="0" 
+                                oninput="document.getElementById('sortino_value').textContent = this.value">
+                            <!-- Removed description text -->
                         </div>
                     </div>
                 </div>
-                
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-chart-line me-2"></i>Assess Risk
-                </button>
-            </form>
+            </div>
         </div>
     </div>
     
@@ -158,7 +169,7 @@
     <div id="results-container" class="d-none">
         <div class="analysis-card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h2 class="h5 mb-0">Risk Assessment Results</h2>
+                <h2><i class="fas fa-chart-bar"></i> Risk Assessment Results</h2>
                 <span id="analysis-date-range" class="text-muted"></span>
             </div>
             <div class="card-body">

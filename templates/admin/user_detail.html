@@ -1,10 +1,10 @@
-{% extends 'admin/layout.html' %}
+{% extends "admin/layout.html" %}
 
-{% block title %}User Details{% endblock %}
+{% block title %}User Details - Admin{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_user_detail.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_user_detail.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -23,11 +23,11 @@
     
     <div class="user-card">
         <div class="user-header">
-            <div class="user-avatar">{{ user.user_name|upper|first }}</div>
             <div class="user-info">
-                <div class="user-name">{{ user.user_name }}</div>
+                <h2 class="user-name">{{ user.user_name }}</h2>
                 <div class="user-email">{{ user.user_email }}</div>
                 <div class="user-status status-{{ user.account_status.name|lower }}">
+                    <i class="fas fa-{% if user.account_status.name == 'ACTIVE' %}check-circle{% elif user.account_status.name == 'SUSPENDED' %}ban{% elif user.account_status.name == 'PENDING' %}clock{% else %}times-circle{% endif %} me-1"></i>
                     {{ user.account_status.name|capitalize }}
                 </div>
             </div>

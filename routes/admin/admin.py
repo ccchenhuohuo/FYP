@@ -279,49 +279,33 @@ def manage_fund_transactions():
 @admin_bp.route('/deposits', methods=['GET'])
 @admin_required
 def manage_deposits():
-    """管理充值请求 - Renders the new deposit/withdrawal template"""
-    transactions = FundTransaction.query.filter_by(
+    """管理充值和提现请求 - Renders the unified deposit/withdrawal template"""
+    # Fetch Deposits
+    deposit_transactions = FundTransaction.query.filter_by(
         transaction_type='deposit'
     ).join(User, FundTransaction.user_id == User.user_id).order_by(
         FundTransaction.created_at.desc()
     ).all()
-    
-    pending_transactions = [t for t in transactions if t.status == 'pending']
-    completed_transactions = [t for t in transactions if t.status != 'pending']
-    safe_pending = [create_safe_dict(t) for t in pending_transactions]
-    safe_completed = [create_safe_dict(t) for t in completed_transactions]
-    
-    # Render the new deposit/withdrawal template
-    return render_template(
-        'admin/deposit_withdrawal.html', 
-        pending_transactions=safe_pending,
-        completed_transactions=safe_completed,
-        transaction_type='deposit',
-        title='Deposit Management'
-    )
+    pending_deposits = [create_safe_dict(t) for t in deposit_transactions if t.status == 'pending']
+    completed_deposits = [create_safe_dict(t) for t in deposit_transactions if t.status != 'pending']
 
-@admin_bp.route('/withdrawals', methods=['GET'])
-@admin_required
-def manage_withdrawals():
-    """管理提现请求 - Renders the new deposit/withdrawal template"""
-    transactions = FundTransaction.query.filter_by(
+    # Fetch Withdrawals
+    withdrawal_transactions = FundTransaction.query.filter_by(
         transaction_type='withdrawal'
     ).join(User, FundTransaction.user_id == User.user_id).order_by(
         FundTransaction.created_at.desc()
     ).all()
+    pending_withdrawals = [create_safe_dict(t) for t in withdrawal_transactions if t.status == 'pending']
+    completed_withdrawals = [create_safe_dict(t) for t in withdrawal_transactions if t.status != 'pending']
     
-    pending_transactions = [t for t in transactions if t.status == 'pending']
-    completed_transactions = [t for t in transactions if t.status != 'pending']
-    safe_pending = [create_safe_dict(t) for t in pending_transactions]
-    safe_completed = [create_safe_dict(t) for t in completed_transactions]
-    
-    # Render the new deposit/withdrawal template
+    # Render the unified deposit/withdrawal template
     return render_template(
         'admin/deposit_withdrawal.html', 
-        pending_transactions=safe_pending,
-        completed_transactions=safe_completed,
-        transaction_type='withdrawal',
-        title='Withdrawal Management'
+        pending_deposits=pending_deposits,
+        completed_deposits=completed_deposits,
+        pending_withdrawals=pending_withdrawals,
+        completed_withdrawals=completed_withdrawals,
+        title='Deposit & Withdrawal Management'
     )
 
 @admin_bp.route('/fund-transactions/<transaction_id>/approve', methods=['POST'])

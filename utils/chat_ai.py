@@ -39,14 +39,50 @@ def chat_with_gemini_api(message):
     try:
         print(f"Processing AI request, message: {message[:50]}...")
         
-        # create a chat session and send a message
+        # 创建生成参数，提高输出质量和一致性
+        generation_config = {
+            "temperature": 0.7,     # 较低的temperature提高输出确定性
+            "top_p": 0.8,           # 控制生成的创造性
+            "top_k": 40,            # 提高输出的多样性
+            "max_output_tokens": 2048, # 允许足够长的回复
+        }
+        
+        # 设置安全设置
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            }
+        ]
+        
+        # create a chat session and send a message with configuration
         chat = model.start_chat(history=[])
         print("chat session created")
         
-        response = chat.send_message(message)
+        response = chat.send_message(
+            message,
+            generation_config=generation_config,
+            safety_settings=safety_settings
+        )
         print("received AI response")
         
-        return response.text
+        # 处理响应文本，移除可能的markdown代码块标记
+        response_text = response.text
+        response_text = response_text.replace("```html", "").replace("```", "")
+        
+        return response_text
     except Exception as e:
         import traceback
         print(f"AI chat error: {str(e)}")

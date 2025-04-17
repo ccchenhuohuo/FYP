@@ -1,4 +1,11 @@
 /* 账户页面样式 */
+/* 添加容器样式，与其他页面保持一致 */
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
 .account-header {
     display: flex;
     justify-content: space-between;
@@ -51,9 +58,15 @@
 .section {
     background-color: white;
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
     padding: 1.5rem;
     margin-bottom: 2rem;
+    transition: var(--transition);
+}
+
+.section:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
 }
 
 .section h2 {
@@ -61,6 +74,16 @@
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--light-gray);
+}
+
+.section.card {
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+}
+
+.section.card:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
 }
 
 .deposit-form {
@@ -170,31 +193,6 @@
     padding: 2rem;
     color: var(--dark-gray);
     font-style: italic;
-}
-
-/* 添加动画效果 */
-.section {
-    transition: transform 0.3s ease;
-}
-
-.section:hover {
-    transform: translateY(-3px);
-}
-
-@media (max-width: 768px) {
-    .order-form {
-        grid-template-columns: 1fr;
-    }
-    
-    .account-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .user-welcome {
-        flex-direction: column;
-        align-items: flex-start;
-    }
 }
 
 /* 余额信息样式 */
@@ -347,4 +345,361 @@
 
 .cta-button:hover {
     background-color: var(--primary-dark);
+}
+
+/* Account Page Specific Styles */
+/* Top grid for Account + Portfolio side by side */
+.top-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 40%) 1fr; /* Account takes 40%, Portfolio takes the rest */
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.account-overview {
+    margin-bottom: 0; /* Reset margin as the grid provides spacing */
+    height: 100%; /* Equal height with portfolio */
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.account-overview:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.account-header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.75rem;
+}
+
+.account-header h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+}
+
+.account-header h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.welcome-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.welcome-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: baseline;
+}
+
+.greeting {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    font-weight: normal;
+    font-style: italic;
+}
+
+.user-name {
+    color: var(--primary-color);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.login-time {
+    color: var(--dark-gray);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.login-time i {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.time-value {
+    font-family: "Monaco", "Consolas", monospace;
+    color: var(--text-color);
+}
+
+.balance-container h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+}
+
+.balance-container h3 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+}
+
+.balance-item {
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 0.3rem;
+    box-shadow: inset 2px 2px 4px var(--neumorphic-shadow-inset-dark),
+                inset -2px -2px 4px var(--neumorphic-shadow-inset-light);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    overflow: hidden;
+}
+
+.balance-label {
+    font-size: 0.7rem;
+    color: var(--dark-gray);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.balance-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: "Monaco", "Consolas", monospace;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Portfolio section adjustments */
+.portfolio-section {
+    margin-bottom: 0; /* Reset margin as the grid provides spacing */
+    height: 100%; /* Equal height with account overview */
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.portfolio-section:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.portfolio-section h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+.portfolio-section h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+.portfolio-table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Account actions */
+.account-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    justify-content: center;
+}
+
+.account-actions button {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* History sections layout */
+.history-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns of equal width */
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.history-card {
+    margin-bottom: 0; /* Reset margin as the grid provides the spacing */
+    height: 100%; /* Equal height cards */
+    padding: 1rem; /* Reduce padding */
+    background-color: white;
+    box-shadow: 6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light);
+    transition: var(--transition);
+}
+
+.history-card:hover {
+    box-shadow: 8px 8px 16px var(--neumorphic-shadow-dark), -8px -8px 16px var(--neumorphic-shadow-light);
+    transform: translateY(-3px);
+}
+
+.history-card h2, 
+.section h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--light-gray);
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.history-card h2 i, 
+.section h2 i {
+    margin-right: 0.5rem;
+    opacity: 0.8;
+}
+
+/* Compact table styles */
+.compact-table {
+    font-size: 0.85rem;
+}
+
+.compact-table th,
+.compact-table td {
+    padding: 0.4rem 0.5rem;
+}
+
+.compact-table th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dark-gray);
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .top-grid,
+    .history-sections {
+        grid-template-columns: 1fr; /* Stack columns on smaller screens */
+    }
+    
+    .account-overview,
+    .portfolio-section {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .balance-grid {
+        grid-template-columns: repeat(3, 1fr); /* Keep 3 columns for balance */
+    }
+    
+    .account-actions {
+        flex-direction: row;
+    }
+    
+    .order-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .account-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .user-welcome {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
+    .balance-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on very small screens */
+    }
+    
+    .account-actions {
+        flex-direction: column;
+    }
+    
+    .account-actions button {
+        width: 100%;
+    }
+}
+
+/* 新的紧凑型余额显示 */
+.balance-compact {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: inset 2px 2px 4px var(--neumorphic-shadow-inset-dark),
+                inset -2px -2px 4px var(--neumorphic-shadow-inset-light);
+    padding: 0.75rem 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden; /* 防止内容溢出 */
+}
+
+.balance-row {
+    display: flex;
+    justify-content: space-around; /* Distribute space more evenly */
+    width: 100%;
+    gap: 0.2rem; /* Further reduce gap between cells */
+}
+
+.balance-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.1rem; /* Minimal horizontal padding */
+    flex: 1;
+    text-align: center;
+    min-width: 0; /* Allow shrinking */
+}
+
+.balance-cell:not(:last-child) {
+    border-right: none; /* Remove divider for more space */
+}
+
+.balance-label {
+    font-size: 0.6rem; /* Further reduced label size */
+    color: var(--dark-gray);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em; /* Slightly reduced spacing */
+    white-space: nowrap;
+    margin-bottom: 0.15rem; /* Reduced margin */
+}
+
+.balance-value {
+    font-size: 0.9rem; /* Further reduced value size */
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: "Monaco", "Consolas", monospace;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1; /* Adjust line height */
 } 
