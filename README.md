@@ -598,12 +598,73 @@ The application provides the following API endpoints:
 *   **Background Worker**: The order processor runs in a separate thread. Check application logs (`logs/app.log`) for its status or errors.
 *   **Development Mode**: Running with `flask run --debug` provides helpful debugging information but is not suitable for production.
 
-## 6. Future Enhancements (Ideas)
+## 6. Future Enhancements and System Improvement Directions
 
-*   Implement more sophisticated technical indicators and charting options.
-*   Add real-time WebSocket updates for stock prices and order status.
-*   Develop more comprehensive risk analysis tools.
-*   Improve error handling and logging throughout the application.
-*   Containerize the application using Docker.
-*   Add unit and integration tests for better code coverage.
-*   Deploy to a cloud platform (e.g., Heroku, AWS, Google Cloud).
+Compared to mature commercial stock trading systems, this system still has significant room for improvement in terms of functional depth, system performance, and robustness. Here are some key enhancement directions aimed at bringing the system closer to professional standards:
+
+### 6.1 Functional Enhancements
+
+*   **Advanced Order Types**:
+    *   **Stop-Loss** and **Take-Profit Orders**: Automatically trigger sell/buy orders when preset loss or profit prices are reached.
+    *   **Trailing Stop-Loss Orders**: Stop-loss price dynamically adjusts as the market price moves favorably.
+    *   **Iceberg Orders**: Split large orders into multiple smaller ones to hide the true trading intention.
+*   **Extended Data Analysis**:
+    *   **More Technical Indicators**: Integrate a broader library of technical analysis indicators (e.g., TA-Lib) and allow users to customize indicator parameters.
+    *   **Fundamental Analysis Integration**: Deeper integration of financial statement data (balance sheet, income statement, cash flow statement), calculation of key financial ratios, and visual presentation.
+    *   **Event-Driven Analysis**: Integrate financial news, company announcements, earnings release dates, and other event information to analyze their potential impact on stock prices.
+    *   **Backtesting System**: Provide historical data backtesting functionality to allow users to test the effectiveness of trading strategies.
+*   **Margin Trading & Short Selling**: Simulate margin buying and short selling functions, increasing the complexity of trading strategies (requires careful risk control design).
+*   **Options and Derivatives Trading**: Extend the system to support simulated trading of options, futures, and other derivatives.
+*   **Personalized User Experience**:
+    *   **Customizable Dashboard**: Allow users to customize layouts, watchlists, and chart settings.
+    *   **Advanced Alert System**: Set complex alert conditions based on price, volume, technical indicators, news events, etc.
+
+### 6.2 High Concurrency, High Availability, and Performance Optimization
+
+Mature trading systems need to handle massive concurrent requests while ensuring low latency and high availability.
+
+*   **Market Data System Optimization**:
+    *   **Market Data Push**: Use **WebSocket** or **Server-Sent Events (SSE)** instead of polling (`/api/real_time_stock_data`) to achieve real-time, low-latency push of market data.
+    *   **Market Data Source**: Connect to more professional real-time market data sources to reduce reliance on libraries like `yfinance` which may have higher latency or request limits.
+*   **Trade Matching Engine**:
+    *   **In-Memory Matching**: Move the order book and matching logic to in-memory processing to significantly increase order processing speed. The current background thread (`tasks/order_processor.py`) only handles limit orders and is relatively inefficient.
+    *   **Distributed Matching**: For extremely high concurrency scenarios, consider distributing the matching logic for different stocks or markets across multiple service nodes.
+*   **Message Queue**:
+    *   **Asynchronous Decoupling**: Use message queues like **Redis Streams**, **Kafka**, or **RabbitMQ** to handle order submissions, status updates, trade notifications, etc. For example, after a user submits an order, the request returns quickly, and the order processing logic is placed in the queue for asynchronous execution, improving system responsiveness and throughput.
+    *   **Peak Shaving**: During market open or periods of high volatility, message queues can buffer instantaneous high concurrency requests, preventing system overload.
+*   **Caching**:
+    *   **Data Caching**: Use **Redis** or **Memcached** to cache frequently accessed data, such as user information, basic stock information, historical K-line data (especially for less frequently changing periods), and calculated technical indicators, to reduce database pressure.
+    *   **Market Data Snapshot Caching**: Cache the latest market data snapshots for use by features with less stringent real-time requirements (e.g., portfolio valuation).
+*   **Database Optimization**:
+    *   **Read/Write Splitting**: Implement read/write splitting for the database, directing read-intensive operations (like querying market data, historical orders) to read-only replicas.
+    *   **Database Sharding**: For scenarios with massive user numbers and transaction volumes, consider sharding core tables like orders, transaction records, and portfolio holdings based on user ID or time range.
+    *   **Index Optimization**: Continuously monitor slow queries and optimize database indexes.
+*   **High Availability Deployment**:
+    *   **Load Balancing**: Deploy a load balancer in front of multiple application server instances.
+    *   **Service Redundancy**: Deploy multiple instances of critical services (e.g., market data service, trading service, user service) to achieve failover.
+    *   **Database High Availability**: Use master-slave replication, clusters, etc., to ensure high availability of database services.
+
+### 6.3 Security Enhancements
+
+Security is paramount for financial systems.
+
+*   **Authentication and Authorization**:
+    *   **Two-Factor Authentication (2FA)**: Add 2FA for user login and sensitive operations (like withdrawals, password changes).
+    *   **Fine-Grained Access Control**: Implement more granular permission management for admin and user operations.
+    *   **API Authentication**: Enforce strict authentication and authorization checks (e.g., using JWT or OAuth2) for all API endpoints.
+*   **Transaction Security**:
+    *   **Replay Attack Prevention**: Implement mechanisms like nonces or timestamps in API requests.
+    *   **Transaction Risk Control**: Implement simple transaction risk control rules, such as maximum order amount per transaction, maximum daily transaction volume, price anomaly limits, etc.
+    *   **Fund Password**: Set up a separate fund password for critical fund operations like withdrawals.
+*   **Data Security**:
+    *   **Sensitive Data Encryption**: Encrypt sensitive data stored in the database, such as passwords, API keys, and user personal information.
+    *   **Transport Encryption**: Enforce HTTPS sitewide.
+    *   **Log Auditing**: Record logs for all critical operations for auditing and tracking purposes.
+*   **Infrastructure Security**:
+    *   **Web Application Firewall (WAF)**: Deploy a WAF to defend against common web attacks (SQL injection, XSS, etc.).
+    *   **Regular Security Audits and Penetration Testing**: Conduct regular code audits and security testing.
+
+### 6.4 Architectural Evolution
+
+*   **Microservices**: Consider breaking down the system into smaller, independently deployable services, such as user service, market data service, order service, account service, etc., to improve maintainability, scalability, and team collaboration efficiency.
+*   **Containerization and Orchestration**: Use **Docker** for containerized deployment and leverage **Kubernetes (K8s)** for container orchestration to simplify deployment, scaling, and management processes.
