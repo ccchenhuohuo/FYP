@@ -1,541 +1,609 @@
-# 股票交易与分析系统
+# Stock Trading & Analysis System
 
-这是一个基于 Flask 的 Web 应用程序，旨在提供一个模拟股票交易和数据分析的平台。它集成了用户管理、股票数据展示、模拟交易（市价单与限价单）、后台订单处理、蒙特卡洛模拟以及基于 Google Gemini 的 AI 投资助手等功能。
+This is a Flask-based web application designed to provide a platform for simulated stock trading and data analysis. It integrates user management, stock data display, simulated trading (market and limit orders), background order processing, Monte Carlo simulation, and an AI investment assistant powered by Google Gemini.
 
-## 1. 项目基本信息
+## 1. Project Overview
 
-### 1.1 项目概况
+### 1.1 Summary
 
-本系统模拟了真实的股票交易环境，允许用户注册账户、管理资金（模拟）、查看实时和历史股票数据、执行买卖订单，并利用数据分析工具和 AI 助手进行投资决策辅助。系统包含用户端和管理端，管理员负责审核用户资金操作和管理系统。
+This system simulates a real stock trading environment, allowing users to register accounts, manage virtual funds, view real-time and historical stock data, execute buy/sell orders, and utilize data analysis tools and an AI assistant for investment decision support. The system includes user-facing and administrative interfaces, where administrators handle fund operations review and system management.
 
-### 1.2 技术架构与栈
+### 1.2 Technology Stack
 
-*   **后端框架**: Flask 2.2.3
-*   **数据库 ORM**: Flask-SQLAlchemy 3.0.3, SQLAlchemy 2.0.7
-*   **数据库**: MySQL (使用 PyMySQL 1.0.3 或 mysql-connector-python 8.0.33 连接)
-*   **数据库迁移**: Flask-Migrate 4.0.4
-*   **用户认证**: Flask-Login 0.6.2
-*   **Web 服务器**: Werkzeug 2.2.3 (开发环境)
-*   **前端**: HTML, CSS, JavaScript, Bootstrap, Chart.js
-*   **数据获取**: yfinance 0.2.20 (股票数据), Alpha Vantage API (实时数据)
-*   **数据处理**: Pandas 2.0.1, NumPy 1.24.3
-*   **AI 助手**: Google Generative AI (Gemini API)
-*   **后台任务**: Standard Python `threading` (用于订单处理器)
-*   **依赖管理**: pip, `requirements.txt`
-*   **版本控制**: Git
+*   **Backend Framework**: Flask 2.2.3
+*   **Database ORM**: Flask-SQLAlchemy 3.0.3, SQLAlchemy 2.0.7
+*   **Database**: MySQL (using PyMySQL 1.0.3 or mysql-connector-python 8.0.33)
+*   **Database Migration**: Flask-Migrate 4.0.4
+*   **User Authentication**: Flask-Login 0.6.2
+*   **Web Server (Development)**: Werkzeug 2.2.3
+*   **Frontend**: HTML, CSS, JavaScript, Bootstrap, Chart.js
+*   **Data Retrieval**: yfinance 0.2.20 (Stock data)
+*   **Data Processing**: Pandas 2.0.1, NumPy 1.24.3
+*   **AI Assistant**: Google Generative AI (`google-generativeai` library)
+*   **Background Tasks**: Standard Python `threading` (for order processor)
+*   **CLI Output Formatting**: Rich (`rich` library)
+*   **Dependency Management**: pip, `requirements.txt`
+*   **Version Control**: Git
 
-## 2. 快速上手指南
+## 2. Quick Start Guide
 
-### 2.1 环境准备
+### 2.1 Prerequisites
 
-*   **Python**: 3.8 或更高版本
-*   **MySQL**: 5.7 或更高版本
-*   **Git**: 用于克隆项目仓库
-*   **pip**: Python 包管理器 (通常随 Python 一起安装)
-*   **操作系统**: Linux, macOS 或 Windows
+*   **Python**: 3.8 or higher
+*   **MySQL**: 5.7 or higher
+*   **Git**: For cloning the project repository
+*   **pip**: Python package manager (usually installed with Python)
+*   **Operating System**: Linux, macOS, or Windows
 
-### 2.2 配置说明
+### 2.2 Configuration
 
-1.  **克隆仓库**:
+1.  **Clone the Repository**:
 ```bash
-git clone <仓库URL>
-cd <项目目录>
+    git clone <repository_url>
+    cd <project_directory>
 ```
 
-2.  **创建并激活虚拟环境**:
+2.  **Create and Activate Virtual Environment**:
 ```bash
-# 创建虚拟环境
+    # Create virtual environment
 python -m venv flask_env
 
-    # 激活虚拟环境 (Linux/macOS)
+    # Activate virtual environment (Linux/macOS)
     source flask_env/bin/activate
-    # 或者 (Windows)
+    # Or (Windows)
     .\flask_env\Scripts\activate
     ```
 
-3.  **安装依赖**:
+3.  **Install Dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-4.  **配置数据库**:
-    *   确保您的 MySQL 服务正在运行。
-    *   创建一个新的数据库 (例如 `stock_data_v1`):
+4.  **Configure Database**:
+    *   Ensure your MySQL service is running.
+    *   Create a new database (e.g., `stock_data_v1`):
 ```sql
         CREATE DATABASE stock_data_v1 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         ```
-    *   打开 `config.py` 文件。
-    *   修改 `SQLALCHEMY_DATABASE_URI` 为您的 MySQL 连接字符串，格式如下:
+    *   Open the `config.py` file.
+    *   Modify `SQLALCHEMY_DATABASE_URI` with your MySQL connection string, format:
         ```python
-        # 示例: mysql+pymysql://<用户名>:<密码>@<主机名>:<端口号>/<数据库名>
+        # Example: mysql+pymysql://<username>:<password>@<hostname>:<port>/<database_name>
         SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:your_password@localhost:3306/stock_data_v1'
         ```
-        *注意: 如果使用 `mysql-connector-python`，则前缀为 `mysql+mysqlconnector://`*
-    *   (可选) 同时更新 `DB_CONFIG` 字典（如果项目的某些部分直接使用它）。
+        *Note: Use `mysql+mysqlconnector://` prefix if using `mysql-connector-python`.*
+    *   (Optional) Update the `DB_CONFIG` dictionary if parts of the project use it directly.
 
-5.  **配置 API 密钥**:
+5.  **Configure API Keys**:
     *   **Google Gemini API**:
-        *   访问 [Google AI Studio](https://ai.google.dev/) 获取 API 密钥。
-        *   在 `config.py` 中设置 `GEMINI_API_KEY` 的值，或者设置同名环境变量 `GEMINI_API_KEY`。
-    *   **Alpha Vantage API**:
-        *   访问 [Alpha Vantage](https://www.alphavantage.co/support/#api-key) 获取免费 API 密钥。
-        *   在 `config.py` 中设置 `ALPHA_VANTAGE_API_KEY` 的值，或者设置同名环境变量 `ALPHA_VANTAGE_API_KEY`。
+        *   Get an API key from [Google AI Studio](https://ai.google.dev/).
+        *   Set the `GEMINI_API_KEY` value in `config.py` or set the environment variable `GEMINI_API_KEY`.
+    *   **(Optional) Alpha Vantage API**:
+        *   *Note: The project currently uses `yfinance` for stock data. If you intend to integrate Alpha Vantage directly, get a free API key from [Alpha Vantage](https://www.alphavantage.co/support/#api-key).*
+        *   *If used, set `ALPHA_VANTAGE_API_KEY` in `config.py` or as an environment variable.*
 
-6.  **数据库初始化与迁移**:
-    *   首次运行时，需要初始化数据库表结构。Flask-Migrate 用于管理数据库模式变更。
-    *   确保 Flask 应用可以找到 (通常通过设置 `FLASK_APP=app.py` 环境变量)。
-    *   运行以下命令生成和应用数据库迁移：
+6.  **Database Initialization & Migration**:
+    *   First-time setup requires initializing the database schema. Flask-Migrate manages schema changes.
+    *   Ensure the Flask app is discoverable (usually by setting the `FLASK_APP=app.py` environment variable).
+    *   Run the following commands to generate and apply database migrations:
 ```bash
-      # 设置 Flask 应用入口 (如果尚未设置)
+      # Set Flask app entry point (if not already set)
       export FLASK_APP=app.py # Linux/macOS
       # set FLASK_APP=app.py # Windows
 
-      # 初始化迁移环境 (仅需首次运行)
+      # Initialize migration environment (only needed once)
       flask db init
 
-      # 生成初始迁移脚本
+      # Generate initial migration script
       flask db migrate -m "Initial migration."
 
-      # 应用迁移到数据库
+      # Apply migrations to the database
       flask db upgrade
       ```
-      *注意: `init_db(app)` 函数在 `app.py` 中被调用，它会创建表并可能包含一些初始数据（如默认管理员）。`flask db upgrade` 会执行这些创建操作。*
+      *Note: The `init_db(app)` function called in `app.py` handles table creation and potentially initial data seeding (like the default admin). `flask db upgrade` executes these creation operations.*
 
-### 2.3 启动与调试
+### 2.3 Running & Debugging
 
-*   **启动开发服务器**:
+*   **Start Development Server**:
 ```bash
 flask run --debug
 ```
-    *   `--debug` 标志会启用调试模式，提供详细错误信息并在代码更改时自动重载。
-    *   应用默认运行在 `http://127.0.0.1:5003` (端口号在 `config.py` 中定义)。
+    *   The `--debug` flag enables debug mode, providing detailed error messages and auto-reloading on code changes.
+    *   The application runs on `http://127.0.0.1:5003` by default (port defined in `config.py`).
 
-*   **访问应用**:
-    *   打开浏览器访问 `http://127.0.0.1:5003/`。
-    *   默认管理员账户: 用户名 `admin`，密码 `admin123secure` (或 `config.py` / 环境变量中设置的值)。
-    *   普通用户需要先注册。
+*   **Accessing the Application**:
+    *   Open your browser to `http://127.0.0.1:5003/`.
+    *   Default admin account: username `admin`, password `admin123secure` (or as set in `config.py`/environment variables).
+    *   Regular users need to register first.
 
-*   **后台任务**:
-    *   限价单处理器 (`tasks/order_processor.py`) 会在应用启动时自动在后台线程中运行。
-    *   应用关闭时 (`atexit`) 会尝试停止该处理器。
+*   **Background Tasks**:
+    *   The limit order processor (`tasks/order_processor.py`) runs automatically in a background thread when the application starts.
+    *   It attempts to stop gracefully upon application shutdown (`atexit`).
 
-## 3. 核心功能与模块设计
+## 3. Core Features & Module Design
 
-### 3.1 主要功能
+### 3.1 Main Features
 
-*   **用户认证**: 普通用户注册、登录、登出；管理员登录。
-*   **账户管理**: 查看账户余额 (可用、冻结、总额)，模拟充值、提现 (需管理员审核)。
-*   **股票行情**: 查看股票列表，搜索股票，展示实时/近实时价格 (Alpha Vantage 或数据库缓存)，历史 K 线图 (yfinance)。
-*   **模拟交易**: 创建市价单、限价单 (买入/卖出)，查看订单历史，取消待处理订单。
-*   **持仓管理**: 查看当前持有的股票、数量、平均成本、总成本、当前市值和盈亏。
-*   **数据分析**:
-    *   基于历史数据的技术指标计算与展示 (集成在图表库或后端计算)。
-    *   蒙特卡洛模拟预测股价未来走势。
-    *   风险评估 (基于 `utils/stock_data.py` 可能的实现)。
-*   **AI 助手**: 与 Gemini AI 模型进行交互，获取市场分析、股票信息或投资建议。
-*   **管理员功能**: 用户管理，资金审核 (充值/提现)，订单管理 (查看、手动执行/拒绝)，数据管理。
-*   **后台订单处理**: 自动检查市场价格，执行满足条件的限价单。
+*   **User Authentication**: Registration, login, logout for regular users; admin login.
+*   **Account Management**: View account balance (available, frozen, total), simulate deposits/withdrawals (requires admin approval).
+*   **Stock Market Data**: View stock list, search stocks, display real-time/near-real-time prices (`yfinance`), historical K-line charts (`yfinance`).
+*   **Simulated Trading**: Create market and limit orders (buy/sell), view order history, cancel pending orders.
+*   **Portfolio Management**: View current holdings, quantity, average cost, total cost, current market value, and profit/loss.
+*   **Data Analysis**:
+    *   Calculation and display of technical indicators based on historical data (integrated into charting libraries or backend calculations).
+    *   Monte Carlo simulation to predict future stock price trends.
+    *   Risk assessment (potential implementation in `utils/stock_data.py`).
+*   **AI Assistant**: Interact with the Gemini AI model via `google-generativeai` for market analysis, stock information, or investment advice.
+*   **Admin Functions**: User management, fund approval (deposit/withdrawal), order management (view, manual execution/rejection), data management.
+*   **Background Order Processing**: Periodically checks market prices to execute pending limit orders that meet price conditions.
 
-### 3.2 模块逻辑与技术实现
+### 3.2 Module Logic & Technical Implementation
 
-*   **应用入口 (`app.py`)**:
-    *   使用 `create_app()` 工厂模式创建和配置 Flask 应用实例。
-    *   加载 `config.py` 中的配置。
-    *   初始化 SQLAlchemy (`models.init_db`) 和 Flask-Migrate。
-    *   初始化 Flask-Login (`auth.init_login_manager`)。
-    *   注册蓝图 (`routes.register_routes`)，将不同功能的路由模块化。
-    *   启动后台订单处理器 (`tasks.order_processor.start_order_processor`) 并通过 `atexit` 注册清理函数。
-    *   定义全局错误处理器 (如处理 Jinja2 未定义错误)。
-    *   注册自定义 Jinja2 模板过滤器 (`safe_round`, `format_datetime`)。
-    *   定义根路由 `/`，根据登录状态和角色重定向到相应仪表盘或登录页。
+*   **Application Entry Point (`app.py`)**:
+    *   Uses the `create_app()` factory pattern to create and configure the Flask application instance.
+    *   Loads configuration from `config.py`.
+    *   Initializes SQLAlchemy (`models.init_db`) and Flask-Migrate.
+    *   Initializes Flask-Login (`auth.init_login_manager`).
+    *   Registers blueprints (`routes.register_routes`) to modularize routes for different features.
+    *   Starts the background order processor (`tasks.order_processor.start_order_processor`) and registers a cleanup function via `atexit`.
+    *   Defines global error handlers (e.g., for Jinja2 undefined errors).
+    *   Registers custom Jinja2 template filters (`safe_round`, `format_datetime`).
+    *   Defines the root route `/`, redirecting to the appropriate dashboard or login page based on login status and role.
 
-*   **配置 (`config.py`)**:
-    *   存储应用密钥、数据库 URI、API 密钥、默认管理员凭证、股票代码列表、订单处理间隔等常量和配置。
-    *   使用环境变量覆盖部分敏感配置是推荐的最佳实践。
+*   **Configuration (`config.py`)**:
+    *   Stores application secrets, database URI, API keys, default admin credentials, stock ticker lists, order processing interval, etc.
+    *   Using environment variables to override sensitive configurations is recommended best practice.
 
-*   **数据模型 (`models/`)**:
-    *   定义数据库表的 SQLAlchemy 模型 (User, Admin, Order, Transaction, AccountBalance, FundTransaction, Portfolio, MarketData 等)。
-    *   `__init__.py` 中的 `init_db` 函数负责数据库初始化逻辑，包括创建表和可能的初始数据填充。
+*   **Data Models (`models/`)**:
+    *   Defines SQLAlchemy models for database tables (User, Admin, Order, Transaction, AccountBalance, FundTransaction, Portfolio, MarketData, etc.).
+    *   The `init_db` function in `__init__.py` handles database initialization logic, including table creation and potential initial data population.
 
-*   **路由 (`routes/`)**:
-    *   按功能划分蓝图 (Auth, User, Admin, Core)。
-    *   每个蓝图下的 Python 文件定义具体的视图函数和对应的 URL 规则。
-    *   处理 HTTP 请求，调用服务/工具函数，与模型交互，渲染 HTML 模板或返回 JSON API 响应。
-    *   用户路由 (`user/`) 包含账户、订单、股票数据、分析、AI 助手等接口。
-    *   管理员路由 (`admin/`) 包含管理功能接口。
-    *   认证路由 (`auth/`) 处理登录、注册、登出。
+*   **Routes (`routes/`)**:
+    *   Organizes blueprints by functionality (Auth, User, Admin, Core).
+    *   Python files within each blueprint define specific view functions and their corresponding URL rules.
+    *   Handles HTTP requests, calls service/utility functions, interacts with models, and renders HTML templates or returns JSON API responses.
+    *   User routes (`user/`) contain endpoints for accounts, orders, stock data, analysis, AI assistant, etc.
+    *   Admin routes (`admin/`) contain endpoints for administrative functions.
+    *   Authentication routes (`auth/`) handle login, registration, logout.
 
-*   **后台任务 (`tasks/order_processor.py`)**:
-    *   使用 Python `threading` 模块实现。
-    *   定期 (由 `config.ORDER_CHECK_INTERVAL` 控制) 查询待处理的限价单。
-    *   获取相关股票的当前市场价格。
-    *   匹配并执行符合价格条件的订单，更新订单状态和用户余额/持仓。
-    *   包含启动和停止处理器的逻辑。
+*   **Background Tasks (`tasks/order_processor.py`)**:
+    *   Implemented using Python's `threading` module.
+    *   Periodically (controlled by `config.ORDER_CHECK_INTERVAL`) queries pending limit orders.
+    *   Fetches current market prices for relevant stocks.
+    *   Matches and executes orders meeting price criteria, updating order status and user balances/portfolios.
+    *   Includes logic for starting and stopping the processor.
 
-*   **工具函数 (`utils/`)**:
-    *   封装可重用的逻辑，如:
-        *   `stock_data.py`: 获取和处理股票数据 (yfinance, Alpha Vantage)。
-        *   `monte_carlo.py`: 执行蒙特卡洛模拟计算。
-        *   `chat_ai.py`: 与 Gemini API 交互。
-        *   `number_utils.py`: 安全的数字格式化。
+*   **Utility Functions (`utils/`)**:
+    *   Encapsulates reusable logic, such as:
+        *   `stock_data.py`: Fetching and processing stock data (`yfinance`).
+        *   `monte_carlo.py`: Performing Monte Carlo simulation calculations.
+        *   `chat_ai.py`: Interacting with the Gemini API (`google-generativeai`).
+        *   `number_utils.py`: Safe number formatting.
 
-*   **前端 (`static/`, `templates/`)**:
-    *   `templates/`: 使用 Jinja2 模板引擎渲染动态 HTML 页面。包含基础布局 (`layout.html`) 和各个功能的页面模板。
-    *   `static/`: 存放 CSS 样式表、JavaScript 文件和图片等静态资源。
-        *   CSS 按页面或模块组织。
-        *   JavaScript 处理前端交互逻辑，如图表绘制 (Chart.js)、表单提交 (AJAX)、用户界面更新等。
+*   **Frontend (`static/`, `templates/`)**:
+    *   `templates/`: Uses Jinja2 templating engine to render dynamic HTML pages. Includes base layout (`layout.html`) and page templates for various features.
+    *   `static/`: Stores static assets like CSS stylesheets, JavaScript files, and images.
+        *   CSS organized by page or module.
+        *   JavaScript handles frontend interactions, such as chart drawing (Chart.js), form submissions (AJAX), and UI updates.
 
-### 3.3 详细项目结构
+### 3.3 Detailed Project Structure
 
 ```
 /
-├── .git/                       # Git 版本控制目录
-├── .gitignore                  # Git 忽略配置文件
-├── .cursor/                    # Cursor IDE 配置目录
-├── .DS_Store                   # macOS 文件夹属性文件
-├── __pycache__/                # Python 编译缓存
-├── flask_env/                  # Python 虚拟环境目录
-├── logs/                       # 日志文件目录
-│   ├── app.log                 # 应用日志文件
-│   └── error.log               # 错误日志文件
-├── test/                       # 单元测试和集成测试目录
-│   ├── __init__.py             # 测试包初始化
-│   ├── test_auth.py            # 认证模块测试
-│   ├── test_models.py          # 数据模型测试
-│   ├── test_routes.py          # 路由模块测试
-│   └── test_utils.py           # 工具函数测试
-├── app.py                      # 应用入口点
-├── config.py                   # 配置文件
-├── requirements.txt            # 项目依赖列表
-├── README.md                   # 项目说明文档
-├── auth/                       # 认证核心逻辑
-│   ├── __init__.py             # 初始化文件
-│   └── login_manager.py        # Flask-Login 配置
-├── models/                     # 数据库模型
-│   ├── __init__.py             # 模型初始化
-│   ├── user.py                 # 用户模型
-│   ├── admin.py                # 管理员模型
-│   ├── trade.py                # 交易模型
-│   ├── finance.py              # 财务模型
-│   └── market.py               # 市场数据模型
-├── routes/                     # 路由模块
-│   ├── __init__.py             # 路由注册
-│   ├── core/                   # 核心路由
-│   │   ├── __init__.py         # 核心蓝图初始化
-│   │   ├── home.py             # 首页路由
-│   │   ├── about.py            # 关于页面路由
-│   │   └── privacy.py          # 隐私政策路由
-│   ├── auth/                   # 认证路由
-│   │   ├── __init__.py         # 认证蓝图初始化
-│   │   ├── login.py            # 登录路由
-│   │   ├── register.py         # 注册路由
-│   │   └── admin_login.py      # 管理员登录路由
-│   ├── user/                   # 用户功能路由
-│   │   ├── __init__.py         # 用户蓝图初始化
-│   │   ├── dashboard.py        # 用户仪表盘
-│   │   ├── account.py          # 账户管理
-│   │   ├── order.py            # 订单管理
-│   │   ├── stock.py            # 股票数据
-│   │   ├── monte_carlo.py      # 蒙特卡洛模拟
-│   │   └── ai_assistant.py     # AI助手
-│   └── admin/                  # 管理员功能路由
-│       ├── __init__.py         # 管理员蓝图初始化
-│       ├── dashboard.py        # 管理员仪表盘
-│       ├── user_manage.py      # 用户管理
-│       ├── fund_manage.py      # 资金管理
-│       ├── order_manage.py     # 订单管理
-│       └── data_manage.py      # 数据管理
-├── static/                     # 静态资源
-│   ├── css/                    # CSS 样式表
-│   │   ├── main.css            # 主样式
-│   │   ├── auth/               # 认证样式
-│   │   │   ├── auth.css        # 认证页面样式
-│   │   │   ├── login.css       # 登录页面样式
-│   │   │   └── register.css    # 注册页面样式
-│   │   ├── user/               # 用户页面样式
-│   │   │   ├── dashboard.css   # 仪表盘样式
-│   │   │   ├── account.css     # 账户页面样式
-│   │   │   ├── stock_chart.css # 图表页面样式
-│   │   │   ├── stock_analysis.css # 分析页面样式
-│   │   │   └── ai_assistant.css # AI助手样式
-│   │   └── admin/              # 管理员样式
-│   │       ├── dashboard.css   # 仪表盘样式
-│   │       ├── common.css      # 通用样式
-│   │       ├── layout.css      # 布局样式
-│   │       ├── fund_manage.css # 资金管理样式
-│   │       └── user_manage.css # 用户管理样式
-│   ├── js/                     # JavaScript 文件
-│   │   ├── main.js             # 主脚本
-│   │   ├── chart_utils.js      # 图表工具
-│   │   ├── auth/               # 认证脚本
-│   │   │   ├── login.js        # 登录脚本
-│   │   │   ├── register.js     # 注册脚本
-│   │   │   └── admin_login.js  # 管理员登录脚本
-│   │   ├── user/               # 用户脚本
-│   │   │   ├── navigation.js   # 导航栏脚本
-│   │   │   ├── account.js      # 账户操作脚本
-│   │   │   ├── stock_chart.js  # 股票图表脚本
-│   │   │   ├── stock_chart_extra.js # 图表附加功能
-│   │   │   ├── stock_analysis.js # 股票分析脚本
-│   │   │   └── ai_assistant.js # AI助手交互脚本
-│   │   └── admin/              # 管理员脚本
-│   │       ├── navigation.js   # 导航栏脚本
-│   │       ├── dashboard.js    # 仪表盘脚本
-│   │       ├── deposits.js     # 充值管理脚本
-│   │       └── withdrawals.js  # 提现管理脚本
-│   └── images/                 # 图片资源
-│       ├── logo.png            # 网站logo
-│       ├── favicon.ico         # 网站图标
-│       ├── background.jpg      # 背景图
-│       ├── user-avatar.png     # 默认用户头像
-│       ├── stock-chart.svg     # 股票图表图标
-│       └── team/               # 团队成员图片
-│           ├── chenyu.png      # 团队成员照片
-│           ├── zhenghaowen.png # 团队成员照片
-│           ├── xumingyang.png  # 团队成员照片
-│           ├── liaoqiyue.png   # 团队成员照片
-│           ├── chenguanqi.png  # 团队成员照片
-│           └── frankie.png     # 团队成员照片
-├── templates/                  # HTML 模板
-│   ├── layout/                 # 布局模板
-│   │   ├── base.html           # 基础布局
-│   │   ├── user_layout.html    # 用户布局
-│   │   └── admin_layout.html   # 管理员布局
-│   ├── core/                   # 核心页面
-│   │   ├── index.html          # 首页
-│   │   ├── about.html          # 关于页面
-│   │   └── privacy.html        # 隐私政策页面
-│   ├── auth/                   # 认证页面
-│   │   ├── login.html          # 登录页面
-│   │   ├── register.html       # 注册页面
-│   │   └── admin_login.html    # 管理员登录页面
-│   ├── user/                   # 用户页面
-│   │   ├── dashboard.html      # 用户仪表盘
-│   │   ├── account.html        # 账户页面
-│   │   ├── stock_chart.html    # 股票图表页面
-│   │   ├── stock_analysis.html # 股票分析页面
-│   │   └── ai_assistant.html   # AI助手页面
-│   ├── admin/                  # 管理员页面
-│   │   ├── dashboard.html      # 仪表盘页面
-│   │   ├── user_manage.html    # 用户管理页面
-│   │   ├── fund_transactions.html # 资金交易页面
-│   │   └── orders.html         # 订单管理页面
-│   ├── partials/               # 页面片段
-│   │   ├── _nav.html           # 导航条
-│   │   ├── _footer.html        # 页脚
-│   │   ├── _pagination.html    # 分页控件
-│   │   └── _flash_messages.html # 消息提示
-│   └── error.html              # 错误页面
-├── tasks/                      # 后台任务
-│   ├── __init__.py             # 任务初始化
-│   └── order_processor.py      # 订单处理器
-└── utils/                      # 工具函数
-    ├── __init__.py             # 初始化文件
-    ├── stock_data.py           # 股票数据工具
-    ├── monte_carlo.py          # 蒙特卡洛模拟
-    ├── risk_monitor.py         # 风险监测
-    ├── chat_ai.py              # AI聊天功能
-    └── number_utils.py         # 数字处理工具
+├── .git/                       # Git version control directory
+├── .gitignore                  # Git ignore configuration file
+├── .cursor/                    # Cursor IDE configuration directory
+├── .DS_Store                   # macOS folder attributes file (if on macOS)
+├── __pycache__/                # Python compiled cache
+├── flask_env/                  # Python virtual environment directory
+├── logs/                       # Log file directory
+│   ├── app.log                 # Application log file
+│   └── error.log               # Error log file
+├── test/                       # Unit and integration test directory
+│   ├── __init__.py             # Test package initialization
+│   ├── test_auth.py            # Authentication module tests
+│   ├── test_models.py          # Data model tests
+│   ├── test_routes.py          # Route module tests
+│   └── test_utils.py           # Utility function tests
+├── app.py                      # Application entry point
+├── config.py                   # Configuration file
+├── requirements.txt            # Project dependency list
+├── README.md                   # Project documentation (this file)
+├── auth/                       # Core authentication logic
+│   ├── __init__.py             # Initialization file
+│   └── login_manager.py        # Flask-Login configuration
+├── models/                     # Database models
+│   ├── __init__.py             # Model initialization
+│   ├── user.py                 # User model
+│   ├── admin.py                # Admin model
+│   ├── trade.py                # Trading models (Order, Portfolio)
+│   ├── finance.py              # Financial models (Account, Transaction)
+│   └── market.py               # Market data model
+├── routes/                     # Route modules
+│   ├── __init__.py             # Route registration
+│   ├── core/                   # Core routes (e.g., home, about)
+│   │   ├── __init__.py         # Core blueprint initialization
+│   │   └── welcome.py          # Welcome page routes
+│   ├── auth/                   # Authentication routes
+│   │   ├── __init__.py         # Authentication blueprint initialization
+│   │   ├── login.py            # Login routes
+│   │   ├── register.py         # Registration routes
+│   │   └── admin_login.py      # Admin login routes
+│   ├── user/                   # User feature routes
+│   │   ├── __init__.py         # User blueprint initialization
+│   │   ├── dashboard.py        # User dashboard routes
+│   │   ├── account.py          # Account management routes
+│   │   ├── order.py            # Order management routes
+│   │   ├── stock.py            # Stock data routes
+│   │   ├── monte_carlo.py      # Monte Carlo simulation routes
+│   │   └── ai_assistant.py     # AI Assistant routes
+│   └── admin/                  # Admin feature routes
+│       ├── __init__.py         # Admin blueprint initialization
+│       ├── dashboard.py        # Admin dashboard routes
+│       ├── user_manage.py      # User management routes
+│       ├── fund_manage.py      # Fund management routes
+│       ├── order_manage.py     # Order management routes
+│       └── data_manage.py      # Data management routes
+├── static/                     # Static assets
+│   ├── .DS_Store               # macOS folder attributes file
+│   ├── chenyu.png              # Team member photo
+│   ├── zhenghaowen.png         # Team member photo
+│   ├── xumingyang.png          # Team member photo
+│   ├── liaoqiyue.png           # Team member photo
+│   ├── chenguanqi.png          # Team member photo
+│   ├── frankie.png             # Team member photo
+│   ├── css/                    # CSS stylesheets
+│   │   ├── auth/               # Authentication styles
+│   │   │   ├── auth.css        # Authentication common styles
+│   │   │   └── auth_style.css  # Authentication additional styles
+│   │   ├── admin/              # Admin styles
+│   │   │   ├── admin_base.css              # Admin base styles
+│   │   │   ├── admin_common.css            # Admin common styles
+│   │   │   ├── admin_dashboard.css         # Admin dashboard styles
+│   │   │   ├── admin_deposits.css          # Admin deposits styles
+│   │   │   ├── admin_edit_user.css         # Admin edit user styles
+│   │   │   ├── admin_fund_transactions.css # Admin fund transactions styles
+│   │   │   ├── admin_layout.css            # Admin layout styles
+│   │   │   ├── admin_orders.css            # Admin orders styles
+│   │   │   ├── admin_user_detail.css       # Admin user detail styles
+│   │   │   ├── admin_users.css             # Admin users list styles
+│   │   │   └── admin_withdrawals.css       # Admin withdrawals styles
+│   │   └── user/               # User styles
+│   │       ├── about.css                   # About page styles
+│   │       ├── account.css                 # Account page styles
+│   │       ├── ai_assistant.css            # AI Assistant page styles
+│   │       ├── main.css                    # Main user styles
+│   │       ├── privacy.css                 # Privacy page styles
+│   │       ├── stock.css                   # Stock page styles
+│   │       ├── stock_analysis.css          # Stock analysis page styles
+│   │       └── stock_chart.css             # Stock chart page styles
+│   └── js/                     # JavaScript files
+│       ├── .DS_Store           # macOS folder attributes file
+│       ├── admin/              # Admin scripts
+│       │   ├── admin_layout.js            # Admin layout scripts
+│   │   │   ├── admin_users.js             # Admin users list scripts
+│   │   │   ├── deposit_withdrawal.js      # Deposit/withdrawal management scripts
+│   │   │   ├── deposits.js                # Deposits management scripts
+│   │   │   ├── navigation.js              # Admin navigation scripts
+│   │   │   └── withdrawals.js             # Withdrawals management scripts
+│   │   ├── auth/               # Authentication scripts
+│   │   │   ├── adminLogin.js              # Admin login scripts
+│   │   │   ├── auth_script.js             # Authentication common scripts
+│   │   │   ├── login.js                   # User login scripts
+│   │   │   └── register.js                # User registration scripts
+│   │   └── user/               # User scripts
+│   │       ├── account.js                 # Account management scripts
+│   │       ├── ai_assistant.js            # AI assistant interaction scripts
+│   │       ├── navigation.js              # User navigation scripts
+│   │       ├── stock_analysis.js          # Stock analysis scripts
+│   │       ├── stock_chart.js             # Stock chart scripts
+│   │       └── stock_chart_extra.js       # Additional stock chart functionality
+├── templates/                  # Jinja2 HTML templates
+│   ├── about.html              # About page template
+│   ├── privacy.html            # Privacy policy template
+│   ├── error.html              # Error page template
+│   ├── admin/                  # Admin templates
+│   │   ├── dashboard.html              # Admin dashboard template
+│   │   ├── deposit_withdrawal.html     # Deposit/withdrawal management template
+│   │   ├── deposits.html               # Deposits management template
+│   │   ├── layout.html                 # Admin layout template
+│   │   ├── order_management.html       # Order management template
+│   │   ├── transaction_history.html    # Transaction history template
+│   │   ├── user_detail.html            # User detail template
+│   │   ├── user_edit.html              # User edit template
+│   │   ├── user_management.html        # User management template
+│   │   └── withdrawals.html            # Withdrawals management template
+│   ├── auth/                   # Authentication templates
+│   │   ├── admin_login.html            # Admin login template
+│   │   ├── login.html                  # User login template
+│   │   └── register.html               # User registration template
+│   └── user/                   # User templates
+│       ├── account.html                # Account management template
+│       ├── ai_assistant.html           # AI assistant template
+│       ├── layout.html                 # User layout template
+│       ├── stock_analysis.html         # Stock analysis template
+│       └── stock_chart.html            # Stock chart template
+└── tasks/                      # Background tasks
+    ├── __init__.py             # Task initialization
+    └── order_processor.py      # Limit order processing task
 ```
 
-## 4. 接口与数据设计
+## 4. Database Design & API Documentation
 
-### 4.1 接口文档 (API Endpoints)
+### 4.1 Database Schema
 
-*(此部分基于现有 README 的 API 文档，已根据代码文件进行核对和微调)*
+The system uses a MySQL database (named `stock_data_v1`) with the following table structure:
 
-#### 核心 (Core)
+#### User-Related Tables
 
-*   **GET /**: 根路径，根据登录状态重定向。
-*   **GET /about**: 关于页面。
-*   **GET /privacy**: 隐私政策页面。
-*   **GET /logout**: 登出操作 (重定向到 `auth.logout`)。
+##### Users Table (`user`)
+- `user_id`: Integer, Primary Key, Auto-increment
+- `user_name`: String(64), Unique, Not Null
+- `user_email`: String(120), Unique, Not Null
+- `user_password`: String(128), Not Null (stores password hash)
+- `created_at`: DateTime, Default current time
 
-#### 认证 (Auth Blueprint: `/auth`)
+##### Admin Table (`admin`)
+- `admin_id`: Integer, Primary Key, Auto-increment
+- `admin_name`: String(64), Unique, Not Null
+- `admin_password`: String(128), Not Null (stores password hash)
 
-*   **GET /**: 认证蓝图根路径 (通常重定向)。
-*   **GET, POST /login**: 用户登录。
-*   **GET, POST /register**: 用户注册。
-*   **GET, POST /admin-login**: 管理员登录。
-*   **GET /logout**: 用户/管理员登出。
+#### Finance-Related Tables
 
-#### 用户 (User Blueprint: `/user`)
+##### Account Balance Table (`account_balance`)
+- `balance_id`: Integer, Primary Key, Auto-increment
+- `user_id`: Integer, Foreign Key(user.user_id), Unique, Not Null
+- `available_balance`: Decimal(15,2), Not Null, Default 0.00
+- `frozen_balance`: Decimal(15,2), Not Null, Default 0.00
+- `total_balance`: Decimal(15,2), Not Null, Default 0.00 (typically available + frozen)
+- `updated_at`: DateTime, Default current time, Updated on change
 
-*   **GET /dashboard**: 用户仪表盘 (通常重定向到 `/user/stock_chart`)。
-*   **GET /account**: 用户账户页面。
-*   **POST /api/deposit**: 用户充值 API。
-*   **POST /api/withdraw**: 用户提现 API。
-*   **GET /api/orders**: 获取用户订单列表 API (支持分页和过滤)。
-*   **POST /api/create_order**: 创建交易订单 API (市价/限价)。
-*   **POST /orders/<order_id>/cancel**: 取消订单 API。
-*   **GET /stock_chart**: 股票图表与交易页面。
-*   **GET /stock_analysis**: 股票分析页面。
-*   **POST /api/stock_analysis**: 股票风险分析 API。
-*   **GET /api/market_data**: 获取股票历史行情数据 API。
-*   **GET /api/fundamental_data**: 获取股票基本面数据 API。
-*   **GET /api/balance_sheet**: 获取资产负债表 API。
-*   **GET /api/income_statement**: 获取利润表 API。
-*   **GET /api/real_time_stock_data**: 获取实时/近实时报价 API。
-*   **GET /api/monte-carlo/<ticker>**: 获取蒙特卡洛模拟结果 API。
-*   **GET /ai_assistant**: AI 智能助手页面。
-*   **POST /api/chat**: 与 AI 助手对话 API。
+##### Fund Transaction Table (`fund_transaction`)
+- `transaction_id`: Integer, Primary Key, Auto-increment
+- `user_id`: Integer, Foreign Key(user.user_id), Not Null
+- `transaction_type`: String(10), Not Null ('deposit', 'withdrawal')
+- `amount`: Decimal(15,2), Not Null
+- `status`: String(10), Not Null ('pending', 'approved', 'rejected'), Default 'pending', Indexed
+- `created_at`: DateTime, Default current time, Indexed
+- `updated_at`: DateTime, Default current time, Updated on change
+- `remark`: String(255), Nullable (e.g., rejection reason)
+- `operator_id`: Integer, Foreign Key(admin.admin_id), Nullable (approving admin)
 
-#### 管理员 (Admin Blueprint: `/admin`)
+#### Trading-Related Tables
 
-*   **GET /, /dashboard**: 管理员仪表盘。
-*   **GET /fund-transactions**: 查看资金交易列表 (充值/提现)。
-*   **GET /deposits**: 查看充值列表 (是 `/fund-transactions` 的过滤视图)。
-*   **GET /withdrawals**: 查看提现列表 (是 `/fund-transactions` 的过滤视图)。
-*   **POST /fund-transactions/<transaction_id>/approve**: 批准资金交易 API。
-*   **POST /fund-transactions/<transaction_id>/reject**: 拒绝资金交易 API。
-*   **GET /orders**: 查看所有用户订单列表。
-*   **POST /orders/<int:order_id>/execute**: (可能存在) 手动执行订单 API。
-*   **POST /orders/<int:order_id>/reject**: (可能存在) 手动拒绝订单 API。
-*   **GET /user_management**: 用户管理页面。
+##### Orders Table (`orders`)
+- `order_id`: Integer, Primary Key, Auto-increment
+- `user_id`: Integer, Foreign Key(user.user_id), Not Null, Indexed
+- `ticker`: String(10), Not Null, Indexed
+- `order_type`: String(4), Not Null ('buy', 'sell'), Indexed
+- `order_execution_type`: String(6), Not Null ('market', 'limit'), Indexed
+- `order_price`: Decimal(10,2), Nullable (null for market orders)
+- `order_quantity`: Integer, Not Null
+- `filled_quantity`: Integer, Not Null, Default 0 (filled amount)
+- `order_status`: String(20), Not Null ('pending', 'filled', 'partially_filled', 'cancelled', 'rejected'), Default 'pending', Indexed
+- `created_at`: DateTime, Default current time, Indexed
+- `updated_at`: DateTime, Default current time, Updated on change
+- `executed_at`: DateTime, Nullable (time of complete execution)
+- `remark`: Text, Nullable
 
-*(注意: API 的具体请求体、响应格式和查询参数请参考现有 README 或直接查看 `routes/` 下的源码)*
+##### Transaction Records Table (`transaction`)
+- `transaction_id`: Integer, Primary Key, Auto-increment
+- `order_id`: Integer, Foreign Key(orders.order_id), Not Null, Indexed
+- `user_id`: Integer, Foreign Key(user.user_id), Not Null, Indexed
+- `ticker`: String(10), Not Null
+- `transaction_type`: String(4), Not Null ('buy', 'sell')
+- `transaction_price`: Decimal(10,2), Not Null
+- `transaction_quantity`: Integer, Not Null
+- `transaction_amount`: Decimal(15,2), Not Null (price * quantity)
+- `transaction_time`: DateTime, Not Null, Default current time, Indexed
+- `commission`: Decimal(10,2), Nullable (transaction fee)
 
-### 4.2 数据库设计
+##### Portfolio Table (`portfolio`)
+- `id`: Integer, Primary Key, Auto-increment
+- `user_id`: Integer, Foreign Key(user.user_id), Not Null
+- `ticker`: String(10), Not Null
+- `quantity`: Integer, Not Null
+- `average_price`: Decimal(10,2), Not Null
+- `total_cost`: Decimal(15,2), Not Null
+- `last_updated`: DateTime, Default current time, Updated on change
+- Constraint: `UNIQUE(user_id, ticker)`
 
-系统使用 MySQL 数据库（名称 `stock_data_v1`），通过 SQLAlchemy ORM 进行交互。详细数据表结构如下:
+#### Market Data Tables
 
-#### 用户相关表
+##### Market Data Table (`market_data`)
+- `ticker`: String(10), Part of Primary Key
+- `date`: Date, Part of Primary Key
+- `open`: Decimal(10,2)
+- `high`: Decimal(10,2)
+- `low`: Decimal(10,2)
+- `close`: Decimal(10,2)
+- `adj_close`: Decimal(10,2) (adjusted close price)
+- `volume`: BigInt
+- `data_collected_at`: DateTime, Default current time
+- Primary Key: `PRIMARY KEY (ticker, date)`
 
-##### 用户表 (user)
-- `user_id`: 整型, 主键, 自增
-- `user_name`: 字符串(64), 唯一, 非空
-- `user_email`: 字符串(120), 唯一, 非空
-- `user_password`: 字符串(128), 非空 (存储哈希值)
-- `created_at`: 日期时间, 默认当前时间
+##### Fundamental Data Table (`fundamental_data`)
+- `ticker`: String(10), Part of Primary Key
+- `date`: Date, Part of Primary Key (typically financial report date)
+- `market_cap`: BigInt, Nullable
+- `pe_ratio`: Decimal(10,2), Nullable
+- `pb_ratio`: Decimal(10,2), Nullable
+- `dividend_yield`: Decimal(10,2), Nullable
+- `revenue`: BigInt, Nullable
+- `net_income`: BigInt, Nullable
+- `eps`: Decimal(10,2), Nullable (earnings per share)
+- `data_collected_at`: DateTime, Default current time
+- Primary Key: `PRIMARY KEY (ticker, date)`
 
-##### 管理员表 (admin)
-- `admin_id`: 整型, 主键, 自增
-- `admin_name`: 字符串(64), 唯一, 非空
-- `admin_password`: 字符串(128), 非空 (存储哈希值)
-
-#### 财务相关表
-
-##### 账户余额表 (account_balance)
-- `balance_id`: 整型, 主键, 自增
-- `user_id`: 整型, 外键(user.user_id), 唯一, 非空
-- `available_balance`: 浮点型(精度待定, 如 DECIMAL(15, 2)), 非空, 默认 0.00
-- `frozen_balance`: 浮点型(精度待定), 非空, 默认 0.00
-- `total_balance`: 浮点型(精度待定), 非空, 默认 0.00 (通常由可用+冻结计算得出)
-- `updated_at`: 日期时间, 默认当前时间, 更新时刷新
-
-##### 资金交易表 (fund_transaction)
-- `transaction_id`: 整型, 主键, 自增
-- `user_id`: 整型, 外键(user.user_id), 非空
-- `transaction_type`: 字符串(10), 非空 ('deposit', 'withdrawal')
-- `amount`: 浮点型(精度待定), 非空
-- `status`: 字符串(10), 非空 ('pending', 'approved', 'rejected'), 默认 'pending', 加索引
-- `created_at`: 日期时间, 默认当前时间, 加索引
-- `updated_at`: 日期时间, 默认当前时间, 更新时刷新
-- `remark`: 字符串(255), 可空 (如拒绝原因)
-- `operator_id`: 整型, 外键(admin.admin_id), 可空 (审核管理员)
-
-#### 交易相关表
-
-##### 订单表 (orders)
-- `order_id`: 整型, 主键, 自增
-- `user_id`: 整型, 外键(user.user_id), 非空, 加索引
-- `ticker`: 字符串(10), 非空, 加索引
-- `order_type`: 字符串(4), 非空 ('buy', 'sell'), 加索引
-- `order_execution_type`: 字符串(6), 非空 ('market', 'limit'), 加索引
-- `order_price`: 浮点型(精度待定), 可空 (市价单为空)
-- `order_quantity`: 整型, 非空
-- `filled_quantity`: 整型, 非空, 默认 0 (已成交数量)
-- `order_status`: 字符串(10), 非空 ('pending', 'filled', 'partially_filled', 'cancelled', 'rejected'), 默认 'pending', 加索引
-- `created_at`: 日期时间, 默认当前时间, 加索引
-- `updated_at`: 日期时间, 默认当前时间, 更新时刷新
-- `executed_at`: 日期时间, 可空 (完全成交时间)
-- `remark`: 文本, 可空
-
-##### 交易记录表 (transaction)
-- `transaction_id`: 整型, 主键, 自增
-- `order_id`: 整型, 外键(orders.order_id), 非空, 加索引
-- `user_id`: 整型, 外键(user.user_id), 非空, 加索引
-- `ticker`: 字符串(10), 非空
-- `transaction_type`: 字符串(4), 非空 ('buy', 'sell')
-- `transaction_price`: 浮点型(精度待定), 非空
-- `transaction_quantity`: 整型, 非空
-- `transaction_amount`: 浮点型(精度待定), 非空 (价格 * 数量)
-- `transaction_time`: 日期时间, 非空, 默认当前时间, 加索引
-- `commission`: 浮点型(精度待定), 可空 (手续费)
-
-##### 持仓表 (portfolio)
-- `id`: 整型, 主键, 自增
-- `user_id`: 整型, 外键(user.user_id), 非空
-- `ticker`: 字符串(10), 非空
-- `quantity`: 整型, 非空
-- `average_price`: 浮点型(精度待定), 非空
-- `total_cost`: 浮点型(精度待定), 非空
-- `last_updated`: 日期时间, 默认当前时间, 更新时刷新
-- 约束: `UNIQUE(user_id, ticker)`
-
-#### 市场数据相关表
-
-##### 股票行情数据表 (market_data)
-- `ticker`: 字符串(10), 主键部分
-- `date`: 日期, 主键部分
-- `open`: 浮点型(精度待定)
-- `high`: 浮点型(精度待定)
-- `low`: 浮点型(精度待定)
-- `close`: 浮点型(精度待定)
-- `adj_close`: 浮点型(精度待定) (复权收盘价)
-- `volume`: 长整型
-- `data_collected_at`: 日期时间, 默认当前时间
-- 主键: `PRIMARY KEY (ticker, date)`
-
-##### 基本面数据表 (fundamental_data)
-- `ticker`: 字符串(10), 主键部分
-- `date`: 日期, 主键部分 (通常是财报日期)
-- `market_cap`: 长整型, 可空
-- `pe_ratio`: 浮点型, 可空
-- `pb_ratio`: 浮点型, 可空
-- `dividend_yield`: 浮点型, 可空
-- `revenue`: 长整型, 可空
-- `net_income`: 长整型, 可空
-- `eps`: 浮点型, 可空 (每股收益)
-- `data_collected_at`: 日期时间, 默认当前时间
-- 主键: `PRIMARY KEY (ticker, date)`
-
-*(注意: 资产负债表和利润表结构类似，字段较多，此处省略，可参考 `models/market.py` 或原 README)*
-
-### 4.3 数据库关系图 (文本表示)
+#### Database Relationship Diagram (Text Format)
 
 ```
-用户相关
-└── user (用户表)
-    ├── 1:1 account_balance (账户余额表)
-    ├── 1:N fund_transaction (资金交易表)
-    ├── 1:N orders (订单表)
-    ├── 1:N transaction (交易记录表)
-    └── 1:N portfolio (持仓表)
+User-Related
+└── user (Users Table)
+    ├── 1:1 account_balance (Account Balance Table)
+    ├── 1:N fund_transaction (Fund Transaction Table)
+    ├── 1:N orders (Orders Table)
+    ├── 1:N transaction (Transaction Records Table)
+    └── 1:N portfolio (Portfolio Table)
 
-管理员相关
-└── admin (管理员表)
-    └── 1:N fund_transaction (资金交易表，作为operator_id关联)
+Admin-Related
+└── admin (Admin Table)
+    └── 1:N fund_transaction (Fund Transaction Table, as operator_id)
 
-交易相关
-├── orders (订单表)
-│   └── 1:N transaction (交易记录表) (一个订单可能分多次成交)
-└── portfolio (持仓表)
-    └── N:1 user (用户表)
+Trading-Related
+├── orders (Orders Table)
+│   └── 1:N transaction (Transaction Records Table) (one order may be filled in multiple transactions)
+└── portfolio (Portfolio Table)
+    └── N:1 user (Users Table)
 
-市场数据相关 (通常与用户/交易数据无直接外键关联)
-├── market_data (股票行情数据表)
-│   └── (ticker, date) 联合主键
-├── fundamental_data (基本面数据表)
-│   └── (ticker, date) 联合主键
-... (其他市场数据表)
-
-关系说明：
-- 1:1 表示一对一关系
-- 1:N 表示一对多关系
-- N:1 表示多对一关系
-- (字段) 表示关联外键
+Market Data-Related (typically no direct foreign key relationships with user/trading data)
+├── market_data (Market Data Table)
+│   └── (ticker, date) compound primary key
+└── fundamental_data (Fundamental Data Table)
+    └── (ticker, date) compound primary key
 ```
 
----
-**注意**: 本系统仅为模拟和学习用途，请勿用于真实交易决策。股票数据和 AI 分析结果仅供参考。
+### 4.2 API Documentation
+
+The application provides the following API endpoints:
+
+#### Core Routes
+
+* **GET /**: Root path, redirects based on login status.
+* **GET /about**: About page.
+* **GET /privacy**: Privacy policy page.
+* **GET /logout**: Logout operation (redirects to `auth.logout`).
+
+#### Authentication Routes (`/auth`)
+
+* **GET /**: Authentication blueprint root (typically redirects).
+* **GET, POST /login**: User login.
+* **GET, POST /register**: User registration.
+* **GET, POST /admin-login**: Admin login.
+* **GET /logout**: User/admin logout.
+
+#### User Routes (`/user`)
+
+* **GET /dashboard**: User dashboard (typically redirects to `/user/stock_chart`).
+* **GET /account**: User account page.
+* **POST /api/deposit**: User deposit API.
+  * Request Body: `{ "amount": float }`
+  * Response: `{ "success": boolean, "message": string, "transaction_id": integer }`
+
+* **POST /api/withdraw**: User withdrawal API.
+  * Request Body: `{ "amount": float }`
+  * Response: `{ "success": boolean, "message": string, "transaction_id": integer }`
+
+* **GET /api/orders**: Get user orders list API (supports pagination and filtering).
+  * Query Parameters: 
+    * `page`: integer (page number)
+    * `limit`: integer (items per page)
+    * `status`: string (filter by status)
+    * `ticker`: string (filter by ticker)
+    * `type`: string (filter by order type)
+  * Response: `{ "success": boolean, "orders": array, "pagination": object }`
+
+* **POST /api/create_order**: Create trading order API (market/limit).
+  * Request Body: 
+    ```
+    {
+      "ticker": string,
+      "order_type": string ("buy"/"sell"),
+      "execution_type": string ("market"/"limit"),
+      "quantity": integer,
+      "price": float (nullable for market orders)
+    }
+    ```
+  * Response: `{ "success": boolean, "message": string, "order_id": integer }`
+
+* **POST /orders/<order_id>/cancel**: Cancel order API.
+  * URL Parameters: `order_id`: integer
+  * Response: `{ "success": boolean, "message": string }`
+
+* **GET /stock_chart**: Stock chart and trading page.
+* **GET /stock_analysis**: Stock analysis page.
+
+* **POST /api/stock_analysis**: Stock risk analysis API.
+  * Request Body: `{ "ticker": string, "window": integer }`
+  * Response: `{ "success": boolean, "data": object, "metrics": object }`
+
+* **GET /api/market_data**: Get stock historical market data API.
+  * Query Parameters:
+    * `ticker`: string (stock symbol)
+    * `period`: string (e.g., "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "max")
+  * Response: `{ "success": boolean, "data": array }`
+
+* **GET /api/fundamental_data**: Get stock fundamental data API.
+  * Query Parameters: `ticker`: string (stock symbol)
+  * Response: `{ "success": boolean, "data": object }`
+
+* **GET /api/balance_sheet**: Get balance sheet API.
+  * Query Parameters: `ticker`: string (stock symbol)
+  * Response: `{ "success": boolean, "data": object }`
+
+* **GET /api/income_statement**: Get income statement API.
+  * Query Parameters: `ticker`: string (stock symbol)
+  * Response: `{ "success": boolean, "data": object }`
+
+* **GET /api/real_time_stock_data**: Get real-time/near-real-time quotes API.
+  * Query Parameters: `ticker`: string (stock symbol)
+  * Response: `{ "success": boolean, "data": object, "last_updated": string }`
+
+* **GET /api/monte-carlo/<ticker>**: Get Monte Carlo simulation results API.
+  * URL Parameters: `ticker`: string (stock symbol)
+  * Query Parameters:
+    * `days`: integer (prediction days)
+    * `simulations`: integer (number of simulations)
+  * Response: `{ "success": boolean, "predictions": array, "statistics": object }`
+
+* **GET /ai_assistant**: AI assistant page.
+
+* **POST /api/chat**: Chat with AI assistant API.
+  * Request Body: `{ "message": string }`
+  * Response: `{ "success": boolean, "response": string }`
+
+#### Admin Routes (`/admin`)
+
+* **GET /, /dashboard**: Admin dashboard.
+* **GET /fund-transactions**: View fund transactions list (deposits/withdrawals).
+* **GET /deposits**: View deposits list (filtered view of `/fund-transactions`).
+* **GET /withdrawals**: View withdrawals list (filtered view of `/fund-transactions`).
+
+* **POST /fund-transactions/<transaction_id>/approve**: Approve fund transaction API.
+  * URL Parameters: `transaction_id`: integer
+  * Response: `{ "success": boolean, "message": string }`
+
+* **POST /fund-transactions/<transaction_id>/reject**: Reject fund transaction API.
+  * URL Parameters: `transaction_id`: integer
+  * Request Body: `{ "reason": string }`
+  * Response: `{ "success": boolean, "message": string }`
+
+* **GET /orders**: View all user orders list.
+
+* **POST /orders/<order_id>/execute**: Manually execute order API.
+  * URL Parameters: `order_id`: integer
+  * Response: `{ "success": boolean, "message": string }`
+
+* **POST /orders/<order_id>/reject**: Manually reject order API.
+  * URL Parameters: `order_id`: integer
+  * Request Body: `{ "reason": string }`
+  * Response: `{ "success": boolean, "message": string }`
+
+* **GET /user_management**: User management page.
+
+## 5. Usage Notes
+
+*   **Database**: Ensure your MySQL server is running before starting the application. The required tables will be created by `flask db upgrade`.
+*   **API Keys**: The application requires a Google Gemini API key to be configured for the AI assistant feature to work.
+*   **Background Worker**: The order processor runs in a separate thread. Check application logs (`logs/app.log`) for its status or errors.
+*   **Development Mode**: Running with `flask run --debug` provides helpful debugging information but is not suitable for production.
+
+## 6. Future Enhancements (Ideas)
+
+*   Implement more sophisticated technical indicators and charting options.
+*   Add real-time WebSocket updates for stock prices and order status.
+*   Develop more comprehensive risk analysis tools.
+*   Improve error handling and logging throughout the application.
+*   Containerize the application using Docker.
+*   Add unit and integration tests for better code coverage.
+*   Deploy to a cloud platform (e.g., Heroku, AWS, Google Cloud).

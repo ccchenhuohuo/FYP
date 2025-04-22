@@ -1,6 +1,6 @@
 """
-管理员相关路由
-包含管理员仪表盘、资金交易管理和订单管理的路由
+Admin related routes
+Includes routes for admin dashboard, fund transaction management, and order management
 """
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user, logout_user
@@ -13,15 +13,15 @@ from utils import create_safe_dict
 
 from . import admin_bp
 
-# 管理员权限检查装饰器
+# Admin permission check decorator
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            flash('请先登录管理员账户', 'warning')
+            flash('Please log in to the admin account first.', 'warning')
             return redirect(url_for('auth.admin_login'))
         if not hasattr(current_user, 'is_admin') or not current_user.is_admin:
-            flash('您没有管理员权限访问此页面', 'danger')
+            flash('You do not have admin permission to access this page.', 'danger')
             logout_user()
             return redirect(url_for('auth.admin_login'))
         return f(*args, **kwargs)
@@ -57,8 +57,8 @@ def get_daily_counts(model, date_column, count_column, days=30, filter_criteria=
 @admin_required
 def admin_dashboard():
     """
-    管理员仪表盘 V2
-    显示核心统计数据和趋势图
+    Admin Dashboard V2
+    Displays core statistics and trend charts
     """
     # --- Core Stats --- 
     users_count = User.query.count()
@@ -142,8 +142,8 @@ def admin_dashboard():
 @admin_required
 def users():
     """
-    用户管理页面
-    显示所有用户及其详细信息
+    User Management Page
+    Displays all users and their details
     """
     page = request.args.get('page', 1, type=int)
     per_page = 10
@@ -171,7 +171,7 @@ def users():
 @admin_required
 def view_user(user_id):
     """
-    查看用户详情
+    View user details
     """
     user = User.query.get_or_404(user_id)
     # Assuming user_detail.html is kept
@@ -182,7 +182,7 @@ def view_user(user_id):
 @admin_required
 def edit_user(user_id):
     """
-    编辑用户信息
+    Edit user information
     """
     user = User.query.get_or_404(user_id)
     if request.method == 'POST':
@@ -213,7 +213,7 @@ def edit_user(user_id):
         #          flash('Invalid balance amount', 'danger')
 
         db.session.commit()
-        flash('用户信息已更新', 'success')
+        flash('User information updated successfully.', 'success')
         return redirect(url_for('admin.view_user', user_id=user.user_id))
     
     # Render the renamed template
@@ -224,7 +224,7 @@ def edit_user(user_id):
 @login_required
 @admin_required
 def manage_orders():
-    """管理订单"""
+    """Manage orders"""
     user_email = request.args.get('user_email')
     buy_orders = []
     sell_orders = []
@@ -255,7 +255,7 @@ def manage_orders():
 @admin_bp.route('/fund-transactions', methods=['GET'])
 @admin_required
 def manage_fund_transactions():
-    """管理所有资金交易 - Renders the new history template"""
+    """Manage all fund transactions - Renders the new history template"""
     status = request.args.get('status', 'all')
     query = FundTransaction.query.join(User, FundTransaction.user_id == User.user_id)
     if status != 'all':
@@ -279,7 +279,7 @@ def manage_fund_transactions():
 @admin_bp.route('/deposits', methods=['GET'])
 @admin_required
 def manage_deposits():
-    """管理充值和提现请求 - Renders the unified deposit/withdrawal template"""
+    """Manage deposit and withdrawal requests - Renders the unified deposit/withdrawal template"""
     # Fetch Deposits
     deposit_transactions = FundTransaction.query.filter_by(
         transaction_type='deposit'
@@ -311,10 +311,10 @@ def manage_deposits():
 @admin_bp.route('/fund-transactions/<transaction_id>/approve', methods=['POST'])
 @admin_required
 def approve_fund_transaction(transaction_id):
-    """批准资金交易"""
+    """Approve fund transaction"""
     transaction = FundTransaction.query.get_or_404(transaction_id)
     if transaction.status != 'pending':
-        flash('该交易已经被处理', 'danger')
+        flash('This transaction has already been processed.', 'danger')
     else:
         transaction.status = 'approved'
         transaction.updated_at = datetime.utcnow()
@@ -328,34 +328,27 @@ def approve_fund_transaction(transaction_id):
         
         if transaction.transaction_type == 'deposit':
             account_balance.available_balance += transaction.amount
-            account_balance.total_balance += transaction.amount
-            flash('充值已批准，用户余额已更新', 'success')
+            # Do not directly modify total_balance as it might be a calculated property
+            flash('Deposit approved, user balance updated.', 'success')
         elif transaction.transaction_type == 'withdrawal':
-            # On approval, the money is considered sent, reduce available
-            # Frozen balance was likely handled during withdrawal request creation
+            # On approval, the money is considered sent
             account_balance.frozen_balance -= transaction.amount # Unfreeze the amount
-            # No change to available or total yet, actual transfer happens separately maybe?
-            # OR: Assume approval means deducted from available:
-            # account_balance.available_balance -= transaction.amount # If approval means deduction
-            # account_balance.total_balance -= transaction.amount
-            flash('提现已批准', 'success') 
+            # Assuming approval means deduction from total balance eventually handled by other processes
+            flash('Withdrawal approved.', 'success') 
             # Note: Ensure withdrawal logic correctly handles frozen/available balance flow
         
         db.session.commit()
 
-    # Redirect back to the specific page (deposit or withdrawal)
-    if transaction.transaction_type == 'deposit':
-        return redirect(url_for('admin.manage_deposits'))
-    else:
-        return redirect(url_for('admin.manage_withdrawals'))
+    # Redirect to the unified management page, selecting the correct tab
+    return redirect(url_for('admin.manage_deposits', tab=transaction.transaction_type+'s'))
 
 @admin_bp.route('/fund-transactions/<transaction_id>/reject', methods=['POST'])
 @admin_required
 def reject_fund_transaction(transaction_id):
-    """拒绝资金交易"""
+    """Reject fund transaction"""
     transaction = FundTransaction.query.get_or_404(transaction_id)
     if transaction.status != 'pending':
-        flash('该交易已经被处理', 'danger')
+        flash('This transaction has already been processed.', 'danger')
     else:
         reject_reason = request.form.get('reject_reason', 'Rejected by admin')
         transaction.status = 'rejected'
@@ -368,24 +361,20 @@ def reject_fund_transaction(transaction_id):
             if account_balance:
                 account_balance.frozen_balance -= transaction.amount
                 account_balance.available_balance += transaction.amount # Return to available
-                # Total balance remains the same
-            flash('提现已拒绝，冻结金额已返还用户可用余额', 'success')
+            flash('Withdrawal rejected, frozen amount returned to user\'s available balance.', 'success')
         else:
-             flash('充值已拒绝', 'success')
+             flash('Deposit rejected.', 'success')
              
         db.session.commit()
         
-    # Redirect back to the specific page (deposit or withdrawal)
-    if transaction.transaction_type == 'deposit':
-        return redirect(url_for('admin.manage_deposits'))
-    else:
-        return redirect(url_for('admin.manage_withdrawals'))
+    # Redirect to the unified management page, selecting the correct tab
+    return redirect(url_for('admin.manage_deposits', tab=transaction.transaction_type+'s'))
 
 # Placeholder for reject_order route
 @admin_bp.route('/orders/<order_id>/reject', methods=['POST'])
 @admin_required
 def reject_order(order_id):
-    """拒绝挂单"""
+    """Reject pending order"""
     order = Order.query.get_or_404(order_id)
     if order.order_status != 'pending':
          flash('Order has already been processed.', 'warning')

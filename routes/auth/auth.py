@@ -52,6 +52,9 @@ def login():
             # Verify password
             if user.user_password == user_password:
                 print("Password verification successful") # Debug info
+                # 更新最后登录时间
+                user.last_login_at = datetime.now()
+                db.session.commit()
                 login_user(user)
                 return redirect(url_for('user.account'))
             else:

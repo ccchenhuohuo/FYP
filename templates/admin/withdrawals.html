@@ -59,14 +59,16 @@
                     <td>
                         {% if withdrawal.status == 'pending' %}
                         <div class="action-buttons">
-                            <form action="{{ url_for('admin.approve_withdrawal', withdrawal_id=withdrawal.withdrawal_id) }}" method="post">
+                            <form action="{{ url_for('admin.approve_withdrawal', withdrawal_id=withdrawal.withdrawal_id) }}" method="post" style="display: inline;">
                                 <button type="submit" class="btn btn-approve">
                                     <i class="fas fa-check mr-1"></i> Approve
                                 </button>
                             </form>
-                            <button class="btn btn-reject" onclick="openRejectModal('{{ withdrawal.withdrawal_id }}')">
-                                <i class="fas fa-times mr-1"></i> Reject
-                            </button>
+                            <form action="{{ url_for('admin.reject_withdrawal', withdrawal_id=withdrawal.withdrawal_id) }}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-reject" onclick="return confirm('Are you sure you want to reject this withdrawal?')">
+                                    <i class="fas fa-times mr-1"></i> Reject
+                                </button>
+                            </form>
                         </div>
                         {% else %}
                         -

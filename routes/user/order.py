@@ -2,12 +2,13 @@
 User order related routes
 Includes creating orders, canceling orders, etc.
 """
-from flask import jsonify, request
+from flask import jsonify, request, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from datetime import datetime
 from models import db, Order, AccountBalance
 from utils.order_utils import process_new_order, simplified_process_order
 from models.enums import OrderStatus, OrderType, OrderExecutionType
+from decimal import Decimal
 
 from . import user_bp
 
@@ -81,15 +82,17 @@ def cancel_order(order_id):
         
         # If it's a buy limit order, unfreeze the funds
         if order.order_type == OrderType.BUY and order.order_execution_type == OrderExecutionType.LIMIT:
-            # Calculate the frozen amount
-            frozen_amount = order.order_price * order.order_quantity
+            # Calculate the frozen amount - 确保数据类型一致
+            order_price = float(order.order_price) if order.order_price else 0.0
+            order_quantity = float(order.order_quantity) if order.order_quantity else 0.0
+            frozen_amount = order_price * order_quantity
             
             # Get user account
             account = AccountBalance.query.filter_by(user_id=order.user_id).first()
             if account:
-                # Transfer the frozen amount back to available balance
-                account.frozen_balance -= frozen_amount
-                account.available_balance += frozen_amount
+                # 确保使用浮点数计算
+                account.frozen_balance = float(account.frozen_balance) - frozen_amount
+                account.available_balance = float(account.available_balance) + frozen_amount
                 # Total balance remains unchanged
                 print(f"Unfrozen funds for user {order.user_id}: ¥{frozen_amount:.2f} (Limit order cancelled)")
         
@@ -99,22 +102,33 @@ def cancel_order(order_id):
         
         db.session.commit()
         
-        return jsonify({
-            'message': f'Order #{order_id} has been cancelled',
-            'order': {
-                'id': order.order_id,
-                'ticker': order.ticker,
-                'quantity': order.order_quantity,
-                'order_type': str(order.order_type), # Return string representation
-                'status': str(order.order_status)    # Return string representation
-            }
-        })
+        # Check if it's an AJAX request
+        if request.headers.get('Content-Type') == 'application/json':
+            return jsonify({
+                'message': f'Order #{order_id} has been cancelled',
+                'order': {
+                    'id': order.order_id,
+                    'ticker': order.ticker,
+                    'quantity': order.order_quantity,
+                    'order_type': str(order.order_type),
+                    'status': str(order.order_status)
+                }
+            })
+        else:
+            # For regular form submission, redirect back to account page
+            flash(f'Order #{order_id} has been cancelled successfully', 'success')
+            return redirect(url_for('user.account'))
         
     except Exception as e:
         db.session.rollback()
         # Log the exception
         current_app.logger.error(f'Error cancelling order {order_id}: {str(e)}', exc_info=True)
-        return jsonify({'error': f'Failed to cancel order: {str(e)}'}), 500
+        
+        if request.headers.get('Content-Type') == 'application/json':
+            return jsonify({'error': f'Failed to cancel order: {str(e)}'}), 500
+        else:
+            flash(f'Failed to cancel order: {str(e)}', 'error')
+            return redirect(url_for('user.account'))
 
 @user_bp.route('/api/orders', methods=['GET'])
 @login_required

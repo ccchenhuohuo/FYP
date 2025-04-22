@@ -28,6 +28,9 @@ from routes.user.ai_analysis import ai_analysis
 # 设置环境变量，禁用兼容性警告
 os.environ['SQLALCHEMY_WARN_20'] = '0'
 
+# 导出init_db函数，使其可以从外部导入
+__all__ = ['create_app', 'app', 'init_db']
+
 def create_app():
     """
     创建并配置Flask应用

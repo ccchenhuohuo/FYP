@@ -14,6 +14,7 @@ from models import db, Order, AccountBalance, Portfolio, Transaction, MarketData
 import contextlib # 导入 contextlib
 # 导入必要的枚举类型
 from models.enums import OrderStatus, TransactionStatus, OrderType, OrderExecutionType
+from decimal import Decimal
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -241,46 +242,69 @@ def can_execute_immediately(order, market_price):
 
 def _execute_order_logic(session, order, account, portfolio, market_price, total_amount):
     """订单执行的核心数据库操作逻辑（不包含commit）"""
+    # 将所有价格和数量转换为Decimal类型以避免float和Decimal混合运算
+    
+    # 转换为Decimal类型以确保精确计算
+    market_price_decimal = Decimal(str(market_price)) if not isinstance(market_price, Decimal) else market_price
+    order_quantity_decimal = Decimal(str(order.order_quantity))
+    
+    # 重新计算total_amount确保类型一致
+    total_amount_decimal = market_price_decimal * order_quantity_decimal
+    
     # 处理买单
     if order.order_type == OrderType.BUY:
         # 如果是限价单，处理冻结余额和退款
         if order.order_execution_type == OrderExecutionType.LIMIT:
-            estimated_cost = order.order_price * order.order_quantity
-            account.frozen_balance -= estimated_cost
+            order_price_decimal = Decimal(str(order.order_price)) if not isinstance(order.order_price, Decimal) else order.order_price
+            estimated_cost = order_price_decimal * order_quantity_decimal
+            account.frozen_balance -= float(estimated_cost)
             refund_amount = 0 # Initialize refund_amount
-            if market_price < order.order_price:
-                refund_amount = (order.order_price - market_price) * order.order_quantity
+            if market_price_decimal < order_price_decimal:
+                refund_amount = float((order_price_decimal - market_price_decimal) * order_quantity_decimal)
                 account.available_balance += refund_amount
+            # 移除手动计算 total_balance，交给事件监听器处理
+            # account.total_balance = account.available_balance + account.frozen_balance
             # Log refund only if it happened
             if refund_amount > 0:
                 logger.info(f"退回用户 {order.user_id} 价格差额: ¥{refund_amount:.2f}")
         else: # 市价单，扣除可用余额
-            account.available_balance -= total_amount
+            account.available_balance -= float(total_amount_decimal)
+            # 移除手动计算 total_balance，交给事件监听器处理
+            # account.total_balance = account.available_balance + account.frozen_balance
         
         # 更新投资组合
         if portfolio:
             # Ensure average_price is not None before calculation
             if portfolio.average_price is None:
                  portfolio.average_price = 0 # Or handle appropriately
-            old_value = portfolio.average_price * portfolio.quantity
-            new_value = old_value + total_amount
-            new_quantity = portfolio.quantity + order.order_quantity
+            
+            # 转换portfolio相关值为Decimal
+            portfolio_quantity_decimal = Decimal(str(portfolio.quantity))
+            portfolio_avg_price_decimal = Decimal(str(portfolio.average_price)) if portfolio.average_price is not None else Decimal('0')
+            
+            # 计算新的平均价格
+            old_value = portfolio_avg_price_decimal * portfolio_quantity_decimal
+            new_value = old_value + total_amount_decimal
+            new_quantity = portfolio_quantity_decimal + order_quantity_decimal
+            
             # Avoid division by zero if new_quantity is somehow zero
-            portfolio.average_price = new_value / new_quantity if new_quantity > 0 else market_price
-            portfolio.quantity = new_quantity
+            portfolio.average_price = float(new_value / new_quantity) if new_quantity > 0 else float(market_price_decimal)
+            portfolio.quantity = int(new_quantity)
         else:
             portfolio = Portfolio(
                 user_id=order.user_id,
                 ticker=order.ticker,
-                quantity=order.order_quantity,
-                average_price=market_price
+                quantity=int(order_quantity_decimal),
+                average_price=float(market_price_decimal)
             )
             session.add(portfolio)
             
     # 处理卖单
     elif order.order_type == OrderType.SELL:
-        account.available_balance += total_amount
-        portfolio.quantity -= order.order_quantity
+        account.available_balance += float(total_amount_decimal)
+        # 移除手动计算 total_balance，交给事件监听器处理
+        # account.total_balance = account.available_balance + account.frozen_balance
+        portfolio.quantity -= int(order_quantity_decimal)
         if portfolio.quantity == 0:
             session.delete(portfolio)
             
@@ -290,9 +314,9 @@ def _execute_order_logic(session, order, account, portfolio, market_price, total
         order=order,  # 直接关联 Order 对象
         ticker=order.ticker,
         transaction_type=order.order_type,
-        transaction_price=market_price,
-        transaction_quantity=order.order_quantity,
-        transaction_amount=total_amount,
+        transaction_price=float(market_price_decimal),
+        transaction_quantity=int(order_quantity_decimal),
+        transaction_amount=float(total_amount_decimal),
         transaction_status=TransactionStatus.COMPLETED, # 使用枚举
         transaction_time=datetime.now()
     )
@@ -458,47 +482,81 @@ def process_new_order(user_id, ticker, order_type, order_execution_type, order_q
             # 8. 判断是否立即执行
             can_execute_now = False
             execution_price = None
+            
+            # 市价单可以立即执行
             if order_execution_type == OrderExecutionType.MARKET.value:
-                 can_execute_now = True
-                 execution_price = market_price
+                can_execute_now = True
+                execution_price = market_price
+            # 检查限价单是否符合立即执行条件
             elif order_execution_type == OrderExecutionType.LIMIT.value:
-                 if order_type == OrderType.BUY.value and market_price <= limit_price:
-                     can_execute_now = True
-                     execution_price = market_price
-                 elif order_type == OrderType.SELL.value and market_price >= limit_price:
-                     can_execute_now = True
-                     execution_price = market_price
-
-            # 9. 执行或暂存
-            if can_execute_now:
-                total_amount = execution_price * order_quantity
-                _execute_order_logic(session, order, account, portfolio, execution_price, total_amount)
-                logger.info(f"新订单 #{order.order_id} 已立即执行")
-                # 事务将在退出 with 块时提交
-                return {
-                    'message': f'{order.order_execution_type.value.capitalize()}单已成功执行',
-                    'order_id': order.order_id,
-                    'executed_price': execution_price,
-                    'total_amount': total_amount,
-                    'status': order.order_status.value # 返回 'executed'
-                    }, 200
-            else: # 不能立即执行 (限价单未满足条件)
-                if order_type == OrderType.BUY.value and order_execution_type == OrderExecutionType.LIMIT.value:
-                     frozen_amount = limit_price * order_quantity
-                     account.available_balance -= frozen_amount
-                     account.frozen_balance += frozen_amount
-                     logger.info(f"已冻结用户 {user_id} 资金: ¥{frozen_amount:.2f} 用于限价单 #{order.order_id}")
+                # 买入限价单: 当市场价格 <= 限价时可执行
+                if order_type == OrderType.BUY.value and market_price <= limit_price:
+                    can_execute_now = True
+                    execution_price = market_price  # 以市场价执行
+                    logger.info(f"买入限价单 #{order.order_id} 可以立即执行: 市场价格({market_price}) <= 限价({limit_price})")
                 
-                # 订单已添加，状态为 PENDING，事务将在退出 with 块时提交
-                logger.info(f"新订单 #{order.order_id} 已创建为 PENDING 状态")
-                execution_condition = "高于" if order_type == OrderType.SELL.value else "低于或等于"
-                return {
-                    'message': f'限价单已创建，将在市场价格{execution_condition}{limit_price}时执行',
-                    'order_id': order.order_id,
-                    'limit_price': limit_price,
-                    'current_market_price': market_price,
-                    'status': order.order_status.value # 返回 'pending'
-                }, 201 # 创建成功返回 201
+                # 卖出限价单: 当市场价格 >= 限价时可执行
+                elif order_type == OrderType.SELL.value and market_price >= limit_price:
+                    can_execute_now = True
+                    execution_price = market_price  # 以市场价执行
+                    logger.info(f"卖出限价单 #{order.order_id} 可以立即执行: 市场价格({market_price}) >= 限价({limit_price})")
+            
+            # 立即执行符合条件的订单(包括市价单和符合条件的限价单)
+            if can_execute_now:
+                logger.info(f"订单 #{order.order_id} 满足立即执行条件，执行价格: {execution_price}")
+                portfolio_obj = Portfolio.query.filter_by(user_id=user_id, ticker=ticker).first()
+                
+                # 使用Decimal类型计算总金额以避免类型不匹配
+                execution_price_decimal = Decimal(str(execution_price)) if not isinstance(execution_price, Decimal) else execution_price
+                order_quantity_decimal = Decimal(str(order_quantity))
+                total_amount_decimal = execution_price_decimal * order_quantity_decimal
+                total_amount = float(total_amount_decimal)  # 转回float用于存储
+                
+                try:
+                    _execute_order_logic(session, order, account, portfolio_obj, execution_price, total_amount)
+                    order_data = {
+                        'message': f'市价单已成功执行',
+                        'order_id': order.order_id,
+                        'executed_price': execution_price,
+                        'total_amount': total_amount,
+                        'status': 'valid',
+                        'order_status': order.order_status.value,
+                        'error': None
+                    }
+                except Exception as e:
+                    logger.error(f"执行订单 #{order.order_id} 失败: {str(e)}")
+                    order.order_status = OrderStatus.FAILED
+                    order.remark = f"执行失败: {str(e)}"
+                    order_data = {
+                        'message': '订单执行失败',
+                        'order_id': order.order_id,
+                        'status': 'invalid',
+                        'order_status': order.order_status.value,
+                        'error': order.remark
+                    }
+            else:
+                # 处理限价单 - 始终进入PENDING状态
+                if order_execution_type == OrderExecutionType.LIMIT.value:
+                    # 对于买入限价单，之前已经冻结过资金，这里不再重复冻结
+                    execution_condition = "高于" if order_type == OrderType.SELL.value else "低于或等于"
+                    order_data = {
+                        'message': f'限价单已创建，将在市场价格{execution_condition}{order_price}时执行',
+                        'order_id': order.order_id,
+                        'limit_price': order_price,
+                        'current_market_price': market_price,
+                        'status': 'valid',
+                        'order_status': order.order_status.value,
+                        'error': None
+                    }
+                else:
+                    # 理论上不应该到达这里，因为市价单应该已经处理过
+                    order_data = {
+                        'message': '订单已创建但无法立即执行',
+                        'order_id': order.order_id,
+                        'status': 'valid',
+                        'order_status': order.order_status.value,
+                        'error': None
+                    }
         
     except Exception as e:
         logger.error(f"处理新订单请求时发生未预料的错误: {str(e)}", exc_info=True)
@@ -530,6 +588,18 @@ def process_new_order(user_id, ticker, order_type, order_execution_type, order_q
             logger.error(f"尝试记录失败订单时再次出错: {nested_e}")
             # 如果记录失败，返回通用 500 错误
             return {'error': '处理订单请求时发生内部错误'}, 500
+
+        # 返回处理结果
+        return order_data
+    
+    except Exception as e:
+        logger.error(f"处理订单时发生未预期错误: {str(e)}", exc_info=True)
+        return {
+            'message': '订单处理失败',
+            'status': 'invalid',
+            'order_status': OrderStatus.FAILED.value,
+            'error': f"处理订单时发生错误: {str(e)}"
+        }
 
 def simplified_process_order(user_id, ticker, order_type, order_execution_type, order_quantity, order_price=None):
     """
@@ -638,9 +708,21 @@ def simplified_process_order(user_id, ticker, order_type, order_execution_type, 
             
             # 对于买单，检查余额是否足够
             elif order_type == OrderType.BUY.value and not failure_reason:
-                estimated_cost = market_price * order_quantity if order_execution_type == OrderExecutionType.MARKET.value else order_price * order_quantity
-                if account.available_balance < estimated_cost:
-                    failure_reason = f"余额不足 (需要 ¥{estimated_cost:.2f}, 可用 ¥{account.available_balance:.2f})"
+                # 将价格和数量转换为Decimal类型以避免float和Decimal混合运算
+                market_price_decimal = Decimal(str(market_price)) if not isinstance(market_price, Decimal) else market_price
+                order_quantity_decimal = Decimal(str(order_quantity))
+                
+                if order_execution_type == OrderExecutionType.MARKET.value:
+                    estimated_cost = market_price_decimal * order_quantity_decimal
+                else:
+                    order_price_decimal = Decimal(str(order_price)) if not isinstance(order_price, Decimal) else order_price
+                    estimated_cost = order_price_decimal * order_quantity_decimal
+                
+                # 将结果转回float用于比较
+                estimated_cost_float = float(estimated_cost)
+                
+                if account.available_balance < estimated_cost_float:
+                    failure_reason = f"余额不足 (需要 ¥{estimated_cost_float:.2f}, 可用 ¥{account.available_balance:.2f})"
                     order_status = OrderStatus.FAILED
                     logger.warning(f"余额验证失败: {failure_reason}")
             
@@ -670,36 +752,60 @@ def simplified_process_order(user_id, ticker, order_type, order_execution_type, 
             if order_status == OrderStatus.PENDING:
                 logger.info(f"有效订单 #{order.order_id} 已创建")
                 
-                # 对于买入限价单，冻结资金
+                # 对于买入限价单，冻结资金（只在这里执行一次）
                 if order_type == OrderType.BUY.value and order_execution_type == OrderExecutionType.LIMIT.value:
-                    frozen_amount = order_price * order_quantity
+                    # 确保使用Decimal类型计算
+                    order_price_decimal = Decimal(str(order_price)) if not isinstance(order_price, Decimal) else order_price
+                    order_quantity_decimal = Decimal(str(order_quantity))
+                    frozen_amount_decimal = order_price_decimal * order_quantity_decimal
+                    
+                    # 转回float用于数据库存储
+                    frozen_amount = float(frozen_amount_decimal)
+                    
+                    # 更新账户余额和冻结余额
                     account.available_balance -= frozen_amount
                     account.frozen_balance += frozen_amount
-                    logger.info(f"已冻结用户 {user_id} 资金: ¥{frozen_amount:.2f} 用于限价单")
+                    # 移除手动计算 total_balance，交给事件监听器处理
+                    
+                    logger.info(f"已冻结用户 {user_id} 资金: ¥{frozen_amount:.2f} 用于限价单 #{order.order_id}")
                 
                 # 判断是否可以立即执行
                 can_execute_now = False
                 execution_price = None
                 
+                # 市价单可以立即执行
                 if order_execution_type == OrderExecutionType.MARKET.value:
                     can_execute_now = True
                     execution_price = market_price
+                # 检查限价单是否符合立即执行条件
                 elif order_execution_type == OrderExecutionType.LIMIT.value:
-                    if (order_type == OrderType.BUY.value and market_price <= order_price) or \
-                       (order_type == OrderType.SELL.value and market_price >= order_price):
+                    # 买入限价单: 当市场价格 <= 限价时可执行
+                    if order_type == OrderType.BUY.value and market_price <= order_price:
                         can_execute_now = True
-                        execution_price = market_price
+                        execution_price = market_price  # 以市场价执行
+                        logger.info(f"买入限价单 #{order.order_id} 可以立即执行: 市场价格({market_price}) <= 限价({order_price})")
+                    
+                    # 卖出限价单: 当市场价格 >= 限价时可执行
+                    elif order_type == OrderType.SELL.value and market_price >= order_price:
+                        can_execute_now = True
+                        execution_price = market_price  # 以市场价执行
+                        logger.info(f"卖出限价单 #{order.order_id} 可以立即执行: 市场价格({market_price}) >= 限价({order_price})")
                 
-                # 立即执行订单
+                # 立即执行符合条件的订单(包括市价单和符合条件的限价单)
                 if can_execute_now:
                     logger.info(f"订单 #{order.order_id} 满足立即执行条件，执行价格: {execution_price}")
                     portfolio_obj = Portfolio.query.filter_by(user_id=user_id, ticker=ticker).first()
-                    total_amount = execution_price * order_quantity
+                    
+                    # 使用Decimal类型计算总金额以避免类型不匹配
+                    execution_price_decimal = Decimal(str(execution_price)) if not isinstance(execution_price, Decimal) else execution_price
+                    order_quantity_decimal = Decimal(str(order_quantity))
+                    total_amount_decimal = execution_price_decimal * order_quantity_decimal
+                    total_amount = float(total_amount_decimal)  # 转回float用于存储
                     
                     try:
                         _execute_order_logic(session, order, account, portfolio_obj, execution_price, total_amount)
                         order_data = {
-                            'message': f'订单已成功执行',
+                            'message': f'市价单已成功执行',
                             'order_id': order.order_id,
                             'executed_price': execution_price,
                             'total_amount': total_amount,
@@ -719,17 +825,28 @@ def simplified_process_order(user_id, ticker, order_type, order_execution_type, 
                             'error': order.remark
                         }
                 else:
-                    # 不能立即执行的有效订单
-                    execution_condition = "高于" if order_type == OrderType.SELL.value else "低于或等于"
-                    order_data = {
-                        'message': f'限价单已创建，将在市场价格{execution_condition}{order_price}时执行',
-                        'order_id': order.order_id,
-                        'limit_price': order_price,
-                        'current_market_price': market_price,
-                        'status': 'valid',
-                        'order_status': order.order_status.value,
-                        'error': None
-                    }
+                    # 处理限价单 - 始终进入PENDING状态
+                    if order_execution_type == OrderExecutionType.LIMIT.value:
+                        # 对于买入限价单，之前已经冻结过资金，这里不再重复冻结
+                        execution_condition = "高于" if order_type == OrderType.SELL.value else "低于或等于"
+                        order_data = {
+                            'message': f'限价单已创建，将在市场价格{execution_condition}{order_price}时执行',
+                            'order_id': order.order_id,
+                            'limit_price': order_price,
+                            'current_market_price': market_price,
+                            'status': 'valid',
+                            'order_status': order.order_status.value,
+                            'error': None
+                        }
+                    else:
+                        # 理论上不应该到达这里，因为市价单应该已经处理过
+                        order_data = {
+                            'message': '订单已创建但无法立即执行',
+                            'order_id': order.order_id,
+                            'status': 'valid',
+                            'order_status': order.order_status.value,
+                            'error': None
+                        }
             else:
                 # 无效订单
                 order_data = {
@@ -753,3 +870,72 @@ def simplified_process_order(user_id, ticker, order_type, order_execution_type, 
             'order_status': OrderStatus.FAILED.value,
             'error': f"处理订单时发生错误: {str(e)}"
         }
+
+def scan_pending_limit_orders():
+    """
+    扫描所有待处理(PENDING)状态的限价单，检查当前市场价格是否满足执行条件
+    如果满足条件则执行订单
+    
+    此函数设计为由定时任务调用
+    """
+    logger.info("开始扫描待处理的限价单...")
+    
+    try:
+        # 查询所有PENDING状态的限价单
+        pending_limit_orders = Order.query.filter_by(
+            order_status=OrderStatus.PENDING,
+            order_execution_type=OrderExecutionType.LIMIT
+        ).all()
+        
+        if not pending_limit_orders:
+            logger.info("没有待处理的限价单")
+            return
+            
+        logger.info(f"找到 {len(pending_limit_orders)} 个待处理的限价单")
+        
+        # 遍历每个待处理的限价单
+        for order in pending_limit_orders:
+            try:
+                # 获取当前市场价格
+                price_success, market_price = get_market_price(order.ticker)
+                
+                if not price_success:
+                    logger.warning(f"无法获取 {order.ticker} 的市场价格，跳过订单 #{order.order_id}")
+                    continue
+                
+                # 转换为Decimal类型进行精确比较
+                market_price_decimal = Decimal(str(market_price)) if not isinstance(market_price, Decimal) else market_price
+                order_price_decimal = Decimal(str(order.order_price)) if not isinstance(order.order_price, Decimal) else order.order_price
+                
+                # 检查是否满足执行条件
+                can_execute = False
+                
+                # 买入限价单: 当市场价格 <= 限价时可执行
+                if order.order_type == OrderType.BUY and market_price_decimal <= order_price_decimal:
+                    can_execute = True
+                    logger.info(f"买入限价单 #{order.order_id} 可以执行: 市场价格({market_price}) <= 限价({order.order_price})")
+                
+                # 卖出限价单: 当市场价格 >= 限价时可执行
+                elif order.order_type == OrderType.SELL and market_price_decimal >= order_price_decimal:
+                    can_execute = True
+                    logger.info(f"卖出限价单 #{order.order_id} 可以执行: 市场价格({market_price}) >= 限价({order.order_price})")
+                
+                # 如果满足执行条件，执行订单
+                if can_execute:
+                    # 使用现有的execute_order函数执行订单
+                    logger.info(f"执行限价单 #{order.order_id}, 股票: {order.ticker}, 类型: {order.order_type.value}, 价格: {market_price}")
+                    success, message = execute_order(order, market_price)
+                    
+                    if success:
+                        logger.info(f"限价单 #{order.order_id} 执行成功")
+                    else:
+                        logger.error(f"限价单 #{order.order_id} 执行失败: {message}")
+            
+            except Exception as e:
+                logger.error(f"处理限价单 #{order.order_id} 时发生错误: {str(e)}", exc_info=True)
+                # 继续处理下一个订单
+        
+        logger.info("限价单扫描完成")
+        
+    except Exception as e:
+        logger.error(f"扫描限价单时发生错误: {str(e)}", exc_info=True)

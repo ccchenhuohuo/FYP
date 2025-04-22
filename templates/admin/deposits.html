@@ -59,14 +59,16 @@
                     <td>
                         {% if deposit.status == 'pending' %}
                         <div class="action-buttons">
-                            <form action="{{ url_for('admin.approve_deposit', deposit_id=deposit.deposit_id) }}" method="post">
+                            <form action="{{ url_for('admin.approve_deposit', deposit_id=deposit.deposit_id) }}" method="post" style="display: inline;">
                                 <button type="submit" class="btn btn-approve">
                                     <i class="fas fa-check mr-1"></i> Approve
                                 </button>
                             </form>
-                            <button class="btn btn-reject" onclick="openRejectModal('{{ deposit.deposit_id }}')">
-                                <i class="fas fa-times mr-1"></i> Reject
-                            </button>
+                            <form action="{{ url_for('admin.reject_deposit', deposit_id=deposit.deposit_id) }}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-reject" onclick="return confirm('Are you sure you want to reject this deposit?');">
+                                    <i class="fas fa-times mr-1"></i> Reject
+                                </button>
+                            </form>
                         </div>
                         {% else %}
                         -
@@ -111,6 +113,7 @@
     
     // Open reject modal
     function openRejectModal(depositId) {
+        console.log("Modal open triggered for ID:", depositId);
         currentDepositId = depositId;
         document.getElementById('rejectForm').action = `/admin/deposits/${depositId}/reject`;
         const modal = document.getElementById('rejectModal');
@@ -120,18 +123,22 @@
     
     // Close reject modal
     function closeRejectModal() {
+        console.log("Modal close triggered");
         const modal = document.getElementById('rejectModal');
         modal.classList.remove('show');
         setTimeout(() => modal.style.display = 'none', 300);
-        document.getElementById('rejectForm').reset();
     }
     
     // Submit reject form
     function submitRejectForm() {
-        if (document.querySelector('#rejectForm textarea').value.trim()) {
-            document.getElementById('rejectForm').submit();
+        console.log("Modal submit triggered");
+        const form = document.getElementById('rejectForm');
+        const reason = form.querySelector('textarea[name="rejection_reason"]');
+        if (reason && reason.value.trim()) {
+            form.submit();
         } else {
             alert('Please enter a reason for rejection');
+            if (reason) reason.focus();
         }
     }
     

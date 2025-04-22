@@ -5,7 +5,8 @@ Include account balance and fund transactions
 from . import db
 from datetime import datetime
 from sqlalchemy.orm import validates
-from sqlalchemy import CheckConstraint, event
+from sqlalchemy import CheckConstraint, event, text
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class AccountBalance(db.Model):
     """
@@ -19,13 +20,21 @@ class AccountBalance(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False, unique=True)
     available_balance = db.Column(db.Float, nullable=False, default=0.0)  # Available balance
     frozen_balance = db.Column(db.Float, nullable=False, default=0.0)     # Frozen balance
-    total_balance = db.Column(db.Float, nullable=False, default=0.0)      # Total balance = available + frozen
+    
+    # total_balance字段将被移除，改为数据库计算列
+    # total_balance = db.Column(db.Float, nullable=False, default=0.0)
+    
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
-    # Add validation constraint: total balance must equal available balance plus frozen balance
-    __table_args__ = (
-        CheckConstraint('total_balance = available_balance + frozen_balance', name='check_balance_sum'),
-    )
+    # 移除原有约束，因为我们将使用计算列
+    # __table_args__ = (
+    #     CheckConstraint('total_balance = available_balance + frozen_balance', name='check_balance_sum'),
+    # )
+    
+    # 添加hybrid_property以便在Python代码中仍然可以访问total_balance
+    @hybrid_property
+    def total_balance(self):
+        return self.available_balance + self.frozen_balance
     
     def __repr__(self):
         """
@@ -43,35 +52,30 @@ class AccountBalance(db.Model):
         Returns:
         float: The rounded value
         """
-        # Determine the value to round based on context
-        # Default return the rounded value of total balance
+        # 更新后使用hybrid_property
         return round(self.total_balance, precision)
 
-# Define event listener function
-def before_account_balance_save(mapper, connection, target):
-    """Automatically calculate total balance before saving (insert or update) AccountBalance object to database"""
-    if target.available_balance is not None and target.frozen_balance is not None:
-        # Perform necessary checks, e.g. balance cannot be negative
-        if target.available_balance < 0:
-             raise ValueError(f"Available balance ({target.available_balance}) cannot be negative")
-        if target.frozen_balance < 0:
-             raise ValueError(f"Frozen balance ({target.frozen_balance}) cannot be negative")
-             
-        # Calculate total balance
-        target.total_balance = target.available_balance + target.frozen_balance
-        print(f"Event triggered: update user {target.user_id} total balance to {target.total_balance}") # Add log/print
-    else:
-        # Handle the case where the initial creation may not have default values (even though the model has default=0.0)
-        if target.available_balance is None: target.available_balance = 0.0
-        if target.frozen_balance is None: target.frozen_balance = 0.0
-        target.total_balance = target.available_balance + target.frozen_balance
-        print(f"Event triggered (initialization): update user {target.user_id} total balance to {target.total_balance}") # Add log/print
-
-# Register event listener
-# Trigger before insert
-event.listen(AccountBalance, 'before_insert', before_account_balance_save)
-# Trigger before update
-event.listen(AccountBalance, 'before_update', before_account_balance_save)
+# 移除旧的事件监听器
+# @event.listens_for(AccountBalance, 'before_insert')
+# @event.listens_for(AccountBalance, 'before_update')
+# def before_account_balance_save(mapper, connection, target):
+#     """Automatically calculate total balance before saving (insert or update) AccountBalance object to database"""
+#     if target.available_balance is not None and target.frozen_balance is not None:
+#         # Perform necessary checks, e.g. balance cannot be negative
+#         if target.available_balance < 0:
+#              raise ValueError(f"Available balance ({target.available_balance}) cannot be negative")
+#         if target.frozen_balance < 0:
+#              raise ValueError(f"Frozen balance ({target.frozen_balance}) cannot be negative")
+#              
+#         # Calculate total balance
+#         target.total_balance = target.available_balance + target.frozen_balance
+#         print(f"Event triggered: update user {target.user_id} total balance to {target.total_balance}") # Add log/print
+#     else:
+#         # Handle the case where the initial creation may not have default values (even though the model has default=0.0)
+#         if target.available_balance is None: target.available_balance = 0.0
+#         if target.frozen_balance is None: target.frozen_balance = 0.0
+#         target.total_balance = target.available_balance + target.frozen_balance
+#         print(f"Event triggered (initialization): update user {target.user_id} total balance to {target.total_balance}") # Add log/print
 
 class FundTransaction(db.Model):
     """

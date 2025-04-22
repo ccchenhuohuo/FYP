@@ -4,6 +4,31 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/user/account.css') }}">
+<style>
+    .history-item.hidden {
+        display: none;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem; /* Adjust as needed */
+    }
+    .section-header h2 {
+        margin-bottom: 0; /* Remove bottom margin from h2 */
+    }
+    .toggle-history-btn {
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .toggle-history-btn:hover {
+        background-color: #e0e0e0;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -39,7 +64,7 @@
                     <span class="user-name">{{ current_user.user_name }}</span>
                 </div>
                 <div class="login-time">
-                    <i class="fas fa-clock"></i> Last login: <span class="time-value">March 3, 2024 10:30</span>
+                    <i class="fas fa-clock"></i> Last login: <span class="time-value">{{ current_user.last_login_at|format_datetime if current_user.last_login_at else 'Never' }}</span>
                 </div>
             </div>
         </div>
@@ -125,7 +150,12 @@
 <div class="history-sections">
     <!-- Transaction History -->
     <div class="section card history-card">
-        <h2><i class="fas fa-history"></i> Transaction History</h2>
+        <div class="section-header">
+            <h2><i class="fas fa-history"></i> Transaction History</h2>
+            {% if transactions|length > 3 %}
+                <button class="toggle-history-btn" data-target="transaction-history-list">Show All</button>
+            {% endif %}
+        </div>
         {% if transactions %}
             <div class="table-responsive">
                 <table class="order-table compact-table">
@@ -139,9 +169,9 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="transaction-history-list">
                         {% for transaction in transactions %}
-                            <tr>
+                            <tr class="history-item{% if loop.index0 >= 3 %} hidden{% endif %}">
                                 <td><small>{{ transaction.transaction_id }}</small></td>
                                 <td>
                                     {% if transaction.transaction_type == 'buy' %}
@@ -193,7 +223,12 @@
 
     <!-- Deposit/Withdrawal History -->
     <div class="section card history-card">
-        <h2><i class="fas fa-money-bill-wave"></i> Deposit & Withdrawal</h2>
+         <div class="section-header">
+            <h2><i class="fas fa-money-bill-wave"></i> Deposit & Withdrawal</h2>
+             {% if fund_transactions|length > 4 %}
+                <button class="toggle-history-btn" data-target="fund-transaction-history-list">Show All</button>
+            {% endif %}
+        </div>
         {% if fund_transactions %}
             <div class="table-responsive">
                 <table class="order-table compact-table">
@@ -206,9 +241,9 @@
                             <th>Time</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="fund-transaction-history-list">
                         {% for fund_tx in fund_transactions %}
-                            <tr>
+                            <tr class="history-item{% if loop.index0 >= 4 %} hidden{% endif %}">
                                 <td>{{ fund_tx.transaction_id }}</td>
                                 <td>
                                     {% if fund_tx.transaction_type == 'deposit' %}
@@ -288,23 +323,29 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if order.order_price %}
+                                {% if order.order_execution_type == 'market' or order.order_execution_type.value == 'market' %}
+                                    {% if order.transaction_price %}
+                                        ¥{{ order.transaction_price|safe_round(2) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                {% elif order.order_status == 'executed' or order.order_status == 'EXECUTED' or order.order_status.value == 'executed' %}
+                                    ¥{{ order.display_price|safe_round(2) }}
+                                {% elif order.order_price %}
                                     ¥{{ order.order_price|safe_round(2) }}
-                                {% elif order.order_execution_type == 'market' %}
-                                    Market
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
                             <td>{{ order.order_quantity }}</td>
                             <td>
-                                {% if order.order_status == 'pending' %}
+                                {% if order.order_status == 'pending' or order.order_status == 'PENDING' or order.order_status.value == 'pending' %}
                                     <span class="status-pending">Pending</span>
-                                {% elif order.order_status == 'executed' %}
+                                {% elif order.order_status == 'executed' or order.order_status == 'EXECUTED' or order.order_status.value == 'executed' %}
                                     <span class="status-executed">Executed</span>
-                                {% elif order.order_status == 'cancelled' %}
+                                {% elif order.order_status == 'cancelled' or order.order_status == 'CANCELLED' or order.order_status.value == 'cancelled' %}
                                     <span class="status-cancelled">Cancelled</span>
-                                {% elif order.order_status == 'failed' %}
+                                {% elif order.order_status == 'failed' or order.order_status == 'FAILED' or order.order_status.value == 'failed' %}
                                     <span class="status-failed">Failed</span>
                                     {% if order.remark %}
                                     <span class="order-note" title="{{ order.remark }}"><i class="fas fa-info-circle"></i></span>
@@ -315,8 +356,8 @@
                             </td>
                             <td>{{ order.created_at }}</td>
                             <td>
-                                {% if order.order_status == 'pending' %}
-                                    <form action="{{ url_for('user.cancel_order', order_id=order.order_id) }}" method="post">
+                                {% if order.order_status == 'pending' or order.order_status == 'PENDING' or order.order_status.value == 'pending' %}
+                                    <form action="{{ url_for('user.cancel_order', order_id=order.order_id) }}" method="post" class="cancel-order-form">
                                         <button type="submit" class="btn-small danger"><i class="fas fa-times"></i> Cancel</button>
                                     </form>
                                 {% else %}

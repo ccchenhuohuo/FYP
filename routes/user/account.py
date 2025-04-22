@@ -68,10 +68,10 @@ def account():
             'pnl_percentage': pnl_percentage  # Add P&L percentage
         })
     
-    # Get user's transaction history (limit 10)
-    transactions = Transaction.query.filter_by(user_id=current_user.user_id).order_by(Transaction.transaction_time.desc()).limit(10).all()
+    # Get user's transaction history (fetch all, ordered)
+    transactions = Transaction.query.filter_by(user_id=current_user.user_id).order_by(Transaction.transaction_time.desc()).all()
     
-    # Get user's order history (limit 10)
+    # Get user's order history (limit 10 - keeping this limited for now unless specified)
     orders = Order.query.filter_by(user_id=current_user.user_id).order_by(Order.created_at.desc()).limit(10).all()
     
     # Format order data to match template expectations
@@ -79,6 +79,18 @@ def account():
     for order in orders:
         # Debugging info
         print(f"Order ID: {order.order_id}, Status: {order.order_status}, Price: {order.order_price}")
+        
+        # 获取订单对应的交易记录，用于获取实际执行价格
+        transaction = None
+        if order.order_status == 'executed' or order.order_status.value == 'executed' or order.order_status == 'EXECUTED':
+            transaction = Transaction.query.filter_by(order_id=order.order_id).first()
+        
+        # 对于已执行的限价单，应显示实际执行价格
+        display_price = order.order_price
+        if transaction and transaction.transaction_price and (order.order_execution_type == 'limit' or 
+                                                            order.order_execution_type.value == 'limit'):
+            display_price = transaction.transaction_price
+        
         order_data.append({
             'order_id': order.order_id,  # Keep original field name
             'id': order.order_id,        # Add id field for the template
@@ -87,7 +99,8 @@ def account():
             'type': order.order_type,    # Add type field for the template 
             'order_execution_type': order.order_execution_type,
             'execution_type': order.order_execution_type, # Add execution_type field for the template
-            'order_price': order.order_price,
+            'order_price': order.order_price,  # 原始限价
+            'display_price': display_price,    # 显示价格（为已执行订单显示实际成交价）
             'price': order.order_price,  # Add price field for the template
             'order_quantity': order.order_quantity,
             'quantity': order.order_quantity,  # Add quantity field for the template
@@ -95,11 +108,13 @@ def account():
             'status': order.order_status,  # Add status field for the template
             'created_at': safe_date_format(order.created_at),
             'updated_at': safe_date_format(order.updated_at),
-            'executed_at': safe_date_format(order.executed_at)
+            'executed_at': safe_date_format(order.executed_at),
+            # 添加交易价格信息
+            'transaction_price': transaction.transaction_price if transaction else None
         })
     
-    # Get user fund transaction history (limit 5)
-    fund_transactions = FundTransaction.query.filter_by(user_id=current_user.user_id).order_by(FundTransaction.created_at.desc()).limit(5).all()
+    # Get user fund transaction history (fetch all, ordered)
+    fund_transactions = FundTransaction.query.filter_by(user_id=current_user.user_id).order_by(FundTransaction.created_at.desc()).all()
     
     # Process fund transaction records, ensuring correct field names
     fund_tx_data = []

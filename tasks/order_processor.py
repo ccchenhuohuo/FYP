@@ -3,7 +3,7 @@
 定期检查和执行待处理的限价单和市价单
 """
 from models import db, Order
-from utils.order_utils import get_market_price, can_execute_immediately, execute_order
+from utils.order_utils import get_market_price, can_execute_immediately, execute_order, scan_pending_limit_orders
 import time
 import threading
 import logging
@@ -29,19 +29,16 @@ class OrderProcessor:
         while self.running:
             try:
                 with self.app.app_context():
-                    # 获取所有待处理的订单（包括限价单和市价单）
-                    pending_orders = Order.query.filter_by(order_status='pending').all()
+                    # 获取所有待处理的市价单
+                    pending_market_orders = Order.query.filter_by(
+                        order_status='pending',
+                        order_execution_type='market'
+                    ).all()
                     
-                    logger.info(f"检查 {len(pending_orders)} 个待处理的订单")
-                    
-                    # 首先处理市价单
-                    market_orders = [order for order in pending_orders if order.order_execution_type == 'market']
-                    limit_orders = [order for order in pending_orders if order.order_execution_type == 'limit']
-                    
-                    logger.info(f"其中 {len(market_orders)} 个市价单, {len(limit_orders)} 个限价单")
+                    logger.info(f"检查 {len(pending_market_orders)} 个待处理的市价单")
                     
                     # 处理市价单
-                    for order in market_orders:
+                    for order in pending_market_orders:
                         try:
                             # 获取当前市场价格
                             price_success, price_result = get_market_price(order.ticker)
@@ -64,31 +61,8 @@ class OrderProcessor:
                             logger.error(f"处理市价单 #{order.order_id} 时发生错误: {str(e)}")
                             continue
                     
-                    # 处理限价单
-                    for order in limit_orders:
-                        try:
-                            # 获取当前市场价格
-                            price_success, price_result = get_market_price(order.ticker)
-                            
-                            if not price_success:
-                                logger.warning(f"无法获取 {order.ticker} 的市场价格: {price_result}")
-                                continue
-                                
-                            market_price = price_result
-                            
-                            # 检查是否满足执行条件
-                            if can_execute_immediately(order, market_price):
-                                # 尝试执行订单
-                                exec_success, exec_message = execute_order(order, market_price)
-                                
-                                if exec_success:
-                                    logger.info(f"限价单 #{order.order_id} 执行成功")
-                                else:
-                                    logger.error(f"限价单 #{order.order_id} 执行失败: {exec_message}")
-                        
-                        except Exception as e:
-                            logger.error(f"处理限价单 #{order.order_id} 时发生错误: {str(e)}")
-                            continue
+                    # 使用专用函数扫描和执行限价单
+                    scan_pending_limit_orders()
                 
             except Exception as e:
                 logger.error(f"处理订单时发生错误: {str(e)}")

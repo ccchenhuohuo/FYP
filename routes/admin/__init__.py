@@ -1,8 +1,8 @@
 """
-admin路由模块
-包含管理员功能相关路由
+Admin routes module
+Contains routes related to admin functions
 """
 from flask import Blueprint
 
-# 创建管理员相关蓝图
+# Create the admin blueprint
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin') 

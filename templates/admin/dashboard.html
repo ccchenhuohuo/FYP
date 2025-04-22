@@ -5,7 +5,7 @@
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin_dashboard.css') }}">
 <style>
-  /* 内联样式覆盖，优化整体布局 */
+  /* Inline style override for overall layout optimization */
   .page-container {
       /* Optional: Add max-width if needed, otherwise let it fill */
   }
@@ -89,7 +89,7 @@
     
     <div class="dashboard-content"> 
         <div class="dashboard-top-section">
-            {# 统计卡片 - 紧凑布局 #}
+            {# Stats cards - compact layout #}
             <div class="stats-grid stats-grid-5">
                 <!-- Total Users -->
                 <a href="{{ url_for('admin.users') }}" class="stat-card" title="View user details">
@@ -137,7 +137,7 @@
                 </a>
             </div>
 
-            {# 趋势图表 - 增加高度 #}
+            {# Trend chart - increased height #}
             <div class="chart-container">
                 <h2>Daily Activity Trends (Last 30 Days)</h2>
                 <canvas id="dailyTrendChart"></canvas>

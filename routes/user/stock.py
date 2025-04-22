@@ -13,6 +13,7 @@ import requests
 import json
 from config import ALPHA_VANTAGE_API_KEY
 import traceback
+from werkzeug.datastructures import MultiDict
 
 from . import user_bp
 from utils.risk_monitor import run_analysis_text_only_simple
@@ -447,3 +448,100 @@ def get_real_time_stock_data():
         print(f"获取实时数据失败: {str(e)}")
         print(f"详细错误: {traceback.format_exc()}")
         return jsonify({'error': f'获取实时数据失败: {str(e)}'}), 500
+
+@user_bp.route('/api/realtime_quote')
+@login_required
+def get_realtime_quote():
+    """
+    获取实时报价API
+    与'/api/real_time_stock_data'相似，但返回格式匹配前端预期
+    """
+    ticker = request.args.get('ticker', '')
+    
+    if not ticker:
+        return jsonify({'error': '缺少股票代码参数'}), 400
+    
+    try:
+        print(f"尝试获取 {ticker} 的实时报价数据")
+        
+        # 安全转换函数
+        def safe_float(value):
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                print(f"警告: 无法将值 {value} (类型: {type(value)}) 转换为浮点数")
+                return None
+        
+        # 调用Alpha Vantage API获取实时数据
+        url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_VANTAGE_API_KEY}'
+        response = requests.get(url)
+        data = response.json()
+        
+        if 'Global Quote' not in data or not data['Global Quote']:
+            print(f"Alpha Vantage API返回无数据，回退到数据库")
+            # 如果API调用失败或没有数据，回退到使用数据库的最新记录
+            latest_data = MarketData.query.filter_by(ticker=ticker).order_by(MarketData.date.desc()).first()
+            
+            if not latest_data:
+                return jsonify({'error': f'未找到{ticker}的数据'}), 404
+            
+            # 准备返回结果（匹配前端期望格式）
+            result = {
+                'symbol': ticker,
+                'current_price': safe_float(latest_data.close),
+                'price_change': safe_float(latest_data.close) - safe_float(latest_data.open),
+                'percentage_change': ((safe_float(latest_data.close) - safe_float(latest_data.open)) / safe_float(latest_data.open)) * 100 if latest_data.open and latest_data.open != 0 else 0,
+                'volume': safe_float(latest_data.volume),
+                'high_price': safe_float(latest_data.high),
+                'low_price': safe_float(latest_data.low),
+                'last_updated': latest_data.date.strftime('%Y-%m-%d') if latest_data.date else None,
+                'data_source': 'database'  # 标记数据来源
+            }
+        else:
+            # 使用Alpha Vantage的实时数据
+            quote = data['Global Quote']
+            
+            # 确保所有字段都使用安全转换
+            current_price = safe_float(quote.get('05. price'))
+            previous_close = safe_float(quote.get('08. previous close'))
+            
+            # 计算变化百分比，避免除以零
+            if previous_close and previous_close != 0:
+                change_percent = ((current_price or 0) - previous_close) / previous_close * 100
+            else:
+                change_percent = 0
+                
+            # 尝试从API响应中获取百分比，如果失败则使用计算值
+            try:
+                api_percent = quote.get('10. change percent', '').strip('%')
+                change_percent = safe_float(api_percent) or change_percent
+            except:
+                pass
+            
+            # 准备返回结果（匹配前端期望格式）
+            result = {
+                'symbol': ticker,
+                'current_price': current_price,
+                'price_change': safe_float(quote.get('09. change')),
+                'percentage_change': change_percent,
+                'volume': safe_float(quote.get('06. volume')),
+                'high_price': safe_float(quote.get('03. high')),
+                'low_price': safe_float(quote.get('04. low')),
+                'last_updated': quote.get('07. latest trading day'),
+                'data_source': 'alpha_vantage'  # 标记数据来源
+            }
+        
+        print(f"返回实时报价数据: {result}")
+        return jsonify(result)
+        
+    except requests.exceptions.RequestException as e:
+        # 处理网络请求错误
+        print(f"API请求失败: {str(e)}")
+        return jsonify({'error': f'API请求失败: {str(e)}'}), 500
+    except Exception as e:
+        # 处理其他错误
+        print(f"获取实时报价数据失败: {str(e)}")
+        print(f"详细错误: {traceback.format_exc()}")
+        return jsonify({'error': f'获取实时报价数据失败: {str(e)}'}), 500

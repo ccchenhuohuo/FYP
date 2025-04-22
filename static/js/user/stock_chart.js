@@ -161,11 +161,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.status === 'failed') {
                         // 如果后端明确返回失败状态，显示红色错误通知
                         showNotification('error', data.message || 'Order creation failed', data.error || 'Unknown reason');
-                    } else if (data.status === 'executed' || data.status === 'pending') {
-                        // 如果是已执行或待处理，显示绿色成功通知
-                        const statusText = data.status === 'executed' ? 
-                            `Executed successfully, price: ${data.executed_price}` : 
-                            `Created, status: ${data.status}`;
+                    } else if (data.status === 'executed' || data.status === 'pending' || data.status === 'valid') {
+                        // 如果是已执行、待处理或有效状态，显示绿色成功通知
+                        let statusText = '';
+                        
+                        if (data.status === 'executed') {
+                            statusText = `Executed successfully, price: ${data.executed_price}`;
+                        } else if (data.status === 'pending') {
+                            statusText = `Created, status: ${data.status}`;
+                        } else if (data.status === 'valid') {
+                            // 处理'valid'状态，查看order_status确定实际状态
+                            if (data.order_status === 'executed') {
+                                statusText = `Executed successfully, price: ${data.executed_price}`;
+                            } else {
+                                statusText = `Order created successfully, status: ${data.order_status || 'pending'}`;
+                            }
+                        }
+                        
                         showNotification('success', data.message || 'Order processing successful', `Order ID: ${data.order_id}<br>${statusText}`);
                         
                         // 重置表单
@@ -747,7 +759,14 @@ async function fetchRealTimeData(symbol) {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
+        
         const data = await response.json();
+        
+        // 检查API是否返回错误
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
         console.log(`成功获取 ${symbol} 的实时数据:`, data);
 
         // Helper to safely update element content
@@ -764,21 +783,32 @@ async function fetchRealTimeData(symbol) {
             else console.warn(`Element with ID '${id}' not found.`);
         };
 
-        // Update DOM elements
-        safeUpdateElement('rtPrice', `$${data.current_price.toFixed(2)}`);
+        // 安全获取数值并提供默认值
+        const getFloatWithDefault = (value, defaultVal = 0) => {
+            return value !== undefined && value !== null ? parseFloat(value) : defaultVal;
+        };
+
+        // 获取价格和变化数据
+        const currentPrice = getFloatWithDefault(data.current_price);
+        const priceChange = getFloatWithDefault(data.price_change);
+        const percentageChange = getFloatWithDefault(data.percentage_change);
+
+        // Update DOM elements with proper formatting and error handling
+        safeUpdateElement('rtPrice', `$${currentPrice.toFixed(2)}`);
         
         // Update price change and apply class
         const changeElementId = 'rtPriceChange';
-        const priceChange = data.price_change;
-        const percentageChange = data.percentage_change;
         safeUpdateElement(changeElementId, `${priceChange.toFixed(2)} (${percentageChange.toFixed(2)}%)`);
         safeUpdateClass(changeElementId, priceChange >= 0 ? 'change positive' : 'change negative');
 
-        // Format volume using the helper function (assuming it exists globally or is defined here)
-        safeUpdateElement('rtVolume', formatNumber(data.volume)); 
+        // Format volume 
+        safeUpdateElement('rtVolume', formatNumber(data.volume));
 
-        safeUpdateElement('rtHigh', `$${data.high_price.toFixed(2)}`);
-        safeUpdateElement('rtLow', `$${data.low_price.toFixed(2)}`);
+        // High and low prices
+        const highPrice = getFloatWithDefault(data.high_price);
+        const lowPrice = getFloatWithDefault(data.low_price);
+        safeUpdateElement('rtHigh', `$${highPrice.toFixed(2)}`);
+        safeUpdateElement('rtLow', `$${lowPrice.toFixed(2)}`);
         
         // Update last updated timestamp - ensure text is English
         const now = new Date();

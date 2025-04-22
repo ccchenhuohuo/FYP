@@ -1,4 +1,3 @@
-// Initialize form validation
 document.addEventListener('DOMContentLoaded', function() {
     // Order form validation
     const orderForm = document.getElementById('orderForm');
@@ -144,6 +143,40 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 alert('An error occurred while cancelling the order');
                 console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Handle Toggle History Button Clicks
+    const toggleButtons = document.querySelectorAll('.toggle-history-btn');
+
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetListId = this.getAttribute('data-target');
+            const targetBody = document.getElementById(targetListId);
+
+            if (targetBody) {
+                // Find hidden items within this specific table body
+                const hiddenItems = targetBody.querySelectorAll('tr.history-item.hidden');
+                const isShowingAll = hiddenItems.length === 0; // Check if currently showing all (no hidden items)
+
+                if (isShowingAll) {
+                    // Hide items beyond the initial limit (3 or 4)
+                    const allItems = targetBody.querySelectorAll('tr.history-item');
+                    const limit = targetListId.includes('fund') ? 4 : 3; // 4 for fund, 3 for transaction
+                    allItems.forEach((item, index) => {
+                        if (index >= limit) {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    this.textContent = 'Show All';
+                } else {
+                    // Show all hidden items
+                    hiddenItems.forEach(item => {
+                        item.classList.remove('hidden');
+                    });
+                    this.textContent = 'Show Less';
+                }
             }
         });
     });
