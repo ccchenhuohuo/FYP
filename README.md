@@ -38,31 +38,31 @@ This system simulates a real stock trading environment, allowing users to regist
 ### 2.2 Configuration
 
 1.  **Clone the Repository**:
-```bash
+    ```bash
     git clone <repository_url>
     cd <project_directory>
-```
+    ```
 
 2.  **Create and Activate Virtual Environment**:
-```bash
+    ```bash
     # Create virtual environment
-python -m venv flask_env
+    python -m venv flask_env
 
     # Activate virtual environment (Linux/macOS)
     source flask_env/bin/activate
     # Or (Windows)
-    .\flask_env\Scripts\activate
+    # .\flask_env\Scripts\activate
     ```
 
 3.  **Install Dependencies**:
-```bash
-pip install -r requirements.txt
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 4.  **Configure Database**:
     *   Ensure your MySQL service is running.
     *   Create a new database (e.g., `stock_data_v1`):
-```sql
+        ```sql
         CREATE DATABASE stock_data_v1 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         ```
     *   Open the `config.py` file.
@@ -86,28 +86,28 @@ pip install -r requirements.txt
     *   First-time setup requires initializing the database schema. Flask-Migrate manages schema changes.
     *   Ensure the Flask app is discoverable (usually by setting the `FLASK_APP=app.py` environment variable).
     *   Run the following commands to generate and apply database migrations:
-```bash
-      # Set Flask app entry point (if not already set)
-      export FLASK_APP=app.py # Linux/macOS
-      # set FLASK_APP=app.py # Windows
+        ```bash
+        # Set Flask app entry point (if not already set)
+        export FLASK_APP=app.py # Linux/macOS
+        # set FLASK_APP=app.py # Windows
 
-      # Initialize migration environment (only needed once)
-      flask db init
+        # Initialize migration environment (only needed once)
+        flask db init
 
-      # Generate initial migration script
-      flask db migrate -m "Initial migration."
+        # Generate initial migration script
+        flask db migrate -m "Initial migration."
 
-      # Apply migrations to the database
-      flask db upgrade
-      ```
-      *Note: The `init_db(app)` function called in `app.py` handles table creation and potentially initial data seeding (like the default admin). `flask db upgrade` executes these creation operations.*
+        # Apply migrations to the database
+        flask db upgrade
+        ```
+    *   *Note: The `init_db(app)` function called in `app.py` handles table creation and potentially initial data seeding (like the default admin). `flask db upgrade` executes these creation operations.*
 
 ### 2.3 Running & Debugging
 
 *   **Start Development Server**:
-```bash
-flask run --debug
-```
+    ```bash
+    flask run --debug
+    ```
     *   The `--debug` flag enables debug mode, providing detailed error messages and auto-reloading on code changes.
     *   The application runs on `http://127.0.0.1:5003` by default (port defined in `config.py`).
 
@@ -437,7 +437,7 @@ The system uses a MySQL database (named `stock_data_v1`) with the following tabl
 
 #### Database Relationship Diagram (Text Format)
 
-```
+```text
 User-Related
 └── user (Users Table)
     ├── 1:1 account_balance (Account Balance Table)
@@ -469,127 +469,127 @@ The application provides the following API endpoints:
 
 #### Core Routes
 
-* **GET /**: Root path, redirects based on login status.
-* **GET /about**: About page.
-* **GET /privacy**: Privacy policy page.
-* **GET /logout**: Logout operation (redirects to `auth.logout`).
+*   **GET /**: Root path, redirects based on login status.
+*   **GET /about**: About page.
+*   **GET /privacy**: Privacy policy page.
+*   **GET /logout**: Logout operation (redirects to `auth.logout`).
 
 #### Authentication Routes (`/auth`)
 
-* **GET /**: Authentication blueprint root (typically redirects).
-* **GET, POST /login**: User login.
-* **GET, POST /register**: User registration.
-* **GET, POST /admin-login**: Admin login.
-* **GET /logout**: User/admin logout.
+*   **GET /**: Authentication blueprint root (typically redirects).
+*   **GET, POST /login**: User login.
+*   **GET, POST /register**: User registration.
+*   **GET, POST /admin-login**: Admin login.
+*   **GET /logout**: User/admin logout.
 
 #### User Routes (`/user`)
 
-* **GET /dashboard**: User dashboard (typically redirects to `/user/stock_chart`).
-* **GET /account**: User account page.
-* **POST /api/deposit**: User deposit API.
-  * Request Body: `{ "amount": float }`
-  * Response: `{ "success": boolean, "message": string, "transaction_id": integer }`
+*   **GET /dashboard**: User dashboard (typically redirects to `/user/stock_chart`).
+*   **GET /account**: User account page.
+*   **POST /api/deposit**: User deposit API.
+    *   Request Body: `{ "amount": float }`
+    *   Response: `{ "success": boolean, "message": string, "transaction_id": integer }`
 
-* **POST /api/withdraw**: User withdrawal API.
-  * Request Body: `{ "amount": float }`
-  * Response: `{ "success": boolean, "message": string, "transaction_id": integer }`
+*   **POST /api/withdraw**: User withdrawal API.
+    *   Request Body: `{ "amount": float }`
+    *   Response: `{ "success": boolean, "message": string, "transaction_id": integer }`
 
-* **GET /api/orders**: Get user orders list API (supports pagination and filtering).
-  * Query Parameters: 
-    * `page`: integer (page number)
-    * `limit`: integer (items per page)
-    * `status`: string (filter by status)
-    * `ticker`: string (filter by ticker)
-    * `type`: string (filter by order type)
-  * Response: `{ "success": boolean, "orders": array, "pagination": object }`
+*   **GET /api/orders**: Get user orders list API (supports pagination and filtering).
+    *   Query Parameters:
+        *   `page`: integer (page number)
+        *   `limit`: integer (items per page)
+        *   `status`: string (filter by status)
+        *   `ticker`: string (filter by ticker)
+        *   `type`: string (filter by order type)
+    *   Response: `{ "success": boolean, "orders": array, "pagination": object }`
 
-* **POST /api/create_order**: Create trading order API (market/limit).
-  * Request Body: 
-    ```
-    {
-      "ticker": string,
-      "order_type": string ("buy"/"sell"),
-      "execution_type": string ("market"/"limit"),
-      "quantity": integer,
-      "price": float (nullable for market orders)
-    }
-    ```
-  * Response: `{ "success": boolean, "message": string, "order_id": integer }`
+*   **POST /api/create_order**: Create trading order API (market/limit).
+    *   Request Body:
+        ```json
+        {
+          "ticker": "string",
+          "order_type": "string (buy/sell)",
+          "execution_type": "string (market/limit)",
+          "quantity": integer,
+          "price": float (nullable for market orders)
+        }
+        ```
+    *   Response: `{ "success": boolean, "message": string, "order_id": integer }`
 
-* **POST /orders/<order_id>/cancel**: Cancel order API.
-  * URL Parameters: `order_id`: integer
-  * Response: `{ "success": boolean, "message": string }`
+*   **POST /orders/<order_id>/cancel**: Cancel order API.
+    *   URL Parameters: `order_id`: integer
+    *   Response: `{ "success": boolean, "message": string }`
 
-* **GET /stock_chart**: Stock chart and trading page.
-* **GET /stock_analysis**: Stock analysis page.
+*   **GET /stock_chart**: Stock chart and trading page.
+*   **GET /stock_analysis**: Stock analysis page.
 
-* **POST /api/stock_analysis**: Stock risk analysis API.
-  * Request Body: `{ "ticker": string, "window": integer }`
-  * Response: `{ "success": boolean, "data": object, "metrics": object }`
+*   **POST /api/stock_analysis**: Stock risk analysis API.
+    *   Request Body: `{ "ticker": string, "window": integer }`
+    *   Response: `{ "success": boolean, "data": object, "metrics": object }`
 
-* **GET /api/market_data**: Get stock historical market data API.
-  * Query Parameters:
-    * `ticker`: string (stock symbol)
-    * `period`: string (e.g., "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "max")
-  * Response: `{ "success": boolean, "data": array }`
+*   **GET /api/market_data**: Get stock historical market data API.
+    *   Query Parameters:
+        *   `ticker`: string (stock symbol)
+        *   `period`: string (e.g., "1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "max")
+    *   Response: `{ "success": boolean, "data": array }`
 
-* **GET /api/fundamental_data**: Get stock fundamental data API.
-  * Query Parameters: `ticker`: string (stock symbol)
-  * Response: `{ "success": boolean, "data": object }`
+*   **GET /api/fundamental_data**: Get stock fundamental data API.
+    *   Query Parameters: `ticker`: string (stock symbol)
+    *   Response: `{ "success": boolean, "data": object }`
 
-* **GET /api/balance_sheet**: Get balance sheet API.
-  * Query Parameters: `ticker`: string (stock symbol)
-  * Response: `{ "success": boolean, "data": object }`
+*   **GET /api/balance_sheet**: Get balance sheet API.
+    *   Query Parameters: `ticker`: string (stock symbol)
+    *   Response: `{ "success": boolean, "data": object }`
 
-* **GET /api/income_statement**: Get income statement API.
-  * Query Parameters: `ticker`: string (stock symbol)
-  * Response: `{ "success": boolean, "data": object }`
+*   **GET /api/income_statement**: Get income statement API.
+    *   Query Parameters: `ticker`: string (stock symbol)
+    *   Response: `{ "success": boolean, "data": object }`
 
-* **GET /api/real_time_stock_data**: Get real-time/near-real-time quotes API.
-  * Query Parameters: `ticker`: string (stock symbol)
-  * Response: `{ "success": boolean, "data": object, "last_updated": string }`
+*   **GET /api/real_time_stock_data**: Get real-time/near-real-time quotes API.
+    *   Query Parameters: `ticker`: string (stock symbol)
+    *   Response: `{ "success": boolean, "data": object, "last_updated": string }`
 
-* **GET /api/monte-carlo/<ticker>**: Get Monte Carlo simulation results API.
-  * URL Parameters: `ticker`: string (stock symbol)
-  * Query Parameters:
-    * `days`: integer (prediction days)
-    * `simulations`: integer (number of simulations)
-  * Response: `{ "success": boolean, "predictions": array, "statistics": object }`
+*   **GET /api/monte-carlo/<ticker>**: Get Monte Carlo simulation results API.
+    *   URL Parameters: `ticker`: string (stock symbol)
+    *   Query Parameters:
+        *   `days`: integer (prediction days)
+        *   `simulations`: integer (number of simulations)
+    *   Response: `{ "success": boolean, "predictions": array, "statistics": object }`
 
-* **GET /ai_assistant**: AI assistant page.
+*   **GET /ai_assistant**: AI assistant page.
 
-* **POST /api/chat**: Chat with AI assistant API.
-  * Request Body: `{ "message": string }`
-  * Response: `{ "success": boolean, "response": string }`
+*   **POST /api/chat**: Chat with AI assistant API.
+    *   Request Body: `{ "message": string }`
+    *   Response: `{ "success": boolean, "response": string }`
 
 #### Admin Routes (`/admin`)
 
-* **GET /, /dashboard**: Admin dashboard.
-* **GET /fund-transactions**: View fund transactions list (deposits/withdrawals).
-* **GET /deposits**: View deposits list (filtered view of `/fund-transactions`).
-* **GET /withdrawals**: View withdrawals list (filtered view of `/fund-transactions`).
+*   **GET /, /dashboard**: Admin dashboard.
+*   **GET /fund-transactions**: View fund transactions list (deposits/withdrawals).
+*   **GET /deposits**: View deposits list (filtered view of `/fund-transactions`).
+*   **GET /withdrawals**: View withdrawals list (filtered view of `/fund-transactions`).
 
-* **POST /fund-transactions/<transaction_id>/approve**: Approve fund transaction API.
-  * URL Parameters: `transaction_id`: integer
-  * Response: `{ "success": boolean, "message": string }`
+*   **POST /fund-transactions/<transaction_id>/approve**: Approve fund transaction API.
+    *   URL Parameters: `transaction_id`: integer
+    *   Response: `{ "success": boolean, "message": string }`
 
-* **POST /fund-transactions/<transaction_id>/reject**: Reject fund transaction API.
-  * URL Parameters: `transaction_id`: integer
-  * Request Body: `{ "reason": string }`
-  * Response: `{ "success": boolean, "message": string }`
+*   **POST /fund-transactions/<transaction_id>/reject**: Reject fund transaction API.
+    *   URL Parameters: `transaction_id`: integer
+    *   Request Body: `{ "reason": string }`
+    *   Response: `{ "success": boolean, "message": string }`
 
-* **GET /orders**: View all user orders list.
+*   **GET /orders**: View all user orders list.
 
-* **POST /orders/<order_id>/execute**: Manually execute order API.
-  * URL Parameters: `order_id`: integer
-  * Response: `{ "success": boolean, "message": string }`
+*   **POST /orders/<order_id>/execute**: Manually execute order API.
+    *   URL Parameters: `order_id`: integer
+    *   Response: `{ "success": boolean, "message": string }`
 
-* **POST /orders/<order_id>/reject**: Manually reject order API.
-  * URL Parameters: `order_id`: integer
-  * Request Body: `{ "reason": string }`
-  * Response: `{ "success": boolean, "message": string }`
+*   **POST /orders/<order_id>/reject**: Manually reject order API.
+    *   URL Parameters: `order_id`: integer
+    *   Request Body: `{ "reason": string }`
+    *   Response: `{ "success": boolean, "message": string }`
 
-* **GET /user_management**: User management page.
+*   **GET /user_management**: User management page.
 
 ## 5. Usage Notes
 
